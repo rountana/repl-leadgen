@@ -1,0 +1,76 @@
+# HVCG — Lead Magnet Webpage: Product One-Pager
+
+*Describes the module as it works for a business owner today.
+## What it is
+
+HVCG is where a business owner creates a lead magnet (a hook) — a single webpage designed
+to trade something valuable (a checklist, a guide, a discount) for a visitor's
+name, phone, and email. That lead magnet is used later to attract and
+capture leads. This module is only about creating that page and reviewing it
+before it goes live — nothing about ads, notifications, or what happens to a
+lead afterward is part of this module.
+
+## Two ways to start
+
+1. **"I have a webpage"** — the owner already has a page live somewhere and
+   just wants to use it as their hook. They paste the address, and it's live
+   immediately — no build step, no review. HVCG is simply recording a link the
+   owner already vouches for.
+2. **"I need to create one"** — the owner doesn't have a page yet, so HVCG
+   builds one for them: a **Give-Away Webpage** — teaser copy the owner writes
+   plus a file they upload (a guide, checklist, or similar), gated behind a
+   short capture form. A visitor fills in their name, phone, and email to
+   unlock the download; that submission is a real, qualified lead.
+
+## The walkthrough
+
+After signing in, the owner picks one of the two paths above. Choosing "I need
+to create one" drops them straight into the Give-Away Webpage form: teaser
+title and description, the file to give away, and a business name/location.
+
+Two AI helpers sit alongside the form, **both off by default**:
+- **Pre-fill from a source** — point at an existing webpage or upload a
+  document and matching fields fill in automatically; everything stays
+  editable before submitting.
+- **Pull my logo/tagline onto the page** — lifts a logo and tagline from that
+  same source and applies them to the page's look.
+
+Neither runs unless the owner turns it on, and either can be used without the
+other. An owner who doesn't have a give-away file ready yet can browse a
+gallery of real examples (filtered by industry) for inspiration before
+uploading their own.
+
+Before submitting, the owner also picks a **look** for the page — not just a layout
+(split, banner, overlay, or stacked) but a real webpage design template complete with color palette, font & iamges.
+5 templates in all. This isn't cosmetic-only: it's chosen right on the
+creation form, before the page is even generated.
+
+## Review, before anything goes live
+
+Submitting a Give-Away Webpage form generates the page and lands the owner on
+a **Review** screen — a live preview in a frame they can open full-size. From
+here they can:
+- **Approve** — the page goes live and starts accepting submissions.
+- **Change the look** — switch to a different layout, or
+  fine-tune font, background, and text color directly; a plain-language
+  warning appears if a color choice would be hard to read on a phone in
+  daylight. Each change regenerates the preview instantly.
+- **Edit and save changes** — correct any field and regenerate before
+  approving.
+
+Nothing goes live from this path without the owner clicking Approve. If they
+leave mid-flow and come back later, they land back where they left off —
+Review if not yet approved, or the finished page if it's already live —
+instead of starting over.
+
+## After it's live
+
+The owner gets a stable link to copy and share, plus a one-line confirmation
+that the page is accepting submissions. They can return anytime to create
+another hook, going through the same flow from the top.
+
+## Deliberately out of scope for this module
+
+- No verification that an "I have a webpage" link is genuine, safe, or live —
+  the owner is vouching for their own page.
+- No video or audio give-aways in this version — file-based give-aways only.

@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: HVCG Lead Magnet Builder API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: lead-magnets
+    description: Lead magnet operations
+  - name: templates
+    description: Design template operations
+  - name: examples
+    description: Example gallery operations
+  - name: industries
+    description: Industry list operations
+  - name: ai
+    description: AI helper operations
 paths:
   /healthz:
     get:
@@ -24,6 +34,283 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /lead-magnets:
+    get:
+      operationId: listLeadMagnets
+      tags: [lead-magnets]
+      summary: List all lead magnets for the current user
+      responses:
+        "200":
+          description: List of lead magnets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeadMagnet"
+    post:
+      operationId: createLeadMagnet
+      tags: [lead-magnets]
+      summary: Create a new lead magnet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadMagnetInput"
+      responses:
+        "201":
+          description: Created lead magnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadMagnet"
+
+  /lead-magnets/summary:
+    get:
+      operationId: getLeadMagnetsSummary
+      tags: [lead-magnets]
+      summary: Get dashboard summary counts by status
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadMagnetsSummary"
+
+  /lead-magnets/{id}:
+    get:
+      operationId: getLeadMagnet
+      tags: [lead-magnets]
+      summary: Get a single lead magnet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Lead magnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadMagnet"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateLeadMagnet
+      tags: [lead-magnets]
+      summary: Update a lead magnet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadMagnetUpdate"
+      responses:
+        "200":
+          description: Updated lead magnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadMagnet"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteLeadMagnet
+      tags: [lead-magnets]
+      summary: Delete a lead magnet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+
+  /lead-magnets/{id}/approve:
+    post:
+      operationId: approveLeadMagnet
+      tags: [lead-magnets]
+      summary: Approve a lead magnet to go live
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Approved lead magnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadMagnet"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /lead-magnets/{id}/file:
+    post:
+      operationId: uploadLeadMagnetFile
+      tags: [lead-magnets]
+      summary: Upload or set the give-away file for a lead magnet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FileUploadInput"
+      responses:
+        "200":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileUploadResult"
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List all design templates
+      responses:
+        "200":
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Template"
+
+  /templates/{id}:
+    get:
+      operationId: getTemplate
+      tags: [templates]
+      summary: Get a single template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Template"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /examples:
+    get:
+      operationId: listExamples
+      tags: [examples]
+      summary: List gallery examples, optionally filtered by industry
+      parameters:
+        - name: industry
+          in: query
+          required: false
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of examples
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Example"
+
+  /industries:
+    get:
+      operationId: listIndustries
+      tags: [industries]
+      summary: List all industries for gallery filtering
+      responses:
+        "200":
+          description: List of industries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Industry"
+
+  /ai/prefill:
+    post:
+      operationId: aiPrefill
+      tags: [ai]
+      summary: AI pre-fill form fields from a URL or uploaded document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiPrefillInput"
+      responses:
+        "200":
+          description: Pre-filled fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiPrefillResult"
+
+  /ai/extract-branding:
+    post:
+      operationId: aiExtractBranding
+      tags: [ai]
+      summary: Extract logo and tagline from a source URL or document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiBrandingInput"
+      responses:
+        "200":
+          description: Extracted branding
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiBrandingResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +321,262 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    LeadMagnet:
+      type: object
+      properties:
+        id:
+          type: number
+        userId:
+          type: string
+        type:
+          type: string
+          enum: [existing_url, give_away]
+        status:
+          type: string
+          enum: [draft, review, live]
+        title:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        existingUrl:
+          type: ["string", "null"]
+        businessName:
+          type: ["string", "null"]
+        businessLocation:
+          type: ["string", "null"]
+        giveawayFileName:
+          type: ["string", "null"]
+        giveawayFileUrl:
+          type: ["string", "null"]
+        templateId:
+          type: ["number", "null"]
+        customFontColor:
+          type: ["string", "null"]
+        customBgColor:
+          type: ["string", "null"]
+        customTextColor:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        tagline:
+          type: ["string", "null"]
+        shareUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - type
+        - status
+        - createdAt
+        - updatedAt
+
+    LeadMagnetInput:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [existing_url, give_away]
+        title:
+          type: string
+        description:
+          type: string
+        existingUrl:
+          type: string
+        businessName:
+          type: string
+        businessLocation:
+          type: string
+        templateId:
+          type: number
+        customFontColor:
+          type: string
+        customBgColor:
+          type: string
+        customTextColor:
+          type: string
+
+    LeadMagnetUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        existingUrl:
+          type: string
+        businessName:
+          type: string
+        businessLocation:
+          type: string
+        templateId:
+          type: number
+        customFontColor:
+          type: string
+        customBgColor:
+          type: string
+        customTextColor:
+          type: string
+        logoUrl:
+          type: string
+        tagline:
+          type: string
+
+    LeadMagnetsSummary:
+      type: object
+      properties:
+        total:
+          type: number
+        live:
+          type: number
+        review:
+          type: number
+        draft:
+          type: number
+      required:
+        - total
+        - live
+        - review
+        - draft
+
+    Template:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        layout:
+          type: string
+          enum: [split, banner, overlay, stacked, minimal]
+        description:
+          type: string
+        previewColor:
+          type: string
+        accentColor:
+          type: string
+        fontFamily:
+          type: string
+        sampleImageUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - name
+        - layout
+        - description
+        - previewColor
+        - accentColor
+        - fontFamily
+
+    Example:
+      type: object
+      properties:
+        id:
+          type: number
+        industry:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        giveawayType:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - industry
+        - title
+        - description
+        - giveawayType
+
+    Industry:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        slug:
+          type: string
+      required:
+        - id
+        - name
+        - slug
+
+    FileUploadInput:
+      type: object
+      required:
+        - fileName
+        - fileDataUrl
+      properties:
+        fileName:
+          type: string
+        fileDataUrl:
+          type: string
+          description: Base64-encoded data URL of the file
+
+    FileUploadResult:
+      type: object
+      properties:
+        fileUrl:
+          type: string
+        fileName:
+          type: string
+      required:
+        - fileUrl
+        - fileName
+
+    AiPrefillInput:
+      type: object
+      properties:
+        sourceUrl:
+          type: ["string", "null"]
+        documentDataUrl:
+          type: ["string", "null"]
+          description: Base64-encoded document content
+      required: []
+
+    AiPrefillResult:
+      type: object
+      properties:
+        title:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        businessName:
+          type: ["string", "null"]
+        businessLocation:
+          type: ["string", "null"]
+
+    AiBrandingInput:
+      type: object
+      properties:
+        sourceUrl:
+          type: ["string", "null"]
+        documentDataUrl:
+          type: ["string", "null"]
+      required: []
+
+    AiBrandingResult:
+      type: object
+      properties:
+        logoUrl:
+          type: ["string", "null"]
+        tagline:
+          type: ["string", "null"]
+        primaryColor:
+          type: ["string", "null"]
