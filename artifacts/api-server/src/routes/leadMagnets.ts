@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { db, leadMagnetsTable } from "@workspace/db";
+import { db, leadMagnetsTable, templatesTable, leadsTable } from "@workspace/db";
 import {
   CreateLeadMagnetBody,
   UpdateLeadMagnetBody,
@@ -25,6 +25,60 @@ function requireAuth(req: any, res: any, next: any) {
   req.userId = userId;
   next();
 }
+
+// ── PUBLIC ROUTES (no auth) ────────────────────────────────────────────────
+
+// GET /public/lead-magnets/:id
+router.get("/public/lead-magnets/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const rows = await db
+    .select()
+    .from(leadMagnetsTable)
+    .leftJoin(templatesTable, eq(leadMagnetsTable.templateId, templatesTable.id))
+    .where(and(eq(leadMagnetsTable.id, id), eq(leadMagnetsTable.status, "live")));
+
+  if (!rows.length) { res.status(404).json({ error: "Not found" }); return; }
+
+  const { lead_magnets: lm, templates: tpl } = rows[0];
+  res.json({
+    id: lm.id,
+    title: lm.title,
+    description: lm.description,
+    businessName: lm.businessName,
+    businessLocation: lm.businessLocation,
+    giveawayFileName: lm.giveawayFileName,
+    templateLayout: tpl?.layout ?? null,
+    bgColor: lm.customBgColor ?? tpl?.previewColor ?? "#ffffff",
+    fontColor: lm.customFontColor ?? "#1e1b4b",
+    accentColor: lm.customTextColor ?? tpl?.accentColor ?? "#4f46e5",
+    fontFamily: tpl?.fontFamily ?? "'Plus Jakarta Sans', sans-serif",
+  });
+});
+
+// POST /public/lead-magnets/:id/leads
+router.post("/public/lead-magnets/:id/leads", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const { name, email, phone } = req.body ?? {};
+  if (!name || !email) { res.status(400).json({ error: "name and email are required" }); return; }
+
+  // Verify the lead magnet is live and fetch the file URL
+  const [lm] = await db
+    .select()
+    .from(leadMagnetsTable)
+    .where(and(eq(leadMagnetsTable.id, id), eq(leadMagnetsTable.status, "live")));
+
+  if (!lm) { res.status(404).json({ error: "Not found" }); return; }
+
+  await db.insert(leadsTable).values({ leadMagnetId: id, name, email, phone: phone ?? null });
+
+  res.json({ fileUrl: lm.giveawayFileUrl ?? null });
+});
+
+// ── AUTHENTICATED ROUTES ───────────────────────────────────────────────────
 
 // GET /lead-magnets/summary — must come before /:id
 router.get("/lead-magnets/summary", requireAuth, async (req: any, res): Promise<void> => {
@@ -188,7 +242,10 @@ router.post("/lead-magnets/:id/approve", requireAuth, async (req: any, res): Pro
     return;
   }
 
-  const shareUrl = existing.shareUrl ?? `${process.env.APP_URL ?? ""}/lm/${existing.id}`;
+  const proto = req.get("x-forwarded-proto") || req.protocol || "https";
+  const host = req.get("x-forwarded-host") || req.get("host") || "";
+  const origin = host ? `${proto}://${host}` : "";
+  const shareUrl = existing.shareUrl ?? `${origin}/lm/${existing.id}`;
 
   const [magnet] = await db
     .update(leadMagnetsTable)
