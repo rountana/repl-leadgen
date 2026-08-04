@@ -48,7 +48,7 @@ export function Dashboard() {
         </div>
         <Button onClick={() => setLocation("/new")} size="lg" className="shadow-md">
           <Plus className="w-5 h-5 mr-2" />
-          Create New Hook
+          Create New Campaign
         </Button>
       </div>
 
@@ -105,7 +105,7 @@ export function Dashboard() {
                 Create your first lead magnet to start capturing emails and growing your audience.
               </p>
               <Button onClick={() => setLocation("/new")} size="lg">
-                Create your first Hook <ArrowRight className="w-4 h-4 ml-2" />
+                Create your first Lead Magnet <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>
           </Card>
@@ -122,7 +122,7 @@ export function Dashboard() {
                         {magnet.type === 'existing_url' ? 'External Link' : 'Give-Away Page'}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold mb-1">{magnet.title || "Untitled Hook"}</h3>
+                    <h3 className="text-xl font-bold mb-1">{magnet.title || "Untitled Campaign"}</h3>
                     <p className="text-muted-foreground text-sm line-clamp-2">
                       {magnet.description || "No description provided."}
                     </p>

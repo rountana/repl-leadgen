@@ -311,7 +311,7 @@ export function Create() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hook Title</FormLabel>
+                  <FormLabel>Lead Magnet Title</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. 10 Secrets to a Perfect Lawn" {...field} className="h-12" />
                   </FormControl>
