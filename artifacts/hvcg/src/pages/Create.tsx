@@ -272,9 +272,9 @@ export function Create() {
                     {industries?.map(ind => (
                       <Button 
                         key={ind.id} 
-                        variant={selectedIndustry === ind.slug ? "default" : "outline"} 
+                        variant={selectedIndustry === ind.name ? "default" : "outline"} 
                         size="sm"
-                        onClick={() => setSelectedIndustry(ind.slug)}
+                        onClick={() => setSelectedIndustry(ind.name)}
                       >
                         {ind.name}
                       </Button>
