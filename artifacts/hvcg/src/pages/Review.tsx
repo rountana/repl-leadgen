@@ -245,7 +245,7 @@ export function Review() {
                   className="w-full px-4 py-4 rounded-md font-bold text-white transition-opacity shadow-lg"
                   style={{ backgroundColor: previewAccentColor }}
                 >
-                  Send it to me
+                  {magnet.ctaText || "Get My Free Guide"}
                 </button>
                 <p className="text-xs opacity-60 mt-4">100% free. No spam ever.</p>
               </div>
