@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { Copy, ExternalLink, ArrowRight, PartyPopper, CheckCircle2, Share2, Facebook, Twitter, Linkedin } from "lucide-react";
+import { Copy, ExternalLink, ArrowRight, ArrowLeft, PartyPopper, CheckCircle2, Share2, Facebook, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -92,8 +92,11 @@ export function Live() {
             <ExternalLink className="w-5 h-5 mr-2" /> Open live page
           </a>
         </Button>
+        <Button variant="outline" size="lg" onClick={() => setLocation(`/review/${id}`)} className="h-14 px-8">
+          <ArrowLeft className="w-5 h-5 mr-2" /> Back to Edit
+        </Button>
         <Button size="lg" onClick={() => setLocation("/dashboard")} className="h-14 px-8 bg-slate-900 hover:bg-slate-800">
-          Back to Dashboard <ArrowRight className="w-5 h-5 ml-2" />
+          Dashboard <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
 
