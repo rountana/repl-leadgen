@@ -9,7 +9,8 @@ import {
   Palette, 
   Type, 
   Save,
-  AlertTriangle
+  AlertTriangle,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +169,12 @@ export function Review() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
+          <button
+            onClick={() => setLocation("/dashboard")}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          </button>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Eye className="w-5 h-5 text-primary" /> Review & Fine-tune
           </h1>

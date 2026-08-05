@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { UploadCloud, Wand2, ArrowRight, Loader2, Search, ImageIcon, LayoutTemplate, FileText } from "lucide-react";
+import { UploadCloud, Wand2, ArrowRight, ArrowLeft, Loader2, Search, ImageIcon, LayoutTemplate, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -155,6 +155,12 @@ export function Create() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
+        <button
+          onClick={() => setLocation("/new")}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
         <h1 className="text-3xl font-bold tracking-tight">Create your Give-Away Page</h1>
         <p className="text-muted-foreground mt-2">Fill in the details below. Our system will generate a beautiful landing page.</p>
       </div>
