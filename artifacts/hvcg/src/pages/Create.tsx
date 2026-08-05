@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 
 import { 
-  useCreateLeadMagnet, 
+  useCreateLeadMagnet,
+  useUpdateLeadMagnet,
+  useGetLeadMagnet,
   useUploadLeadMagnetFile, 
   useListTemplates,
   useListExamples,
@@ -35,7 +37,14 @@ const formSchema = z.object({
 export function Create() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  
+
+  // Edit mode: read ?id= from URL
+  const editId = (() => {
+    const raw = new URLSearchParams(window.location.search).get("id");
+    return raw ? parseInt(raw, 10) : null;
+  })();
+  const isEditMode = editId !== null;
+
   const [file, setFile] = useState<File | null>(null);
   const [fileDataUrl, setFileDataUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,11 +56,15 @@ export function Create() {
   const [aiBrandingUrl, setAiBrandingUrl] = useState("");
   
   const createLeadMagnet = useCreateLeadMagnet();
+  const updateLeadMagnet = useUpdateLeadMagnet();
   const uploadFile = useUploadLeadMagnetFile();
   const aiPrefillMut = useAiPrefill();
   const aiBrandingMut = useAiExtractBranding();
   const { data: templates } = useListTemplates();
   const { data: industries } = useListIndustries();
+  const { data: existingMagnet } = useGetLeadMagnet(editId ?? 0, {
+    query: { enabled: isEditMode && editId !== null },
+  });
   
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const { data: examples } = useListExamples(
@@ -68,6 +81,19 @@ export function Create() {
       templateId: undefined,
     },
   });
+
+  // Pre-populate form when editing an existing lead magnet
+  useEffect(() => {
+    if (existingMagnet && isEditMode) {
+      form.reset({
+        title: existingMagnet.title ?? "",
+        description: existingMagnet.description ?? "",
+        businessName: existingMagnet.businessName ?? "",
+        businessLocation: existingMagnet.businessLocation ?? "",
+        templateId: existingMagnet.templateId ?? undefined,
+      });
+    }
+  }, [existingMagnet, isEditMode]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -92,34 +118,48 @@ export function Create() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // 1. Create the lead magnet
-      const magnet = await createLeadMagnet.mutateAsync({
-        data: {
-          type: 'give_away',
-          title: values.title,
-          description: values.description,
-          businessName: values.businessName,
-          businessLocation: values.businessLocation,
-          templateId: values.templateId,
-        }
-      });
-      
-      // 2. Upload the file if present
-      if (magnet.id && file && fileDataUrl) {
-        await uploadFile.mutateAsync({
-          id: magnet.id,
+      let magnetId: number;
+
+      if (isEditMode && editId) {
+        // Update existing lead magnet
+        await updateLeadMagnet.mutateAsync({
+          id: editId,
           data: {
-            fileName: file.name,
-            fileDataUrl: fileDataUrl
-          }
+            title: values.title,
+            description: values.description,
+            businessName: values.businessName,
+            businessLocation: values.businessLocation,
+            templateId: values.templateId,
+          },
+        });
+        magnetId = editId;
+      } else {
+        // Create new lead magnet
+        const magnet = await createLeadMagnet.mutateAsync({
+          data: {
+            type: "give_away",
+            title: values.title,
+            description: values.description,
+            businessName: values.businessName,
+            businessLocation: values.businessLocation,
+            templateId: values.templateId,
+          },
+        });
+        magnetId = magnet.id;
+      }
+
+      // Upload file if a new one was selected
+      if (file && fileDataUrl) {
+        await uploadFile.mutateAsync({
+          id: magnetId,
+          data: { fileName: file.name, fileDataUrl },
         });
       }
-      
-      toast({ title: "Success!", description: "Your lead magnet is ready for review." });
-      setLocation(`/review/${magnet.id}`);
-      
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to create lead magnet.", variant: "destructive" });
+
+      toast({ title: isEditMode ? "Updated!" : "Success!", description: "Your lead magnet is ready for review." });
+      setLocation(`/review/${magnetId}`);
+    } catch {
+      toast({ title: "Error", description: `Failed to ${isEditMode ? "update" : "create"} lead magnet.`, variant: "destructive" });
     }
   };
 
@@ -150,19 +190,25 @@ export function Create() {
     }
   };
 
-  const isSubmitting = createLeadMagnet.isPending || uploadFile.isPending;
+  const isSubmitting = createLeadMagnet.isPending || updateLeadMagnet.isPending || uploadFile.isPending;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
         <button
-          onClick={() => setLocation("/new")}
+          onClick={() => setLocation(isEditMode ? `/review/${editId}` : "/new")}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
-          <ArrowLeft className="w-4 h-4" /> Back
+          <ArrowLeft className="w-4 h-4" /> {isEditMode ? "Back to Review" : "Back"}
         </button>
-        <h1 className="text-3xl font-bold tracking-tight">Create your Give-Away Page</h1>
-        <p className="text-muted-foreground mt-2">Fill in the details below. Our system will generate a beautiful landing page.</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {isEditMode ? "Edit Campaign" : "Create your Give-Away Page"}
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          {isEditMode
+            ? "Update your content and template, then return to review."
+            : "Fill in the details below. Our system will generate a beautiful landing page."}
+        </p>
       </div>
 
       <Form {...form}>
@@ -410,7 +456,9 @@ export function Create() {
           <div className="pt-4 pb-12 flex justify-end">
             <Button type="submit" size="lg" className="w-full sm:w-auto px-12 shadow-lg text-lg h-14" disabled={isSubmitting}>
               {isSubmitting ? (
-                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> Building...</>
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> {isEditMode ? "Saving..." : "Building..."}</>
+              ) : isEditMode ? (
+                <>Save & Review <ArrowRight className="w-5 h-5 ml-2" /></>
               ) : (
                 <>Generate Page <ArrowRight className="w-5 h-5 ml-2" /></>
               )}

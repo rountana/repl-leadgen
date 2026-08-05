@@ -170,10 +170,10 @@ export function Review() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <button
-            onClick={() => setLocation("/dashboard")}
+            onClick={() => setLocation(`/create?id=${id}`)}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+            <ArrowLeft className="w-4 h-4" /> Edit Content
           </button>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Eye className="w-5 h-5 text-primary" /> Review & Fine-tune
