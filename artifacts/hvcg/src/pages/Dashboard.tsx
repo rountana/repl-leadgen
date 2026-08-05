@@ -43,7 +43,7 @@ export function Dashboard() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your Hooks</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Your Campaigns</h1>
           <p className="text-muted-foreground mt-1">Manage your lead magnets and track performance.</p>
         </div>
         <Button onClick={() => setLocation("/new")} size="lg" className="shadow-md">
@@ -55,7 +55,7 @@ export function Dashboard() {
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {[
-          { title: "Total Hooks", value: summary?.total ?? 0, icon: <BarChart3 className="w-5 h-5 text-primary" />, color: "bg-primary/10" },
+          { title: "Total Campaigns", value: summary?.total ?? 0, icon: <BarChart3 className="w-5 h-5 text-primary" />, color: "bg-primary/10" },
           { title: "Live", value: summary?.live ?? 0, icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, color: "bg-green-500/10" },
           { title: "Needs Review", value: summary?.review ?? 0, icon: <Clock className="w-5 h-5 text-amber-500" />, color: "bg-amber-500/10" },
           { title: "Drafts", value: summary?.draft ?? 0, icon: <LayoutTemplate className="w-5 h-5 text-muted-foreground" />, color: "bg-secondary" },
@@ -100,7 +100,7 @@ export function Dashboard() {
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                 <MousePointer2 className="w-10 h-10 text-primary" />
               </div>
-              <h3 className="text-2xl font-bold mb-2">No hooks yet</h3>
+              <h3 className="text-2xl font-bold mb-2">No campaigns yet</h3>
               <p className="text-muted-foreground max-w-md mb-8">
                 Create your first lead magnet to start capturing emails and growing your audience.
               </p>
