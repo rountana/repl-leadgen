@@ -20,6 +20,7 @@ export const leadMagnetsTable = pgTable("lead_magnets", {
   customTextColor: text("custom_text_color"),
   logoUrl: text("logo_url"),
   tagline: text("tagline"),
+  ctaText: text("cta_text"),
   shareUrl: text("share_url"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

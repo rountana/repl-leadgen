@@ -49,6 +49,7 @@ router.get("/public/lead-magnets/:id", async (req, res): Promise<void> => {
     businessName: lm.businessName,
     businessLocation: lm.businessLocation,
     giveawayFileName: lm.giveawayFileName,
+    ctaText: lm.ctaText ?? null,
     templateLayout: tpl?.layout ?? null,
     bgColor: lm.customBgColor ?? tpl?.previewColor ?? "#ffffff",
     fontColor: lm.customFontColor ?? "#1e1b4b",
@@ -190,6 +191,7 @@ router.put("/lead-magnets/:id", requireAuth, async (req: any, res): Promise<void
   if (data.customTextColor !== undefined) updates.customTextColor = data.customTextColor;
   if (data.logoUrl !== undefined) updates.logoUrl = data.logoUrl;
   if (data.tagline !== undefined) updates.tagline = data.tagline;
+  if (data.ctaText !== undefined) updates.ctaText = data.ctaText;
 
   const [magnet] = await db
     .update(leadMagnetsTable)

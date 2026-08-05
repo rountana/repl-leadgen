@@ -38,6 +38,7 @@ export const ListLeadMagnetsResponseItem = zod.object({
   "customTextColor": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "tagline": zod.string().nullish(),
+  "ctaText": zod.string().nullish(),
   "shareUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -79,6 +80,7 @@ export const CreateLeadMagnetResponse = zod.object({
   "customTextColor": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "tagline": zod.string().nullish(),
+  "ctaText": zod.string().nullish(),
   "shareUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -121,6 +123,7 @@ export const GetLeadMagnetResponse = zod.object({
   "customTextColor": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "tagline": zod.string().nullish(),
+  "ctaText": zod.string().nullish(),
   "shareUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -145,7 +148,8 @@ export const UpdateLeadMagnetBody = zod.object({
   "customBgColor": zod.string().optional(),
   "customTextColor": zod.string().optional(),
   "logoUrl": zod.string().optional(),
-  "tagline": zod.string().optional()
+  "tagline": zod.string().optional(),
+  "ctaText": zod.string().optional()
 })
 
 export const UpdateLeadMagnetResponse = zod.object({
@@ -166,6 +170,7 @@ export const UpdateLeadMagnetResponse = zod.object({
   "customTextColor": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "tagline": zod.string().nullish(),
+  "ctaText": zod.string().nullish(),
   "shareUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -207,6 +212,7 @@ export const ApproveLeadMagnetResponse = zod.object({
   "customTextColor": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "tagline": zod.string().nullish(),
+  "ctaText": zod.string().nullish(),
   "shareUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()

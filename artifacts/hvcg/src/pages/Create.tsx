@@ -26,12 +26,22 @@ import {
   useAiExtractBranding
 } from "@workspace/api-client-react";
 
+const CTA_PRESETS = [
+  "Get My Free Guide",
+  "Send It to Me",
+  "Download Now",
+  "Claim My Copy",
+  "Yes, I Want This!",
+  "Get Instant Access",
+];
+
 const formSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   businessName: z.string().min(2, "Business name is required"),
   businessLocation: z.string().optional(),
   templateId: z.coerce.number().min(1, "Please select a template"),
+  ctaText: z.string().min(1, "Please choose a call-to-action"),
 });
 
 export function Create() {
@@ -79,18 +89,21 @@ export function Create() {
       businessName: "",
       businessLocation: "",
       templateId: undefined,
+      ctaText: CTA_PRESETS[0],
     },
   });
 
   // Pre-populate form when editing an existing lead magnet
   useEffect(() => {
     if (existingMagnet && isEditMode) {
+      const cta = existingMagnet.ctaText ?? CTA_PRESETS[0];
       form.reset({
         title: existingMagnet.title ?? "",
         description: existingMagnet.description ?? "",
         businessName: existingMagnet.businessName ?? "",
         businessLocation: existingMagnet.businessLocation ?? "",
         templateId: existingMagnet.templateId ?? undefined,
+        ctaText: cta,
       });
     }
   }, [existingMagnet, isEditMode]);
@@ -130,6 +143,7 @@ export function Create() {
             businessName: values.businessName,
             businessLocation: values.businessLocation,
             templateId: values.templateId,
+            ctaText: values.ctaText,
           },
         });
         magnetId = editId;
@@ -144,6 +158,11 @@ export function Create() {
             businessLocation: values.businessLocation,
             templateId: values.templateId,
           },
+        });
+        // Save ctaText on the newly created magnet
+        await updateLeadMagnet.mutateAsync({
+          id: magnet.id,
+          data: { ctaText: values.ctaText },
         });
         magnetId = magnet.id;
       }
@@ -382,6 +401,58 @@ export function Create() {
                   <FormControl>
                     <Textarea placeholder="Explain what they get and why it matters..." className="resize-none h-24" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="ctaText"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Call-to-Action Button</FormLabel>
+                  <FormDescription>What should the button on your capture page say?</FormDescription>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {CTA_PRESETS.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => field.onChange(preset)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                          field.value === preset
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (CTA_PRESETS.includes(field.value)) field.onChange("");
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                        !CTA_PRESETS.includes(field.value)
+                          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                          : "bg-background border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      }`}
+                    >
+                      ✏️ Custom
+                    </button>
+                  </div>
+                  {!CTA_PRESETS.includes(field.value) && (
+                    <FormControl>
+                      <Input
+                        placeholder="e.g. Get My Free Checklist"
+                        className="mt-2 h-11"
+                        value={field.value}
+                        onChange={field.onChange}
+                        autoFocus
+                      />
+                    </FormControl>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

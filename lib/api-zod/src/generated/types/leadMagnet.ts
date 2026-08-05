@@ -40,6 +40,8 @@ export interface LeadMagnet {
   /** @nullable */
   tagline?: string | null;
   /** @nullable */
+  ctaText?: string | null;
+  /** @nullable */
   shareUrl?: string | null;
   createdAt: string;
   updatedAt: string;

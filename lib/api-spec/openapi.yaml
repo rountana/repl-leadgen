@@ -368,6 +368,8 @@ components:
           type: ["string", "null"]
         tagline:
           type: ["string", "null"]
+        ctaText:
+          type: ["string", "null"]
         shareUrl:
           type: ["string", "null"]
         createdAt:
@@ -433,6 +435,8 @@ components:
         logoUrl:
           type: string
         tagline:
+          type: string
+        ctaText:
           type: string
 
     LeadMagnetsSummary:

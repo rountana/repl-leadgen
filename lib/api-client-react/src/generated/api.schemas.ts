@@ -62,6 +62,8 @@ export interface LeadMagnet {
   /** @nullable */
   tagline?: string | null;
   /** @nullable */
+  ctaText?: string | null;
+  /** @nullable */
   shareUrl?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -100,6 +102,7 @@ export interface LeadMagnetUpdate {
   customTextColor?: string;
   logoUrl?: string;
   tagline?: string;
+  ctaText?: string;
 }
 
 export interface LeadMagnetsSummary {

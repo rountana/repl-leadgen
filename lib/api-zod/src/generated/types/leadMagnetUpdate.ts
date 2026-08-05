@@ -18,4 +18,5 @@ export interface LeadMagnetUpdate {
   customTextColor?: string;
   logoUrl?: string;
   tagline?: string;
+  ctaText?: string;
 }

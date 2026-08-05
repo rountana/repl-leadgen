@@ -24,6 +24,7 @@ interface PublicMagnet {
   businessName: string | null;
   businessLocation: string | null;
   giveawayFileName: string | null;
+  ctaText: string | null;
   templateLayout: string | null;
   bgColor: string;
   fontColor: string;
@@ -512,7 +513,7 @@ export function PublicCapture() {
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting…</>
                       ) : (
                         <span className="flex items-center gap-2">
-                          Get My Free {magnet.giveawayFileName ? "Download" : "Guide"}
+                          {magnet.ctaText || (magnet.giveawayFileName ? "Download Now" : "Get My Free Guide")}
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                             <path d="M5 12h14M12 5l7 7-7 7" />
                           </svg>
