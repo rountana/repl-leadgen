@@ -318,6 +318,205 @@ export const AiPrefillResponse = zod.object({
 
 
 /**
+ * @summary Get the current user's Facebook connection
+ */
+export const GetFbConnectionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "fbPageId": zod.string().nullish(),
+  "fbPageName": zod.string().nullish(),
+  "adAccountId": zod.string().nullish(),
+  "adAccountName": zod.string().nullish(),
+  "status": zod.enum(['connected', 'disconnected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).describe('Facebook connection record — partner credentials are never returned.')
+
+
+/**
+ * @summary Create or replace the current user's Facebook connection
+ */
+export const CreateFbConnectionBody = zod.object({
+  "partnerToken": zod.string(),
+  "fbPageId": zod.string(),
+  "fbPageName": zod.string(),
+  "adAccountId": zod.string(),
+  "adAccountName": zod.string()
+})
+
+export const CreateFbConnectionResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "fbPageId": zod.string().nullish(),
+  "fbPageName": zod.string().nullish(),
+  "adAccountId": zod.string().nullish(),
+  "adAccountName": zod.string().nullish(),
+  "status": zod.enum(['connected', 'disconnected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).describe('Facebook connection record — partner credentials are never returned.')
+
+
+/**
+ * @summary Disconnect the current user's Facebook connection
+ */
+export const DeleteFbConnectionResponse = zod.void()
+
+
+/**
+ * @summary Generate FB ad copy and image from business info
+ */
+export const GenerateFbAdBody = zod.object({
+  "businessName": zod.string(),
+  "industry": zod.string(),
+  "location": zod.string(),
+  "offer": zod.string()
+})
+
+export const GenerateFbAdResponse = zod.object({
+  "headline": zod.string(),
+  "bodyText": zod.string(),
+  "imageUrl": zod.string()
+})
+
+
+/**
+ * @summary List all Facebook campaigns for the current user
+ */
+export const ListFbCampaignsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "connectionId": zod.number().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "targetingRadiusMiles": zod.number().nullish(),
+  "targetingLatitude": zod.string().nullish(),
+  "targetingLongitude": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
+  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListFbCampaignsResponse = zod.array(ListFbCampaignsResponseItem)
+
+
+/**
+ * @summary Create a new Facebook campaign
+ */
+export const CreateFbCampaignBody = zod.object({
+  "headline": zod.string(),
+  "bodyText": zod.string(),
+  "imageUrl": zod.string(),
+  "dailyBudgetCents": zod.number(),
+  "targetingRadiusMiles": zod.number(),
+  "targetingLatitude": zod.number(),
+  "targetingLongitude": zod.number()
+})
+
+export const CreateFbCampaignResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "connectionId": zod.number().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "targetingRadiusMiles": zod.number().nullish(),
+  "targetingLatitude": zod.string().nullish(),
+  "targetingLongitude": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
+  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Get a single Facebook campaign
+ */
+export const GetFbCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetFbCampaignResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "connectionId": zod.number().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "targetingRadiusMiles": zod.number().nullish(),
+  "targetingLatitude": zod.string().nullish(),
+  "targetingLongitude": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
+  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Launch a Facebook campaign via the partner adapter
+ */
+export const LaunchFbCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const LaunchFbCampaignResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "connectionId": zod.number().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "targetingRadiusMiles": zod.number().nullish(),
+  "targetingLatitude": zod.string().nullish(),
+  "targetingLongitude": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
+  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Check the lead delivery status for a campaign
+ */
+export const GetFbCampaignLeadStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetFbCampaignLeadStatusResponse = zod.object({
+  "status": zod.enum(['active', 'failed', 'unverified']),
+  "checkedAt": zod.string()
+})
+
+
+/**
+ * @summary Receive an inbound lead from the partner (public, no auth)
+ */
+export const ReceiveFbLeadBody = zod.object({
+  "campaignId": zod.number(),
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().optional()
+})
+
+export const ReceiveFbLeadResponse = zod.object({
+  "status": zod.string()
+})
+
+
+/**
  * @summary Extract logo and tagline from a source URL or document
  */
 export const AiExtractBrandingBody = zod.object({

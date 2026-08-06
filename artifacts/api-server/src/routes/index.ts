@@ -5,6 +5,7 @@ import templatesRouter from "./templates";
 import industriesRouter from "./industries";
 import examplesRouter from "./examples";
 import aiRouter from "./ai";
+import fbRouter from "./fb";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(templatesRouter);
 router.use(industriesRouter);
 router.use(examplesRouter);
 router.use(aiRouter);
+router.use(fbRouter);
 
 export default router;

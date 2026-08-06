@@ -199,6 +199,132 @@ export interface AiBrandingResult {
   primaryColor?: string | null;
 }
 
+export type FbConnectionStatus = typeof FbConnectionStatus[keyof typeof FbConnectionStatus];
+
+
+export const FbConnectionStatus = {
+  connected: 'connected',
+  disconnected: 'disconnected',
+} as const;
+
+/**
+ * Facebook connection record — partner credentials are never returned.
+ */
+export interface FbConnection {
+  id: number;
+  userId: string;
+  /** @nullable */
+  fbPageId?: string | null;
+  /** @nullable */
+  fbPageName?: string | null;
+  /** @nullable */
+  adAccountId?: string | null;
+  /** @nullable */
+  adAccountName?: string | null;
+  status: FbConnectionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FbConnectionInput {
+  partnerToken: string;
+  fbPageId: string;
+  fbPageName: string;
+  adAccountId: string;
+  adAccountName: string;
+}
+
+export interface FbAdGenerationInput {
+  businessName: string;
+  industry: string;
+  location: string;
+  offer: string;
+}
+
+export interface FbAdDraft {
+  headline: string;
+  bodyText: string;
+  imageUrl: string;
+}
+
+export type FbCampaignStatus = typeof FbCampaignStatus[keyof typeof FbCampaignStatus];
+
+
+export const FbCampaignStatus = {
+  draft: 'draft',
+  launching: 'launching',
+  live: 'live',
+  error: 'error',
+} as const;
+
+export type FbCampaignLeadDeliveryStatus = typeof FbCampaignLeadDeliveryStatus[keyof typeof FbCampaignLeadDeliveryStatus];
+
+
+export const FbCampaignLeadDeliveryStatus = {
+  unverified: 'unverified',
+  active: 'active',
+  failed: 'failed',
+} as const;
+
+export interface FbCampaign {
+  id: number;
+  userId: string;
+  /** @nullable */
+  connectionId?: number | null;
+  /** @nullable */
+  headline?: string | null;
+  /** @nullable */
+  bodyText?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  dailyBudgetCents?: number | null;
+  /** @nullable */
+  targetingRadiusMiles?: number | null;
+  /** @nullable */
+  targetingLatitude?: string | null;
+  /** @nullable */
+  targetingLongitude?: string | null;
+  /** @nullable */
+  partnerCampaignId?: string | null;
+  status: FbCampaignStatus;
+  leadDeliveryStatus: FbCampaignLeadDeliveryStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FbCampaignInput {
+  headline: string;
+  bodyText: string;
+  imageUrl: string;
+  dailyBudgetCents: number;
+  targetingRadiusMiles: number;
+  targetingLatitude: number;
+  targetingLongitude: number;
+}
+
+export type FbLeadStatusStatus = typeof FbLeadStatusStatus[keyof typeof FbLeadStatusStatus];
+
+
+export const FbLeadStatusStatus = {
+  active: 'active',
+  failed: 'failed',
+  unverified: 'unverified',
+} as const;
+
+export interface FbLeadStatus {
+  status: FbLeadStatusStatus;
+  checkedAt: string;
+}
+
+export interface FbLeadWebhookPayload {
+  campaignId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+}
+
 export type ListExamplesParams = {
 /**
  * @nullable

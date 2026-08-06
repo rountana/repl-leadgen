@@ -292,6 +292,194 @@ paths:
               schema:
                 $ref: "#/components/schemas/AiPrefillResult"
 
+  /fb/connection:
+    get:
+      operationId: getFbConnection
+      tags: [fb]
+      summary: Get the current user's Facebook connection
+      responses:
+        "200":
+          description: FB connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbConnection"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createFbConnection
+      tags: [fb]
+      summary: Create or replace the current user's Facebook connection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FbConnectionInput"
+      responses:
+        "200":
+          description: Created FB connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbConnection"
+    delete:
+      operationId: deleteFbConnection
+      tags: [fb]
+      summary: Disconnect the current user's Facebook connection
+      responses:
+        "204":
+          description: Deleted
+
+  /fb/campaigns/generate-ad:
+    post:
+      operationId: generateFbAd
+      tags: [fb]
+      summary: Generate FB ad copy and image from business info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FbAdGenerationInput"
+      responses:
+        "200":
+          description: Generated ad draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbAdDraft"
+
+  /fb/campaigns:
+    get:
+      operationId: listFbCampaigns
+      tags: [fb]
+      summary: List all Facebook campaigns for the current user
+      responses:
+        "200":
+          description: List of FB campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FbCampaign"
+    post:
+      operationId: createFbCampaign
+      tags: [fb]
+      summary: Create a new Facebook campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FbCampaignInput"
+      responses:
+        "201":
+          description: Created FB campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbCampaign"
+
+  /fb/campaigns/{id}:
+    get:
+      operationId: getFbCampaign
+      tags: [fb]
+      summary: Get a single Facebook campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: FB campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbCampaign"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /fb/campaigns/{id}/launch:
+    post:
+      operationId: launchFbCampaign
+      tags: [fb]
+      summary: Launch a Facebook campaign via the partner adapter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Launched FB campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbCampaign"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /fb/campaigns/{id}/lead-status:
+    get:
+      operationId: getFbCampaignLeadStatus
+      tags: [fb]
+      summary: Check the lead delivery status for a campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Lead delivery status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbLeadStatus"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /fb/webhooks/leads:
+    post:
+      operationId: receiveFbLead
+      tags: [fb]
+      summary: Receive an inbound lead from the partner (public, no auth)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FbLeadWebhookPayload"
+      responses:
+        "200":
+          description: Lead received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
   /ai/extract-branding:
     post:
       operationId: aiExtractBranding
@@ -584,3 +772,184 @@ components:
           type: ["string", "null"]
         primaryColor:
           type: ["string", "null"]
+
+    FbConnection:
+      type: object
+      description: Facebook connection record — partner credentials are never returned.
+      properties:
+        id:
+          type: number
+        userId:
+          type: string
+        fbPageId:
+          type: ["string", "null"]
+        fbPageName:
+          type: ["string", "null"]
+        adAccountId:
+          type: ["string", "null"]
+        adAccountName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [connected, disconnected]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - status
+        - createdAt
+        - updatedAt
+
+    FbConnectionInput:
+      type: object
+      required:
+        - partnerToken
+        - fbPageId
+        - fbPageName
+        - adAccountId
+        - adAccountName
+      properties:
+        partnerToken:
+          type: string
+        fbPageId:
+          type: string
+        fbPageName:
+          type: string
+        adAccountId:
+          type: string
+        adAccountName:
+          type: string
+
+    FbAdGenerationInput:
+      type: object
+      required:
+        - businessName
+        - industry
+        - location
+        - offer
+      properties:
+        businessName:
+          type: string
+        industry:
+          type: string
+        location:
+          type: string
+        offer:
+          type: string
+
+    FbAdDraft:
+      type: object
+      properties:
+        headline:
+          type: string
+        bodyText:
+          type: string
+        imageUrl:
+          type: string
+      required:
+        - headline
+        - bodyText
+        - imageUrl
+
+    FbCampaign:
+      type: object
+      properties:
+        id:
+          type: number
+        userId:
+          type: string
+        connectionId:
+          type: ["number", "null"]
+        headline:
+          type: ["string", "null"]
+        bodyText:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        dailyBudgetCents:
+          type: ["number", "null"]
+        targetingRadiusMiles:
+          type: ["number", "null"]
+        targetingLatitude:
+          type: ["string", "null"]
+        targetingLongitude:
+          type: ["string", "null"]
+        partnerCampaignId:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, launching, live, error]
+        leadDeliveryStatus:
+          type: string
+          enum: [unverified, active, failed]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - status
+        - leadDeliveryStatus
+        - createdAt
+        - updatedAt
+
+    FbCampaignInput:
+      type: object
+      required:
+        - headline
+        - bodyText
+        - imageUrl
+        - dailyBudgetCents
+        - targetingRadiusMiles
+        - targetingLatitude
+        - targetingLongitude
+      properties:
+        headline:
+          type: string
+        bodyText:
+          type: string
+        imageUrl:
+          type: string
+        dailyBudgetCents:
+          type: number
+        targetingRadiusMiles:
+          type: number
+        targetingLatitude:
+          type: number
+        targetingLongitude:
+          type: number
+
+    FbLeadStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, failed, unverified]
+        checkedAt:
+          type: string
+      required:
+        - status
+        - checkedAt
+
+    FbLeadWebhookPayload:
+      type: object
+      required:
+        - campaignId
+        - firstName
+        - lastName
+        - email
+      properties:
+        campaignId:
+          type: number
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string

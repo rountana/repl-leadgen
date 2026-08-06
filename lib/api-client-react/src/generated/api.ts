@@ -26,6 +26,14 @@ import type {
   AiPrefillResult,
   ErrorResponse,
   Example,
+  FbAdDraft,
+  FbAdGenerationInput,
+  FbCampaign,
+  FbCampaignInput,
+  FbConnection,
+  FbConnectionInput,
+  FbLeadStatus,
+  FbLeadWebhookPayload,
   FileUploadInput,
   FileUploadResult,
   HealthStatus,
@@ -1115,6 +1123,740 @@ export const useAiPrefill = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getAiPrefillMutationOptions(options));
+    }
+
+export const getGetFbConnectionUrl = () => {
+
+
+
+
+  return `/api/fb/connection`
+}
+
+/**
+ * @summary Get the current user's Facebook connection
+ */
+export const getFbConnection = async ( options?: Parameters<typeof customFetch>[1]): Promise<FbConnection> => {
+
+  return customFetch<FbConnection>(getGetFbConnectionUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFbConnectionQueryKey = () => {
+    return [
+    `/api/fb/connection`
+    ] as const;
+    }
+
+
+export const getGetFbConnectionQueryOptions = <TData = Awaited<ReturnType<typeof getFbConnection>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbConnection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFbConnectionQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFbConnection>>> = ({ signal }) => getFbConnection({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFbConnection>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFbConnectionQueryResult = NonNullable<Awaited<ReturnType<typeof getFbConnection>>>
+export type GetFbConnectionQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get the current user's Facebook connection
+ */
+
+export function useGetFbConnection<TData = Awaited<ReturnType<typeof getFbConnection>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbConnection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFbConnectionQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFbConnectionUrl = () => {
+
+
+
+
+  return `/api/fb/connection`
+}
+
+/**
+ * @summary Create or replace the current user's Facebook connection
+ */
+export const createFbConnection = async (fbConnectionInput: FbConnectionInput, options?: Parameters<typeof customFetch>[1]): Promise<FbConnection> => {
+
+  return customFetch<FbConnection>(getCreateFbConnectionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(fbConnectionInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFbConnectionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFbConnection>>, TError,{data: BodyType<FbConnectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFbConnection>>, TError,{data: BodyType<FbConnectionInput>}, TContext> => {
+
+const mutationKey = ['createFbConnection'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFbConnection>>, {data: BodyType<FbConnectionInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFbConnection(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFbConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof createFbConnection>>>
+    export type CreateFbConnectionMutationBody = BodyType<FbConnectionInput>
+    export type CreateFbConnectionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create or replace the current user's Facebook connection
+ */
+export const useCreateFbConnection = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFbConnection>>, TError,{data: BodyType<FbConnectionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createFbConnection>>,
+        TError,
+        {data: BodyType<FbConnectionInput>},
+        TContext
+      > => {
+      return useMutation(getCreateFbConnectionMutationOptions(options));
+    }
+
+export const getDeleteFbConnectionUrl = () => {
+
+
+
+
+  return `/api/fb/connection`
+}
+
+/**
+ * @summary Disconnect the current user's Facebook connection
+ */
+export const deleteFbConnection = async ( options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteFbConnectionUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteFbConnectionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFbConnection>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteFbConnection>>, TError,void, TContext> => {
+
+const mutationKey = ['deleteFbConnection'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFbConnection>>, void> = () => {
+
+
+          return  deleteFbConnection(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteFbConnectionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteFbConnection>>>
+
+    export type DeleteFbConnectionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disconnect the current user's Facebook connection
+ */
+export const useDeleteFbConnection = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFbConnection>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteFbConnection>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteFbConnectionMutationOptions(options));
+    }
+
+export const getGenerateFbAdUrl = () => {
+
+
+
+
+  return `/api/fb/campaigns/generate-ad`
+}
+
+/**
+ * @summary Generate FB ad copy and image from business info
+ */
+export const generateFbAd = async (fbAdGenerationInput: FbAdGenerationInput, options?: Parameters<typeof customFetch>[1]): Promise<FbAdDraft> => {
+
+  return customFetch<FbAdDraft>(getGenerateFbAdUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(fbAdGenerationInput)
+  }
+);}
+
+
+
+
+
+export const getGenerateFbAdMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateFbAd>>, TError,{data: BodyType<FbAdGenerationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof generateFbAd>>, TError,{data: BodyType<FbAdGenerationInput>}, TContext> => {
+
+const mutationKey = ['generateFbAd'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateFbAd>>, {data: BodyType<FbAdGenerationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  generateFbAd(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateFbAdMutationResult = NonNullable<Awaited<ReturnType<typeof generateFbAd>>>
+    export type GenerateFbAdMutationBody = BodyType<FbAdGenerationInput>
+    export type GenerateFbAdMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Generate FB ad copy and image from business info
+ */
+export const useGenerateFbAd = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateFbAd>>, TError,{data: BodyType<FbAdGenerationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof generateFbAd>>,
+        TError,
+        {data: BodyType<FbAdGenerationInput>},
+        TContext
+      > => {
+      return useMutation(getGenerateFbAdMutationOptions(options));
+    }
+
+export const getListFbCampaignsUrl = () => {
+
+
+
+
+  return `/api/fb/campaigns`
+}
+
+/**
+ * @summary List all Facebook campaigns for the current user
+ */
+export const listFbCampaigns = async ( options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign[]> => {
+
+  return customFetch<FbCampaign[]>(getListFbCampaignsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListFbCampaignsQueryKey = () => {
+    return [
+    `/api/fb/campaigns`
+    ] as const;
+    }
+
+
+export const getListFbCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listFbCampaigns>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFbCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListFbCampaignsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFbCampaigns>>> = ({ signal }) => listFbCampaigns({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFbCampaigns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListFbCampaignsQueryResult = NonNullable<Awaited<ReturnType<typeof listFbCampaigns>>>
+export type ListFbCampaignsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all Facebook campaigns for the current user
+ */
+
+export function useListFbCampaigns<TData = Awaited<ReturnType<typeof listFbCampaigns>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFbCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListFbCampaignsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFbCampaignUrl = () => {
+
+
+
+
+  return `/api/fb/campaigns`
+}
+
+/**
+ * @summary Create a new Facebook campaign
+ */
+export const createFbCampaign = async (fbCampaignInput: FbCampaignInput, options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign> => {
+
+  return customFetch<FbCampaign>(getCreateFbCampaignUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(fbCampaignInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFbCampaignMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFbCampaign>>, TError,{data: BodyType<FbCampaignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFbCampaign>>, TError,{data: BodyType<FbCampaignInput>}, TContext> => {
+
+const mutationKey = ['createFbCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFbCampaign>>, {data: BodyType<FbCampaignInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFbCampaign(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFbCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof createFbCampaign>>>
+    export type CreateFbCampaignMutationBody = BodyType<FbCampaignInput>
+    export type CreateFbCampaignMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a new Facebook campaign
+ */
+export const useCreateFbCampaign = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFbCampaign>>, TError,{data: BodyType<FbCampaignInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createFbCampaign>>,
+        TError,
+        {data: BodyType<FbCampaignInput>},
+        TContext
+      > => {
+      return useMutation(getCreateFbCampaignMutationOptions(options));
+    }
+
+export const getGetFbCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/fb/campaigns/${id}`
+}
+
+/**
+ * @summary Get a single Facebook campaign
+ */
+export const getFbCampaign = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign> => {
+
+  return customFetch<FbCampaign>(getGetFbCampaignUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFbCampaignQueryKey = (id: number,) => {
+    return [
+    `/api/fb/campaigns/${id}`
+    ] as const;
+    }
+
+
+export const getGetFbCampaignQueryOptions = <TData = Awaited<ReturnType<typeof getFbCampaign>>, TError = ErrorType<ErrorResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFbCampaignQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFbCampaign>>> = ({ signal }) => getFbCampaign(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFbCampaign>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFbCampaignQueryResult = NonNullable<Awaited<ReturnType<typeof getFbCampaign>>>
+export type GetFbCampaignQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get a single Facebook campaign
+ */
+
+export function useGetFbCampaign<TData = Awaited<ReturnType<typeof getFbCampaign>>, TError = ErrorType<ErrorResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFbCampaignQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getLaunchFbCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/fb/campaigns/${id}/launch`
+}
+
+/**
+ * @summary Launch a Facebook campaign via the partner adapter
+ */
+export const launchFbCampaign = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign> => {
+
+  return customFetch<FbCampaign>(getLaunchFbCampaignUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLaunchFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['launchFbCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof launchFbCampaign>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  launchFbCampaign(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LaunchFbCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof launchFbCampaign>>>
+
+    export type LaunchFbCampaignMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Launch a Facebook campaign via the partner adapter
+ */
+export const useLaunchFbCampaign = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof launchFbCampaign>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getLaunchFbCampaignMutationOptions(options));
+    }
+
+export const getGetFbCampaignLeadStatusUrl = (id: number,) => {
+
+
+
+
+  return `/api/fb/campaigns/${id}/lead-status`
+}
+
+/**
+ * @summary Check the lead delivery status for a campaign
+ */
+export const getFbCampaignLeadStatus = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<FbLeadStatus> => {
+
+  return customFetch<FbLeadStatus>(getGetFbCampaignLeadStatusUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFbCampaignLeadStatusQueryKey = (id: number,) => {
+    return [
+    `/api/fb/campaigns/${id}/lead-status`
+    ] as const;
+    }
+
+
+export const getGetFbCampaignLeadStatusQueryOptions = <TData = Awaited<ReturnType<typeof getFbCampaignLeadStatus>>, TError = ErrorType<ErrorResponse>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbCampaignLeadStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFbCampaignLeadStatusQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFbCampaignLeadStatus>>> = ({ signal }) => getFbCampaignLeadStatus(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFbCampaignLeadStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFbCampaignLeadStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getFbCampaignLeadStatus>>>
+export type GetFbCampaignLeadStatusQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Check the lead delivery status for a campaign
+ */
+
+export function useGetFbCampaignLeadStatus<TData = Awaited<ReturnType<typeof getFbCampaignLeadStatus>>, TError = ErrorType<ErrorResponse>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbCampaignLeadStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFbCampaignLeadStatusQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getReceiveFbLeadUrl = () => {
+
+
+
+
+  return `/api/fb/webhooks/leads`
+}
+
+/**
+ * @summary Receive an inbound lead from the partner (public, no auth)
+ */
+export const receiveFbLead = async (fbLeadWebhookPayload: FbLeadWebhookPayload, options?: Parameters<typeof customFetch>[1]): Promise<HealthStatus> => {
+
+  return customFetch<HealthStatus>(getReceiveFbLeadUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(fbLeadWebhookPayload)
+  }
+);}
+
+
+
+
+
+export const getReceiveFbLeadMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveFbLead>>, TError,{data: BodyType<FbLeadWebhookPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveFbLead>>, TError,{data: BodyType<FbLeadWebhookPayload>}, TContext> => {
+
+const mutationKey = ['receiveFbLead'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveFbLead>>, {data: BodyType<FbLeadWebhookPayload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveFbLead(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveFbLeadMutationResult = NonNullable<Awaited<ReturnType<typeof receiveFbLead>>>
+    export type ReceiveFbLeadMutationBody = BodyType<FbLeadWebhookPayload>
+    export type ReceiveFbLeadMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Receive an inbound lead from the partner (public, no auth)
+ */
+export const useReceiveFbLead = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveFbLead>>, TError,{data: BodyType<FbLeadWebhookPayload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveFbLead>>,
+        TError,
+        {data: BodyType<FbLeadWebhookPayload>},
+        TContext
+      > => {
+      return useMutation(getReceiveFbLeadMutationOptions(options));
     }
 
 export const getAiExtractBrandingUrl = () => {
