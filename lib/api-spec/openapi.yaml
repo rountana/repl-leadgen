@@ -806,14 +806,9 @@ components:
     FbConnectionInput:
       type: object
       required:
-        - partnerToken
         - fbPageId
-        - fbPageName
         - adAccountId
-        - adAccountName
       properties:
-        partnerToken:
-          type: string
         fbPageId:
           type: string
         fbPageName:

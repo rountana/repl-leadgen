@@ -337,11 +337,10 @@ export const GetFbConnectionResponse = zod.object({
  * @summary Create or replace the current user's Facebook connection
  */
 export const CreateFbConnectionBody = zod.object({
-  "partnerToken": zod.string(),
   "fbPageId": zod.string(),
-  "fbPageName": zod.string(),
+  "fbPageName": zod.string().optional(),
   "adAccountId": zod.string(),
-  "adAccountName": zod.string()
+  "adAccountName": zod.string().optional()
 })
 
 export const CreateFbConnectionResponse = zod.object({

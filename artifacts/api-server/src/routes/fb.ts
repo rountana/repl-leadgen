@@ -93,7 +93,7 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
     return;
   }
 
-  const { partnerToken, fbPageId, fbPageName, adAccountId, adAccountName } = parsed.data;
+  const { fbPageId, fbPageName, adAccountId, adAccountName } = parsed.data;
 
   // Upsert: update existing row to preserve FK references from campaigns,
   // or insert fresh if none exists yet.
@@ -106,7 +106,7 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
   if (existing) {
     const [updated] = await db
       .update(fbConnectionsTable)
-      .set({ partnerToken, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
+      .set({ fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
       .where(eq(fbConnectionsTable.userId, userId))
       .returning();
     conn = updated;
@@ -114,7 +114,7 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
   } else {
     const [inserted] = await db
       .insert(fbConnectionsTable)
-      .values({ userId, partnerToken, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
+      .values({ userId, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
       .returning();
     conn = inserted;
     req.log.info({ userId, fbPageId }, "FB connection created");
@@ -268,10 +268,10 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
         )
     : [];
 
-  if (!conn || !conn.partnerToken || !conn.fbPageId || !conn.adAccountId) {
+  if (!conn || !conn.fbPageId || !conn.adAccountId) {
     res.status(400).json({
       error:
-        "Campaign has no active Facebook connection with credentials. Reconnect your account before launching.",
+        "Campaign has no active Facebook connection. Reconnect your account before launching.",
     });
     return;
   }
@@ -295,13 +295,11 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       targetingLongitude: Number(campaign.targetingLongitude ?? 0),
       fbPageId: conn.fbPageId,
       adAccountId: conn.adAccountId,
-      partnerToken: conn.partnerToken,
     });
 
     // 2. Atomically verify lead delivery right after launch
     const verifyResult = await activeFbPartnerAdapter.verifyLeadDelivery(
       createResult.partnerCampaignId,
-      conn.partnerToken,
     );
     const leadDeliveryStatus: "active" | "failed" = verifyResult.active ? "active" : "failed";
 
@@ -366,23 +364,9 @@ router.get(
       return;
     }
 
-    // Look up the connection to get the partner token for the API call
-    const [conn] = campaign.connectionId
-      ? await db
-          .select()
-          .from(fbConnectionsTable)
-          .where(eq(fbConnectionsTable.id, campaign.connectionId))
-      : [];
-
-    if (!conn?.partnerToken) {
-      res.status(400).json({ error: "No active connection found for this campaign." });
-      return;
-    }
-
-    // Verify lead delivery via the partner adapter
+    // Verify lead delivery via the partner adapter (uses server-side ZERNIO_API_KEY)
     const result = await activeFbPartnerAdapter.verifyLeadDelivery(
       campaign.partnerCampaignId,
-      conn.partnerToken,
     );
     const deliveryStatus: "active" | "failed" | "unverified" = result.active ? "active" : "failed";
 

@@ -10,7 +10,6 @@ export interface CreateCampaignParams {
   targetingLongitude: number;
   fbPageId: string;
   adAccountId: string;
-  partnerToken: string;
 }
 
 export interface CreateCampaignResult {
@@ -24,22 +23,28 @@ export interface VerifyLeadDeliveryResult {
 
 export interface FbPartnerAdapter {
   createCampaign(params: CreateCampaignParams): Promise<CreateCampaignResult>;
-  /** partnerToken is the user's Zernio API key stored in fbConnections.partnerToken */
-  verifyLeadDelivery(
-    partnerCampaignId: string,
-    partnerToken: string,
-  ): Promise<VerifyLeadDeliveryResult>;
+  verifyLeadDelivery(partnerCampaignId: string): Promise<VerifyLeadDeliveryResult>;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 const ZERNIO_BASE = "https://zernio.com/api/v1";
 
+function getZernioApiKey(): string {
+  const key = process.env.ZERNIO_API_KEY;
+  if (!key) {
+    throw new Error(
+      "ZERNIO_API_KEY is not configured. Add it as a server secret in the Replit environment.",
+    );
+  }
+  return key;
+}
+
 async function zernioFetch(
   path: string,
-  token: string,
   options: RequestInit = {},
 ): Promise<any> {
+  const token = getZernioApiKey();
   const url = `${ZERNIO_BASE}${path}`;
   const res = await fetch(url, {
     ...options,
@@ -64,7 +69,7 @@ export const zernioFbPartnerAdapter: FbPartnerAdapter = {
     // 1. Discover the Zernio account ID that holds this Meta ad account.
     //    Zernio's campaign-create endpoint requires their internal accountId,
     //    not the raw Meta page/ad-account ID.
-    const accountsData = await zernioFetch("/accounts", params.partnerToken);
+    const accountsData = await zernioFetch("/accounts");
     const accounts: any[] = accountsData.accounts ?? [];
 
     const fbAccount = accounts.find(
@@ -73,8 +78,8 @@ export const zernioFbPartnerAdapter: FbPartnerAdapter = {
 
     if (!fbAccount) {
       throw new Error(
-        "No Facebook/Instagram account found in Zernio. " +
-          "Connect a Facebook account under Settings → Connected accounts in your Zernio dashboard.",
+        "No Facebook account found in Zernio. Connect a Facebook Business account " +
+          "under Settings → Connected accounts in the Zernio dashboard.",
       );
     }
 
@@ -87,9 +92,9 @@ export const zernioFbPartnerAdapter: FbPartnerAdapter = {
     //    Minimum is $1 / day.
     const budgetAmount = Math.max(1, Math.round(params.dailyBudgetCents / 100));
 
-    // 3. Create the campaign shell (ODAX, CBO, lead_generation objective).
+    // 3. Create the campaign shell (lead_generation objective, daily budget, ACTIVE).
     const idempotencyKey = `hvcg-${params.adAccountId}-${Date.now()}`;
-    const campaignData = await zernioFetch("/ads/campaigns", params.partnerToken, {
+    const campaignData = await zernioFetch("/ads/campaigns", {
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
       body: JSON.stringify({
@@ -111,11 +116,10 @@ export const zernioFbPartnerAdapter: FbPartnerAdapter = {
     return { partnerCampaignId: campaignData.campaignId };
   },
 
-  async verifyLeadDelivery(partnerCampaignId, partnerToken) {
+  async verifyLeadDelivery(partnerCampaignId) {
     // Query the campaign list filtered by platform campaign ID and check status.
     const data = await zernioFetch(
       `/ads/campaigns?campaignId=${encodeURIComponent(partnerCampaignId)}&platform=facebook`,
-      partnerToken,
     );
 
     const campaigns: any[] = data.campaigns ?? [];
@@ -140,7 +144,7 @@ export const stubFbPartnerAdapter: FbPartnerAdapter = {
     logger.warn("stubFbPartnerAdapter.createCampaign: returning stub campaign ID");
     return { partnerCampaignId: `stub_camp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}` };
   },
-  async verifyLeadDelivery(partnerCampaignId, _partnerToken) {
+  async verifyLeadDelivery(partnerCampaignId) {
     logger.warn({ partnerCampaignId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub active");
     return { active: true, checkedAt: new Date().toISOString() };
   },
