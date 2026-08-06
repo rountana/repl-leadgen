@@ -1,0 +1,544 @@
+# Quickstart
+
+> Get started with the Zernio API - authenticate, connect accounts, and schedule your first post in minutes.
+
+Source: Zernio API Documentation (https://docs.zernio.com)
+API Base URL: https://zernio.com/api/v1
+
+---
+
+# Quickstart
+
+Get started with the Zernio API - authenticate, connect accounts, and schedule your first post in minutes.
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Cards, Card } from 'fumadocs-ui/components/card';
+import { Inbox, Phone, Megaphone, Zap, Radio, Workflow, Webhook, Globe, Image, Users, Activity } from 'lucide-react';
+import { SiWhatsapp } from 'react-icons/si';
+
+Zernio is one API for social publishing and customer communication: schedule posts across 14 platforms, answer DMs and comments from a unified inbox, run ads, pull analytics, and provision phone numbers for SMS, calls, and WhatsApp. This page takes you from API key to your first scheduled post — about five minutes.
+
+Trying it out costs nothing: the [first 2 connected accounts are free](/pricing), no credit card required.
+
+**Base URL:** `https://zernio.com/api/v1`
+
+<Callout type="info">
+**Building a product where your users connect *their* accounts?** The flow below is the same, but you'll want one profile per customer, scoped keys, and webhook routing — start at the [multi-tenant guide](/multi-tenant) after your first post.
+</Callout>
+
+---
+
+## Install an SDK
+
+<Tabs items={['Node.js', 'Python']}>
+<Tab value="Node.js">
+```bash
+npm install @zernio/node
+```
+</Tab>
+<Tab value="Python">
+```bash
+pip install zernio-sdk
+```
+</Tab>
+</Tabs>
+
+Prefer another language? There are SDKs for [Go, Ruby, Java, PHP, .NET, and Rust](/sdks), each with its own setup page — and every example below also shows plain `curl`, which needs no install at all.
+
+## Authentication
+
+All API requests require an API key. The SDKs read it from the `ZERNIO_API_KEY` environment variable by default.
+
+### Get Your API Key
+
+1. [Sign up free](https://zernio.com) or log in — no credit card needed
+2. Go to **Settings → API Keys**
+3. Click **Create API Key**
+4. Copy the key immediately - you won't be able to see it again
+
+### Set Up the Client
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+import Zernio from '@zernio/node';
+
+const zernio = new Zernio(); // uses ZERNIO_API_KEY env var
+```
+</Tab>
+<Tab value="Python">
+```python
+from zernio import Zernio
+
+client = Zernio() # uses ZERNIO_API_KEY env var
+```
+</Tab>
+<Tab value="curl">
+```bash
+# Set your API key as an environment variable
+export ZERNIO_API_KEY="sk_..."
+
+# All requests use the Authorization header
+curl https://zernio.com/api/v1/posts \
+  -H "Authorization: Bearer $ZERNIO_API_KEY"
+```
+</Tab>
+</Tabs>
+
+**Key format:** `sk_` prefix + 64 hex characters (67 total). Keys are stored as SHA-256 hashes - they're only shown once at creation.
+
+**Security tips:** Use environment variables, create separate keys per app, and rotate periodically. You can also [manage keys via the API](/api-keys/list-api-keys).
+
+---
+
+## Key Concepts
+
+- **Profiles** - Containers that group social accounts together (think "brands" or "projects")
+- **Accounts** - Your connected social media accounts, belonging to profiles
+- **Posts** - Content to publish, schedulable to multiple accounts across platforms simultaneously
+- **Queue** - Optional recurring time slots for auto-scheduling posts
+
+IDs in this API are 24-character MongoDB-style strings in an `_id` field (like `66a1f0c2a4b9d3e8f1a2b3c4`) — each step below returns the ID the next step needs.
+
+---
+
+## Step 1: Create a Profile
+
+Profiles group your social accounts together. For example, you might have a "Personal Brand" profile with your Twitter and LinkedIn, and a "Company" profile with your business accounts.
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+const { data } = await zernio.profiles.createProfile({
+  body: {
+    name: 'My First Profile',
+    description: 'Testing the Zernio API'
+  }
+});
+
+console.log('Profile created:', data.profile._id);
+// → Profile created: 66a1f0c2a4b9d3e8f1a2b3c4
+```
+</Tab>
+<Tab value="Python">
+```python
+result = client.profiles.create_profile(
+    name="My First Profile",
+    description="Testing the Zernio API"
+)
+
+print(f"Profile created: {result['profile']['_id']}")
+# → Profile created: 66a1f0c2a4b9d3e8f1a2b3c4
+```
+</Tab>
+<Tab value="curl">
+```bash
+curl -X POST https://zernio.com/api/v1/profiles \
+  -H "Authorization: Bearer $ZERNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My First Profile",
+    "description": "Testing the Zernio API"
+  }'
+```
+</Tab>
+</Tabs>
+
+Save the `_id` value - you'll need it for the next steps.
+
+## Step 2: Connect a Social Account
+
+Now connect a social media account to your profile. This uses OAuth, so it will redirect to the platform for authorization.
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+const { data } = await zernio.connect.getConnectUrl({
+  path: { platform: 'twitter' },
+  query: { profileId: '66a1f0c2a4b9d3e8f1a2b3c4' } // the profile _id from Step 1
+});
+
+// Redirect user to this URL to authorize
+console.log('Open this URL:', data.authUrl);
+```
+</Tab>
+<Tab value="Python">
+```python
+result = client.connect.get_connect_url(
+    platform="twitter",
+    profile_id="66a1f0c2a4b9d3e8f1a2b3c4",  # the profile _id from Step 1
+)
+
+print(f"Open this URL: {result['authUrl']}")
+```
+</Tab>
+<Tab value="curl">
+```bash
+# profileId is the profile _id from Step 1
+curl "https://zernio.com/api/v1/connect/twitter?profileId=66a1f0c2a4b9d3e8f1a2b3c4" \
+  -H "Authorization: Bearer $ZERNIO_API_KEY"
+```
+</Tab>
+</Tabs>
+
+Open the URL in a browser to authorize Zernio to access your Twitter account. After authorization, you'll be redirected back and the account will be connected.
+
+### Available Platforms
+
+Replace `twitter` with any of these:
+
+<PlatformConnectTable />
+
+## Step 3: Get Your Connected Accounts
+
+After connecting, list your accounts to get the account ID:
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+const { data } = await zernio.accounts.listAccounts();
+
+for (const account of data.accounts) {
+  console.log(`${account.platform}: ${account._id}`);
+}
+// → twitter: 66b2e19d8c3f5a7e9d0b1c2d
+```
+</Tab>
+<Tab value="Python">
+```python
+result = client.accounts.list_accounts()
+
+for account in result["accounts"]:
+    print(f"{account['platform']}: {account['_id']}")
+# → twitter: 66b2e19d8c3f5a7e9d0b1c2d
+```
+</Tab>
+<Tab value="curl">
+```bash
+curl "https://zernio.com/api/v1/accounts" \
+  -H "Authorization: Bearer $ZERNIO_API_KEY"
+```
+</Tab>
+</Tabs>
+
+Save the account `_id` - you need it to create posts.
+
+## Step 4: Schedule Your First Post
+
+Now you can schedule a post! Here's how to schedule a tweet for tomorrow at noon:
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+// Tomorrow at 12:00 in the timezone below
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+const scheduledFor = tomorrow.toISOString().slice(0, 10) + 'T12:00:00';
+
+const { data } = await zernio.posts.createPost({
+  body: {
+    content: 'Hello world! This is my first post from the Zernio API',
+    scheduledFor,
+    timezone: 'America/New_York',
+    platforms: [
+      { platform: 'twitter', accountId: '66b2e19d8c3f5a7e9d0b1c2d' } // from Step 3
+    ]
+  }
+});
+
+console.log('Post scheduled:', data.post._id);
+```
+</Tab>
+<Tab value="Python">
+```python
+from datetime import date, timedelta
+
+# Tomorrow at 12:00 in the timezone below
+scheduled_for = f"{date.today() + timedelta(days=1)}T12:00:00"
+
+result = client.posts.create_post(
+    content="Hello world! This is my first post from the Zernio API",
+    scheduled_for=scheduled_for,
+    timezone="America/New_York",
+    platforms=[
+        {"platform": "twitter", "accountId": "66b2e19d8c3f5a7e9d0b1c2d"}  # from Step 3
+    ]
+)
+
+print(f"Post scheduled: {result['post']['_id']}")
+```
+</Tab>
+<Tab value="curl">
+```bash
+# Use any future time; it's interpreted in the timezone field
+curl -X POST https://zernio.com/api/v1/posts \
+  -H "Authorization: Bearer $ZERNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "Hello world! This is my first post from the Zernio API",
+    "scheduledFor": "2027-01-01T12:00:00",
+    "timezone": "America/New_York",
+    "platforms": [
+      {"platform": "twitter", "accountId": "66b2e19d8c3f5a7e9d0b1c2d"}
+    ]
+  }'
+```
+</Tab>
+</Tabs>
+
+## Step 5: Confirm It Worked
+
+Fetch the post back — its `status` tells you exactly where it is in the pipeline:
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+const { data: check } = await zernio.posts.getPost({
+  path: { postId: data.post._id } // the _id returned in Step 4
+});
+
+console.log(check.post.status);
+// → scheduled
+```
+</Tab>
+<Tab value="Python">
+```python
+result = client.posts.get_post(post_id=result["post"]["_id"])
+
+print(result["post"]["status"])
+# → scheduled
+```
+</Tab>
+<Tab value="curl">
+```bash
+curl "https://zernio.com/api/v1/posts/POST_ID" \
+  -H "Authorization: Bearer $ZERNIO_API_KEY"
+```
+</Tab>
+</Tabs>
+
+`status` moves through `scheduled → publishing → published` (or `failed` / `partial` if something goes wrong — see [error handling](/guides/error-handling)). Once published, the response includes a `platformPostUrl` per platform: the live link to your post. You'll also see the post in your [dashboard](https://zernio.com), and [webhooks](/webhooks) can push these status changes to you instead of polling.
+
+**That's the whole loop** — profile, connected account, scheduled post, confirmation. Everything else is variations on this.
+
+## One Endpoint, Every Posting Mode
+
+The same `createPost` call covers scheduling, publishing immediately, and drafts:
+
+| You set | Result |
+|---|---|
+| `scheduledFor` + `timezone` | Publishes automatically at that time |
+| `publishNow: true` | Publishes immediately |
+| Neither | Saved as a draft to finish later |
+
+And cross-posting is just more entries in the `platforms` array — same content, one call, every network:
+
+```typescript
+await zernio.posts.createPost({
+  body: {
+    content: 'Cross-posting to all my accounts, right now!',
+    publishNow: true,
+    platforms: [
+      { platform: 'twitter', accountId: '66b2e19d8c3f5a7e9d0b1c2d' },
+      { platform: 'linkedin', accountId: '66b2e19d8c3f5a7e9d0b1c2e' },
+      { platform: 'bluesky', accountId: '66b2e19d8c3f5a7e9d0b1c2f' }
+    ]
+  }
+});
+```
+
+The request shape is identical in every SDK and in raw JSON. Per-platform options (first comment, board IDs, video titles) are covered in the [platform guides](/platforms).
+
+---
+
+## Beyond Posting
+
+Publishing is the entry point, but the same API key and connected accounts open the whole engagement surface: the unified inbox, messaging channels, automations, ads, and analytics.
+
+### Reply to a DM
+
+Read and answer Instagram, Facebook, WhatsApp, and X conversations from one inbox:
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+await zernio.messages.sendInboxMessage({
+  path: { conversationId: '66c3d2ae7b4f6c8d0e1f2a3b' }, // from List conversations
+  body: {
+    accountId: '66b2e19d8c3f5a7e9d0b1c2d',
+    message: 'Thanks for reaching out! How can we help?'
+  }
+});
+```
+</Tab>
+<Tab value="Python">
+```python
+client.messages.send_inbox_message(
+    conversation_id="66c3d2ae7b4f6c8d0e1f2a3b",  # from List conversations
+    account_id="66b2e19d8c3f5a7e9d0b1c2d",
+    message="Thanks for reaching out! How can we help?",
+)
+```
+</Tab>
+<Tab value="curl">
+```bash
+curl -X POST "https://zernio.com/api/v1/inbox/conversations/66c3d2ae7b4f6c8d0e1f2a3b/messages" \
+  -H "Authorization: Bearer $ZERNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountId": "66b2e19d8c3f5a7e9d0b1c2d",
+    "message": "Thanks for reaching out! How can we help?"
+  }'
+```
+</Tab>
+</Tabs>
+
+Find conversation IDs with [List conversations](/messages/list-inbox-conversations).
+
+### Send an SMS
+
+Provision a [phone number](/platforms/phone-numbers), then message customers directly:
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+await zernio.sms.sendSms({
+  body: {
+    from: '+15551234567', // one of your SMS-enabled numbers
+    to: '+15557654321',
+    text: 'Your order has shipped!'
+  }
+});
+```
+</Tab>
+<Tab value="Python">
+```python
+client.sms.send_sms(
+    from_="+15551234567",  # one of your SMS-enabled numbers
+    to="+15557654321",
+    text="Your order has shipped!",
+)
+```
+</Tab>
+<Tab value="curl">
+```bash
+curl -X POST "https://zernio.com/api/v1/sms/messages" \
+  -H "Authorization: Bearer $ZERNIO_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "+15551234567",
+    "to": "+15557654321",
+    "text": "Your order has shipped!"
+  }'
+```
+</Tab>
+</Tabs>
+
+### Pull analytics
+
+See how your posts perform across every connected account:
+
+<Tabs items={['Node.js', 'Python', 'curl']}>
+<Tab value="Node.js">
+```typescript
+const { data } = await zernio.analytics.getAnalytics({
+  query: { sortBy: 'engagement', limit: 5 }
+});
+```
+</Tab>
+<Tab value="Python">
+```python
+result = client.analytics.get(limit=5)
+```
+</Tab>
+<Tab value="curl">
+```bash
+curl "https://zernio.com/api/v1/analytics?sortBy=engagement&limit=5" \
+  -H "Authorization: Bearer $ZERNIO_API_KEY"
+```
+</Tab>
+</Tabs>
+
+### Explore the rest
+
+<Cards>
+  <Card
+    icon={<Inbox />}
+    title="Unified Inbox"
+    description="DMs, comments, reviews, and mentions across every platform"
+    href="/messages/list-inbox-conversations"
+  />
+  <Card
+    icon={<SiWhatsapp />}
+    title="WhatsApp Platform"
+    description="Templates, broadcasts, flows, groups, and calling"
+    href="/platforms/whatsapp"
+  />
+  <Card
+    icon={<Phone />}
+    title="Phone Numbers, SMS & Voice"
+    description="Provision numbers, register campaigns, send SMS, place calls"
+    href="/platforms/phone-numbers"
+  />
+  <Card
+    icon={<Megaphone />}
+    title="Ads"
+    description="Meta, TikTok, Google, LinkedIn, Pinterest, and X: campaigns, boosting, lead forms"
+    href="/ad-campaigns/list-ads"
+  />
+  <Card
+    icon={<Zap />}
+    title="Comment-to-DM Automations"
+    description="Auto-DM people who comment on your posts"
+    href="/comment-automations/list-comment-automations"
+  />
+  <Card
+    icon={<Radio />}
+    title="Broadcasts & Sequences"
+    description="Bulk messaging campaigns and multi-step drip sequences"
+    href="/broadcasts/list-broadcasts"
+  />
+  <Card
+    icon={<Workflow />}
+    title="Workflows"
+    description="Event-driven automation with branching logic"
+    href="/workflows/list-workflows"
+  />
+  <Card
+    icon={<Webhook />}
+    title="Webhooks"
+    description="Real-time events for posts, messages, accounts, and more"
+    href="/webhooks"
+  />
+</Cards>
+
+## What's Next?
+
+<Cards>
+  <Card
+    icon={<Globe />}
+    title="Platform Guides"
+    description="Platform-specific features, media requirements, and publishing options"
+    href="/platforms"
+  />
+  <Card
+    icon={<Image />}
+    title="Upload media"
+    description="Add images and videos to your posts"
+    href="/guides/media-uploads"
+  />
+  <Card
+    icon={<Users />}
+    title="Build for your users"
+    description="One profile per customer, scoped keys, webhook routing"
+    href="/multi-tenant"
+  />
+  <Card
+    icon={<Activity />}
+    title="Track post status"
+    description="Webhooks for publishing results instead of polling"
+    href="/webhooks"
+  />
+</Cards>
+
+Going to production? Read up on [rate limits](/guides/rate-limits), [idempotent retries](/guides/idempotency), and [error handling](/guides/error-handling). You can also [set up a posting queue](/guides/queue-scheduling), [invite team members](/invites/create-invite-token), or manage everything from the [CLI](/cli).
