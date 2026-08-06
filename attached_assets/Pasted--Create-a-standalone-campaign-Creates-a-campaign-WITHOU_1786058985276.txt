@@ -1,0 +1,201 @@
+# Create a standalone campaign
+
+> Creates a campaign WITHOUT its first ad set / ad (the ODAX shell only). Ad sets join it
+later via `existingCampaignId` on the create endpoints. A budget here is campaign-level
+(CBO) by definition; omit it for ABO (each ad set carries its own budget). Created
+`PAUSED` unless `status: ACTIVE`. The campaign materializes in `/v1/ads/tree` via the
+next sync discovery pass.
+
+**Idempotency:** send an `Idempotency-Key` header to make retries safe.
+
+Source: Zernio API Documentation (https://docs.zernio.com)
+API Base URL: https://zernio.com/api/v1
+
+---
+
+# Create a standalone campaign API Reference
+
+Creates a campaign WITHOUT its first ad set / ad (the ODAX shell only). Ad sets join it
+later via `existingCampaignId` on the create endpoints. A budget here is campaign-level
+(CBO) by definition; omit it for ABO (each ad set carries its own budget). Created
+`PAUSED` unless `status: ACTIVE`. The campaign materializes in `/v1/ads/tree` via the
+next sync discovery pass.
+
+**Idempotency:** send an `Idempotency-Key` header to make retries safe.
+
+## GET /v1/ads/campaigns
+
+**List campaigns**
+
+Returns campaigns as virtual aggregations over ad documents grouped by platform campaign ID.
+Metrics (spend, impressions, clicks, etc.) are summed across all ads in each campaign.
+Campaign status is derived from child ad statuses (active > pending_review > paused > error > completed > cancelled > rejected).
+
+
+### Parameters
+
+- **includeEmpty** (optional) in query: Meta only. Campaign reads aggregate over ad documents, so a campaign with ZERO ads is normally invisible here — the state the two-step create (campaign, then ads via `existingCampaignId`) leaves behind whenever Meta rejects the ad step. Set true to list those too, with `adCount: 0` and zeroed metrics. Requires `accountId` and `adAccountId`, since an empty campaign has no ad row to resolve a token or ad account from.
+- **undefined** (optional): No description
+- **limit** (optional) in query: No description
+- **source** (optional) in query: `all` (default) returns both Zernio-created ads and those discovered from the platform's ad manager — matches the web UI's default view. Pass `zernio` to restrict to isExternal=false only. Status is NOT filtered by default — use the `status` param for that.
+- **platform** (optional) in query: No description
+- **status** (optional) in query: Filter by derived campaign status (post-aggregation)
+- **adAccountId** (optional) in query: Platform ad account ID (e.g. act_123 for Meta)
+- **pageId** (optional) in query: Meta only: Facebook Page ID. Campaigns have no Page of their own, so this keeps campaigns having at least one ad backed by this Page, with adCount and metrics computed over those ads only. Mirrors the same filter on /v1/ads and /v1/ads/tree.
+- **accountId** (optional) in query: Social account ID
+- **profileId** (optional) in query: Profile ID
+- **fromDate** (optional) in query: Start of metrics date range (YYYY-MM-DD, inclusive). Defaults to 90 days ago when both date params are omitted.
+- **toDate** (optional) in query: End of metrics date range (YYYY-MM-DD, inclusive). Defaults to today. Max 730-day range.
+
+### Responses
+
+#### 200: Paginated campaigns
+
+**Response Body:**
+
+- **campaigns** `array[AdCampaign]`: 
+- **pagination**: `Pagination` - See schema definition
+
+#### 400: Invalid request
+
+**Response Body:**
+
+- **error** `string`: Human-readable error message.
+- **type** `string`: Error class for programmatic handling. - one of: invalid_request_error, authentication_error, permission_error, not_found, rate_limit_error, platform_error, api_error
+- **code** `string`: Stable machine-readable error code.
+- **param** `string`: The request field that caused the error, when applicable.
+- **platform** `string`: Upstream platform (e.g. meta, google, tiktok) — present when type is platform_error.
+- **platformError** `object`: Raw error payload from the upstream platform, passed through verbatim so
+integrators can read provider-specific codes. For Meta this includes
+error_subcode, error_user_title, and error_user_msg.
+
+- **details** `object`: Additional structured context (e.g. field-level validation errors).
+
+#### 401: Unauthorized
+
+**Response Body:**
+
+- **error** `string`: No description (example: "Unauthorized")
+
+#### 403: Ads access required. Legacy plans need the Ads add-on; included by default on usage-based plans.
+
+---
+
+## POST /v1/ads/campaigns
+
+**Create a standalone campaign**
+
+Creates a campaign WITHOUT its first ad set / ad (the ODAX shell only). Ad sets join it
+later via `existingCampaignId` on the create endpoints. A budget here is campaign-level
+(CBO) by definition; omit it for ABO (each ad set carries its own budget). Created
+`PAUSED` unless `status: ACTIVE`. The campaign materializes in `/v1/ads/tree` via the
+next sync discovery pass.
+
+**Idempotency:** send an `Idempotency-Key` header to make retries safe.
+
+### Parameters
+
+- **Idempotency-Key** (optional) in header: Optional client-generated unique key (e.g. a UUID) that makes retries safe. Same key + same body replays the original response; same key + different body → 422; key still processing → 409. Only 2xx responses are stored, so a request that failed with a 4xx can be retried with a corrected body under the SAME key.
+
+### Request Body
+
+- **accountId** (required) `string`: Zernio SocialAccount id (posting or ads variant) used to resolve the Meta token.
+- **adAccountId** (required) `string`: Meta ad account id (act_<n>).
+- **name** (required) `string`: No description
+- **goal** (required) `string`: Mapped to the ODAX objective (same mapping as POST /v1/ads/create). - one of: engagement, traffic, awareness, video_views, lead_generation, lead_conversion, job_applicants, conversions, app_promotion, catalog_sales
+- **specialAdCategories** `array`: No description
+- **budgetAmount** `number`: Campaign-level (CBO) budget in WHOLE currency units (USD: 50 = $50.00), NOT cents — Meta's own Marketing API takes this same number in minor units, so it is an easy and expensive mix-up. Requires budgetType.
+- **budgetType** `string`: No description - one of: daily, lifetime
+- **status** `string`: No description - one of: ACTIVE, PAUSED
+- **bidStrategy** `string`: Campaign bid strategy. Meta stores `bid_strategy` alongside the budget, so this REQUIRES `budgetAmount` + `budgetType` on the same request; sending it without a campaign budget is a 400. A campaign carrying a strategy without its `bid_amount` makes every ad set created under it fail with an error that names the ad set (code 100, subcode 1815857), so the bad state is rejected up front rather than accepted. To bid at ad-set level, set the strategy there instead. - one of: LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP, COST_CAP, LOWEST_COST_WITH_MIN_ROAS
+- **bidAmount** `number`: Whole currency units (USD: 5 = $5.00). Required for LOWEST_COST_WITH_BID_CAP and COST_CAP; ignored otherwise.
+- **roasAverageFloor** `number`: Decimal ROAS multiplier (2.0 = 2.0x). Required for LOWEST_COST_WITH_MIN_ROAS.
+
+### Responses
+
+#### 201: Campaign created
+
+**Response Body:**
+
+- **adAccountId** `string`: No description
+- **campaignId** `string`: Platform id of the new campaign
+- **objective** `string`: Resolved ODAX objective (e.g. OUTCOME_SALES).
+- **status** `string`: No description - one of: ACTIVE, PAUSED
+
+#### 400: Invalid input, or Meta rejected the create
+
+#### 401: Unauthorized
+
+**Response Body:**
+
+- **error** `string`: No description (example: "Unauthorized")
+
+#### 501: Only supported on Meta (facebook/instagram)
+
+---
+
+
+# Related Schema Definitions
+
+## AdCampaign
+
+### Properties
+
+- **platformCampaignId** `string`: No description
+- **platform** `string`: No description - one of: facebook, instagram, tiktok, linkedin, pinterest, google, twitter, openai
+- **campaignName** `string`: No description
+- **status**: Delivery status derived from child ad statuses. Distinct from `reviewStatus`.
+- **reviewStatus**: Platform-side review state of the campaign. See AdTreeCampaign.reviewStatus for the full description.
+- **platformCampaignStatus** `string,null`: Raw platform-level campaign status (Meta `effective_status`).
+- **campaignIssuesInfo** `array,null`: Platform-reported campaign issues (Meta `issues_info[]`).
+- **adCount** `integer`: No description
+- **budget** `object,null`: Effective budget (back-compat). Use `budgetLevel` to disambiguate CBO vs ABO.
+- **campaignBudget** `object,null`: Campaign-level budget (CBO). Null for ABO campaigns.
+- **budgetLevel** `string,null`: Canonical CBO/ABO indicator. See AdTreeCampaign.budgetLevel. - one of: campaign, adset
+- **isBudgetScheduleEnabled** `boolean`: Meta-only. Mirrors Campaign.is_budget_schedule_enabled. (default: false)
+- **currency** `string,null`: ISO 4217 currency code for all budget amounts. Budgets are NOT normalized to USD.
+- **metrics**: No description
+- **platformAdAccountId** `string`: No description
+- **platformAdAccountName** `string,null`: Human-readable advertiser/account name from the platform. Refreshed on every sync.
+- **accountId** `string`: No description
+- **profileId** `string`: No description
+- **advertisingChannelType** `string,null`: Google-only. Raw campaign.advertising_channel_type. See AdTreeCampaign.advertisingChannelType.
+- **platformObjective** `string,null`: Raw Meta campaign objective (e.g. OUTCOME_SALES, OUTCOME_LEADS, OUTCOME_TRAFFIC)
+- **optimizationGoal** `string,null`: Optimization goal shared across ad sets, or comma-separated values when ad sets differ. Meta: e.g. OFFSITE_CONVERSIONS, VALUE, LEAD_GENERATION. LinkedIn: the campaign optimizationTargetType (e.g. MAX_CLICK, MAX_IMPRESSION, NONE); `NONE` with a manual costType is a campaign LinkedIn will not deliver.
+- **bidStrategy**: Campaign-level bid strategy. Ad sets inherit this unless they override.
+- **bidAmount** `number,null`: Representative bid from the top-spending ad set (whole currency units). Meta: populated when bidStrategy is LOWEST_COST_WITH_BID_CAP or COST_CAP. LinkedIn: the campaign unitCost, ungated, where 0 is a real delivery-stopping value.
+- **roasAverageFloor** `number,null`: Representative ROAS floor from the top-spending ad set. Decimal multiplier (2.0 = 2.0x).
+- **promotedObject** `object,null`: Meta promoted object at campaign level (conversion event details)
+- **earliestAd** `string`: No description
+- **latestAd** `string`: No description
+
+## Pagination
+
+### Properties
+
+- **page** `integer`: No description
+- **limit** `integer`: No description
+- **total** `integer`: No description
+- **pages** `integer`: No description
+
+## ErrorResponse
+
+Canonical error envelope. `error` is the human-readable message; `type`,
+`code`, `param`, `platform`, and `platformError` are top-level siblings
+for programmatic handling. For upstream platform failures (`type:
+platform_error`), `platformError` carries the provider's raw payload
+verbatim (for Meta: `error_subcode`, `error_user_title`, `error_user_msg`).
+
+
+### Properties
+
+- **error** `string`: Human-readable error message.
+- **type** `string`: Error class for programmatic handling. - one of: invalid_request_error, authentication_error, permission_error, not_found, rate_limit_error, platform_error, api_error
+- **code** `string`: Stable machine-readable error code.
+- **param** `string`: The request field that caused the error, when applicable.
+- **platform** `string`: Upstream platform (e.g. meta, google, tiktok) — present when type is platform_error.
+- **platformError** `object`: Raw error payload from the upstream platform, passed through verbatim so
+integrators can read provider-specific codes. For Meta this includes
+error_subcode, error_user_title, and error_user_msg.
+
+- **details** `object`: Additional structured context (e.g. field-level validation errors).

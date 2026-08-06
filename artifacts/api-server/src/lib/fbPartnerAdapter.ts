@@ -24,28 +24,130 @@ export interface VerifyLeadDeliveryResult {
 
 export interface FbPartnerAdapter {
   createCampaign(params: CreateCampaignParams): Promise<CreateCampaignResult>;
-  verifyLeadDelivery(partnerCampaignId: string): Promise<VerifyLeadDeliveryResult>;
+  /** partnerToken is the user's Zernio API key stored in fbConnections.partnerToken */
+  verifyLeadDelivery(
+    partnerCampaignId: string,
+    partnerToken: string,
+  ): Promise<VerifyLeadDeliveryResult>;
 }
 
-/**
- * Stub adapter — returns plausible shaped responses without calling any real partner.
- * Swap this import in fb.ts once a real partner adapter is implemented.
- */
-export const stubFbPartnerAdapter: FbPartnerAdapter = {
-  async createCampaign(_params: CreateCampaignParams): Promise<CreateCampaignResult> {
-    logger.warn(
-      "stubFbPartnerAdapter.createCampaign: no real partner configured — returning stub campaign ID",
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const ZERNIO_BASE = "https://zernio.com/api/v1";
+
+async function zernioFetch(
+  path: string,
+  token: string,
+  options: RequestInit = {},
+): Promise<any> {
+  const url = `${ZERNIO_BASE}${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...(options.headers ?? {}),
+    },
+  });
+
+  const body = await res.text();
+  if (!res.ok) {
+    throw new Error(`Zernio ${options.method ?? "GET"} ${path} → ${res.status}: ${body}`);
+  }
+  return JSON.parse(body);
+}
+
+// ── Zernio adapter ─────────────────────────────────────────────────────────
+
+export const zernioFbPartnerAdapter: FbPartnerAdapter = {
+  async createCampaign(params) {
+    // 1. Discover the Zernio account ID that holds this Meta ad account.
+    //    Zernio's campaign-create endpoint requires their internal accountId,
+    //    not the raw Meta page/ad-account ID.
+    const accountsData = await zernioFetch("/accounts", params.partnerToken);
+    const accounts: any[] = accountsData.accounts ?? [];
+
+    const fbAccount = accounts.find(
+      (a) => a.platform === "facebook" || a.platform === "instagram",
     );
-    // Generate a plausible-looking partner campaign ID
-    const stubId = `stub_camp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-    return { partnerCampaignId: stubId };
+
+    if (!fbAccount) {
+      throw new Error(
+        "No Facebook/Instagram account found in Zernio. " +
+          "Connect a Facebook account under Settings → Connected accounts in your Zernio dashboard.",
+      );
+    }
+
+    logger.info(
+      { zernioAccountId: fbAccount._id, adAccountId: params.adAccountId },
+      "Zernio: resolved FB account",
+    );
+
+    // 2. Convert budget from cents → whole currency units (Zernio's requirement).
+    //    Minimum is $1 / day.
+    const budgetAmount = Math.max(1, Math.round(params.dailyBudgetCents / 100));
+
+    // 3. Create the campaign shell (ODAX, CBO, lead_generation objective).
+    const idempotencyKey = `hvcg-${params.adAccountId}-${Date.now()}`;
+    const campaignData = await zernioFetch("/ads/campaigns", params.partnerToken, {
+      method: "POST",
+      headers: { "Idempotency-Key": idempotencyKey },
+      body: JSON.stringify({
+        accountId: fbAccount._id,
+        adAccountId: params.adAccountId,
+        name: params.headline.slice(0, 255),
+        goal: "lead_generation",
+        budgetAmount,
+        budgetType: "daily",
+        status: "ACTIVE",
+      }),
+    });
+
+    logger.info(
+      { partnerCampaignId: campaignData.campaignId },
+      "Zernio: FB campaign created",
+    );
+
+    return { partnerCampaignId: campaignData.campaignId };
   },
 
-  async verifyLeadDelivery(partnerCampaignId: string): Promise<VerifyLeadDeliveryResult> {
-    logger.warn(
-      { partnerCampaignId },
-      "stubFbPartnerAdapter.verifyLeadDelivery: no real partner configured — returning stub active status",
+  async verifyLeadDelivery(partnerCampaignId, partnerToken) {
+    // Query the campaign list filtered by platform campaign ID and check status.
+    const data = await zernioFetch(
+      `/ads/campaigns?campaignId=${encodeURIComponent(partnerCampaignId)}&platform=facebook`,
+      partnerToken,
     );
+
+    const campaigns: any[] = data.campaigns ?? [];
+    const campaign = campaigns[0];
+
+    // Zernio derives status from child ad statuses; "active" means delivering.
+    const active = campaign?.status === "active";
+
+    logger.info(
+      { partnerCampaignId, status: campaign?.status ?? "not_found", active },
+      "Zernio: lead delivery verification",
+    );
+
+    return { active, checkedAt: new Date().toISOString() };
+  },
+};
+
+// ── Stub (kept for local dev / tests without Zernio credentials) ──────────
+
+export const stubFbPartnerAdapter: FbPartnerAdapter = {
+  async createCampaign(_params) {
+    logger.warn("stubFbPartnerAdapter.createCampaign: returning stub campaign ID");
+    return { partnerCampaignId: `stub_camp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}` };
+  },
+  async verifyLeadDelivery(partnerCampaignId, _partnerToken) {
+    logger.warn({ partnerCampaignId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub active");
     return { active: true, checkedAt: new Date().toISOString() };
   },
 };
+
+/**
+ * The active adapter. Swap to stubFbPartnerAdapter for local dev without
+ * real Zernio credentials.
+ */
+export const activeFbPartnerAdapter: FbPartnerAdapter = zernioFbPartnerAdapter;

@@ -12,7 +12,7 @@ import {
   GetFbCampaignLeadStatusParams,
   ReceiveFbLeadBody,
 } from "@workspace/api-zod";
-import { stubFbPartnerAdapter } from "../lib/fbPartnerAdapter";
+import { activeFbPartnerAdapter } from "../lib/fbPartnerAdapter";
 import { generateFbAd } from "../lib/fbAdGenerator";
 
 /**
@@ -285,7 +285,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
   let updatedCampaign: typeof campaign;
   try {
     // 1. Create the campaign via the partner adapter
-    const createResult = await stubFbPartnerAdapter.createCampaign({
+    const createResult = await activeFbPartnerAdapter.createCampaign({
       headline: campaign.headline ?? "",
       bodyText: campaign.bodyText ?? "",
       imageUrl: campaign.imageUrl ?? "",
@@ -299,8 +299,9 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
     });
 
     // 2. Atomically verify lead delivery right after launch
-    const verifyResult = await stubFbPartnerAdapter.verifyLeadDelivery(
+    const verifyResult = await activeFbPartnerAdapter.verifyLeadDelivery(
       createResult.partnerCampaignId,
+      conn.partnerToken,
     );
     const leadDeliveryStatus: "active" | "failed" = verifyResult.active ? "active" : "failed";
 
@@ -365,8 +366,24 @@ router.get(
       return;
     }
 
+    // Look up the connection to get the partner token for the API call
+    const [conn] = campaign.connectionId
+      ? await db
+          .select()
+          .from(fbConnectionsTable)
+          .where(eq(fbConnectionsTable.id, campaign.connectionId))
+      : [];
+
+    if (!conn?.partnerToken) {
+      res.status(400).json({ error: "No active connection found for this campaign." });
+      return;
+    }
+
     // Verify lead delivery via the partner adapter
-    const result = await stubFbPartnerAdapter.verifyLeadDelivery(campaign.partnerCampaignId);
+    const result = await activeFbPartnerAdapter.verifyLeadDelivery(
+      campaign.partnerCampaignId,
+      conn.partnerToken,
+    );
     const deliveryStatus: "active" | "failed" | "unverified" = result.active ? "active" : "failed";
 
     // Persist the verified status
