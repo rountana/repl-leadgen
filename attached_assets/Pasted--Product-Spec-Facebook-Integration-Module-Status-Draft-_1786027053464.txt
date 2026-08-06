@@ -1,0 +1,221 @@
+# Product Spec: Facebook Integration Module
+
+**Status:** Draft
+**Parent product:** Two-Click Lead Machine
+**Audience:** Product / stakeholder reference — no implementation detail included
+**Source:** Derived from `docs/modules/fb-integration-PRD.md` and the module's shipped Phase 1 build
+
+---
+
+## 1. Overview
+
+The Facebook Integration module is what turns a business owner's basic
+details into a live Facebook lead ad, without them ever touching Facebook's
+own ad tools directly. The owner connects their Facebook account, the
+product writes the ad copy and picks an image for them, they set a daily
+budget, and they click Launch. From that point on, every person who fills
+out the ad's lead form on Facebook flows automatically into the product's
+lead-notification system.
+
+This module owns the entire relationship with Facebook on the business's
+behalf: the connection itself, the ad campaign, and the subscription that
+lets new leads arrive in real time. No other part of the product ever talks
+to Facebook directly.
+
+It ships in two stages:
+
+- **Phase 1 (shipping now):** the connection and campaign creation are
+  brokered through a third-party ad-automation partner rather than a direct
+  relationship with Facebook's parent company, Meta. This lets the product
+  get in front of real businesses sooner, without waiting on Meta's own
+  lengthy platform-approval process.
+- **Phase 2 (later, post-validation):** once the product has proven itself
+  with real users, the same experience is rebuilt on a direct relationship
+  with Meta, removing the third-party partner from the equation. The owner's
+  experience does not change when this happens.
+
+## 2. User Journey
+
+1. Business owner has already entered their basic business details
+   elsewhere in the product (name, industry, location, what they're
+   offering).
+2. Owner connects their Facebook account and selects which Facebook Page
+   and ad account to run the campaign on.
+3. Product automatically writes ad headline/body copy and selects a
+   matching image — the owner doesn't write anything themselves.
+4. Owner sets (or accepts a suggested) daily budget and a target radius
+   around their business.
+5. Owner clicks Launch. The ad goes live on Facebook within their own ad
+   account.
+6. Any consumer who fills out the ad's lead form on Facebook is
+   automatically captured and handed off to the product's lead-response
+   system, in real time.
+
+## 3. Functional Requirements
+
+### 3.1 Connecting Facebook
+
+- **FR-1:** The owner must be able to connect their real Facebook account
+  through Facebook's own login and permissions screen — this cannot be a
+  simulated or internal-only flow.
+- **FR-2:** After connecting, the owner must be able to choose which
+  Facebook Page and which ad account the campaign will run under.
+- **FR-3:** The product must remember this connection so the owner is not
+  asked to reconnect for every new campaign.
+
+### 3.2 Ad Creation
+
+- **FR-4:** The product must automatically generate ad headline and body
+  copy based on the business's name, industry, location, and stated offer
+  — the owner does not write ad copy themselves.
+- **FR-5:** The product must automatically select a matching image for the
+  ad.
+- **FR-6:** Ad copy and image generation must reliably produce at least one
+  usable result per business without the owner needing to intervene or
+  retry.
+- **FR-7:** The generated ad is independent of any other content the
+  business has created elsewhere in the product (e.g. their giveaway
+  webpage) — it is not required to match or reuse that content.
+
+### 3.3 Budget & Targeting
+
+- **FR-8:** The owner must be able to set a daily ad budget.
+- **FR-9:** The owner must be able to set (or accept a default) geographic
+  targeting radius, defaulted from the business's own location.
+
+### 3.4 Launch
+
+- **FR-10:** The owner must be able to launch the campaign with a single
+  action once creative, budget, and targeting are set.
+- **FR-11:** Once launched, the campaign must appear as a live, running
+  campaign inside the owner's own Facebook Ads account — not just inside
+  this product.
+- **FR-12:** The ad must use Facebook's built-in native lead form, which
+  automatically pre-fills a consumer's name, phone, and email from their
+  Facebook profile when they respond to the ad.
+
+### 3.5 Lead Delivery
+
+- **FR-13:** The moment a consumer submits the native lead form, that lead
+  must be captured and made available to the product's lead-response system
+  in real time — no manual export or delay.
+- **FR-14:** The product must confirm that live lead delivery is actually
+  active immediately after launch, rather than simply assuming the
+  connection succeeded.
+- **FR-15:** This module is the only part of the product that ever holds
+  the business's Facebook connection — no other module asks the business to
+  connect Facebook a second time or holds its own separate credentials.
+
+### 3.6 Billing
+
+- **FR-16:** Ad spend is billed directly to the business's own connected
+  Facebook ad account — the product does not collect, hold, or mark up ad
+  budget on the business's behalf.
+
+## 4. Non-Functional Requirements
+
+- **NFR-1 (Reliability):** A launched campaign's live-lead connection must
+  be verified working immediately after launch, not left to fail silently;
+  if verification fails, the owner must be told rather than left believing
+  the campaign is fully live.
+- **NFR-2 (Trust & Transparency):** The Facebook connection step must be a
+  genuine, recognizable Facebook consent screen — never an experience that
+  could be mistaken for collecting the owner's Facebook password directly
+  within this product.
+- **NFR-3 (Continuity across phases):** The owner-facing experience
+  (connect → generate ad → set budget → launch) must look and behave
+  identically whether the underlying connection is brokered through the
+  Phase 1 partner or a direct Phase 2 relationship with Meta — the owner
+  should never need to know, or care, which is in effect.
+- **NFR-4 (Data ownership boundary):** Only this module may hold a
+  business's Facebook/ad-platform credentials at any point in time; every
+  other part of the product receives leads and spend data secondhand,
+  never direct platform access.
+- **NFR-5 (Compliance):** Ad copy generated for regulated industries (e.g.
+  financial services, insurance) must be reviewed for required disclaimers
+  before use, consistent with how the rest of the product handles regulated
+  content.
+- **NFR-6 (Resilience to partner dependency):** Because Phase 1 relies on
+  an outside partner's own access to Facebook, an outage, policy change, or
+  loss of access on the partner's side is treated as a real risk to
+  campaign launches — not a hidden dependency.
+- **NFR-7 (Migration continuity):** Moving a business from the Phase 1
+  partner-brokered connection to the Phase 2 direct connection must not
+  require the owner to rebuild their campaign from scratch, and should
+  avoid requiring them to reconnect Facebook if at all possible.
+- **NFR-8 (Usability):** An owner with no prior Facebook advertising
+  experience must be able to complete the entire connect → launch flow
+  without needing outside instructions.
+
+## 5. Out of Scope (Non-Goals)
+
+- Writing or generating the business's giveaway webpage content — that is
+  owned by a separate part of the product.
+- Capturing, notifying on, or scripting responses to leads once they
+  arrive — that is owned by the lead-response system; this module's job
+  ends the moment a lead is handed off.
+- Holding or managing ad spend as a wallet or balance — Facebook bills the
+  business directly.
+- A custom landing page for the ad — the ad always points to Facebook's own
+  native lead form.
+- Any other part of the product independently connecting to Facebook — this
+  module is the sole gatekeeper of that relationship.
+- A direct (non-partner) relationship with Meta in Phase 1 — deliberately
+  deferred to Phase 2, after the product is validated with real users.
+
+## 6. Success Criteria
+
+**Phase 1 (soft launch):**
+- An owner can connect Facebook and see a genuinely live campaign appear in
+  their own Facebook Ads account after clicking Launch.
+- Live lead delivery is confirmed active immediately after launch, not
+  assumed.
+- Ad generation reliably produces a usable headline, body copy, and image
+  for a business without manual rework.
+
+**Phase 2 (owned integration):**
+- The same guarantees above continue to hold, now delivered through a
+  direct relationship with Meta, with existing Phase 1 businesses carried
+  over without a confusing or repeated setup experience.
+
+## 7. Open Questions (Product-Level)
+
+- Which third-party partner should be used for Phase 1 — not yet decided;
+  needs evaluation for whether it genuinely supports Facebook's native lead
+  form flow, not just generic ad posting.
+- What specifically triggers the move from Phase 1 to Phase 2 (a number of
+  active campaigns, a revenue milestone, elapsed time)? Not yet defined.
+- When moving a business from Phase 1 to Phase 2, will they need to
+  reconnect Facebook, or can the existing connection be preserved? Needs to
+  be understood before a Phase 1 partner is chosen, not after.
+- Since ad copy is generated independently from the business's giveaway
+  webpage content, should the two be checked for consistency so a consumer
+  doesn't see one message in the ad and a different one on the page they
+  land on afterward?
+
+## 8. Key Risks
+
+- **Partner dependency (Phase 1):** campaign launches depend on an outside
+  partner's own standing with Facebook; if that access is revoked or
+  degraded, campaigns break for reasons outside the product's control.
+- **Migration risk (Phase 1 → Phase 2):** switching partners could force
+  existing businesses to reconnect Facebook or re-grant permissions if not
+  planned for up front.
+- **Platform approval (Phase 2):** Meta's own review and verification
+  process for a direct integration is the single biggest long-term
+  timeline risk for this module.
+- **Ad policy compliance:** Facebook can reject or disable ad accounts for
+  policy violations; regulated-industry ad copy carries elevated risk here.
+- **Concentrated credential risk:** because this module is the sole holder
+  of each business's Facebook connection, a broken or expired connection
+  simultaneously breaks both ad management and lead delivery for that
+  business.
+- **Message mismatch:** the ad and the webpage it eventually points a
+  consumer toward are generated independently, so their messaging could
+  drift apart over time.
+
+---
+
+*Companion to `docs/modules/fb-integration-PRD.md` (build-oriented PRD) —
+this document restates the same module in product-requirements language
+only, with no implementation detail, for stakeholder review.*
