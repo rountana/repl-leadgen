@@ -102,10 +102,16 @@ export function Connect() {
         throw new Error(body?.error ?? "Server error");
       }
       const { authUrl } = await res.json() as { authUrl: string };
-      // Use top-level navigation so the redirect escapes any iframe (e.g. the
-      // Replit preview pane). Facebook blocks loading inside iframes and returns
-      // "refused to connect" if we don't break out first.
-      (window.top ?? window).location.href = authUrl;
+      // Facebook blocks loading inside iframes ("refused to connect").
+      // In production the app runs at the top level, so a normal redirect works.
+      // In embedded preview contexts (e.g. Replit's iframe), window.top is
+      // cross-origin and can't be navigated — open a new tab instead so the
+      // OAuth flow can complete.
+      if (window.self === window.top) {
+        window.location.href = authUrl;
+      } else {
+        window.open(authUrl, "_blank", "noopener");
+      }
     } catch (err: any) {
       setLoginLoading(false);
       setOauthError(err?.message ?? "Failed to start Facebook login. Please try again.");
