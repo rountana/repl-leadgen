@@ -197,9 +197,10 @@ router.get("/auth/facebook/callback", async (req, res): Promise<void> => {
       return;
     }
 
-    // 3b. Multiple options → let the frontend show a picker
-    const fbData = Buffer.from(JSON.stringify({ pages, adAccounts })).toString("base64url");
-    res.redirect(`${frontend}/connect?fb_data=${fbData}`);
+    // 3b. Multiple options → let the frontend show a picker.
+    // Use standard base64 (not base64url) so the browser's atob() can decode it.
+    const fbData = Buffer.from(JSON.stringify({ pages, adAccounts })).toString("base64");
+    res.redirect(`${frontend}/connect?fb_data=${encodeURIComponent(fbData)}`);
   } catch (err: any) {
     logger.error({ err, userId }, "FB OAuth callback error");
     res.redirect(

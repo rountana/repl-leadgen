@@ -76,7 +76,7 @@ export function Connect() {
     } else if (fbData) {
       try {
         const { pages, adAccounts } = JSON.parse(
-          Buffer.from(fbData, "base64").toString("utf8"),
+          atob(decodeURIComponent(fbData)),
         ) as { pages: FbPage[]; adAccounts: FbAdAccount[] };
         setPickerPages(pages);
         setPickerAccounts(adAccounts);
