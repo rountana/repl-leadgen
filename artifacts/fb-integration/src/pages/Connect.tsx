@@ -8,6 +8,7 @@ import {
   Loader2,
   AlertCircle,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +25,11 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+/** Zernio requires adAccountId in the form act_<digits>. Anything else (e.g. act_mock_789) will be rejected. */
+function isRealAdAccountId(id: string | null | undefined): boolean {
+  return /^act_\d+$/.test(id ?? "");
+}
 
 interface FbPage { id: string; name: string }
 interface FbAdAccount { id: string; name: string }
@@ -252,23 +258,52 @@ export function Connect() {
                   <Badge variant="secondary">{connection.adAccountId}</Badge>
                 </div>
               )}
-              <div className="flex gap-3 pt-2">
-                <Button className="flex-1" onClick={() => setLocation("/campaign/new")}>
-                  Continue to Ad Creative
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowUpdate(true)}>
-                  <RefreshCw className="w-4 h-4 mr-1" /> Switch account
-                </Button>
-                <Button
-                  variant="ghost" size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={handleDisconnect}
-                  disabled={deleteConnection.isPending}
-                >
-                  Disconnect
-                </Button>
-              </div>
+              {isRealAdAccountId(connection.adAccountId) ? (
+                <div className="flex gap-3 pt-2">
+                  <Button className="flex-1" onClick={() => setLocation("/campaign/new")}>
+                    Continue to Ad Creative
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowUpdate(true)}>
+                    <RefreshCw className="w-4 h-4 mr-1" /> Switch account
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={handleDisconnect}
+                    disabled={deleteConnection.isPending}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <div className="pt-2 space-y-3">
+                  <div className="flex gap-3 items-start p-3 rounded-lg bg-amber-50 border border-amber-200">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-amber-900">Ad account needs reconnecting</p>
+                      <p className="text-amber-800 mt-0.5">
+                        The linked ad account ID ({connection.adAccountId}) isn't a real Facebook Ad Account.
+                        Disconnect and click <strong>Continue with Facebook</strong> again to pull your real account.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-amber-300 text-amber-900 hover:bg-amber-50"
+                      onClick={handleDisconnect}
+                      disabled={deleteConnection.isPending}
+                    >
+                      {deleteConnection.isPending ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Disconnecting…</>
+                      ) : (
+                        <><RefreshCw className="w-4 h-4 mr-2" />Disconnect &amp; Reconnect</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         ) : (
