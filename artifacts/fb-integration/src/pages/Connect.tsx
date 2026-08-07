@@ -1,22 +1,19 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import {
   Facebook,
   ChevronRight,
   CheckCircle2,
   RefreshCw,
-  ExternalLink,
   Loader2,
-  ArrowLeft,
-  Monitor,
-  Hash,
+  AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { WizardProgress } from "@/components/WizardProgress";
 import {
   useGetFbConnection,
@@ -26,8 +23,15 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+interface FbPage { id: string; name: string }
+interface FbAdAccount { id: string; name: string }
+
 export function Connect() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
   const queryClient = useQueryClient();
 
   const { data: connection, isLoading } = useGetFbConnection({
@@ -38,59 +42,96 @@ export function Connect() {
 
   const isConnected = connection?.status === "connected";
 
-  // UI state
-  const [showForm, setShowForm] = useState(false);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [fields, setFields] = useState({ fbPageId: "", fbPageName: "", adAccountId: "", adAccountName: "" });
+  // ── OAuth result state ────────────────────────────────────────────────────
+  const [oauthError, setOauthError] = useState<string | null>(null);
+  const [pickerPages, setPickerPages] = useState<FbPage[] | null>(null);
+  const [pickerAccounts, setPickerAccounts] = useState<FbAdAccount[] | null>(null);
+  const [selectedPage, setSelectedPage] = useState<FbPage | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<FbAdAccount | null>(null);
+  const [pickerSaving, setPickerSaving] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
 
-  const set = (k: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setFields((f) => ({ ...f, [k]: e.target.value }));
+  // ── Login button state ────────────────────────────────────────────────────
+  const [loginLoading, setLoginLoading] = useState(false);
 
-  const handleSave = async () => {
-    setFormError(null);
-    if (!fields.fbPageId.trim()) { setFormError("Facebook Page ID is required."); return; }
-    if (!fields.adAccountId.trim()) { setFormError("Ad Account ID is required."); return; }
-    if (!fields.adAccountId.startsWith("act_")) {
-      setFormError("Ad Account ID must start with act_ — copy it exactly from Facebook Business Settings.");
-      return;
-    }
-    try {
-      await createConnection.mutateAsync({ data: {
-        fbPageId: fields.fbPageId.trim(),
-        fbPageName: fields.fbPageName.trim() || undefined,
-        adAccountId: fields.adAccountId.trim(),
-        adAccountName: fields.adAccountName.trim() || undefined,
-      }});
+  // ── Process OAuth redirect params on mount ─────────────────────────────
+  useEffect(() => {
+    const fbConnected = params.get("fb_connected");
+    const fbError = params.get("fb_error");
+    const fbData = params.get("fb_data");
+
+    if (fbConnected === "1") {
+      // Auto-connected — invalidate and clean up URL
       queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
-      setShowForm(false);
-      setStep(1);
+      window.history.replaceState({}, "", `${basePath}/connect`);
+    } else if (fbError) {
+      setOauthError(decodeURIComponent(fbError));
+      window.history.replaceState({}, "", `${basePath}/connect`);
+    } else if (fbData) {
+      try {
+        const { pages, adAccounts } = JSON.parse(
+          Buffer.from(fbData, "base64").toString("utf8"),
+        ) as { pages: FbPage[]; adAccounts: FbAdAccount[] };
+        setPickerPages(pages);
+        setPickerAccounts(adAccounts);
+        setSelectedPage(pages[0] ?? null);
+        setSelectedAccount(adAccounts[0] ?? null);
+        window.history.replaceState({}, "", `${basePath}/connect`);
+      } catch {
+        setOauthError("Failed to read Facebook account data. Please try again.");
+      }
+    }
+  // Only run on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleFacebookLogin = async () => {
+    setLoginLoading(true);
+    setOauthError(null);
+    try {
+      const res = await fetch("/api/auth/facebook/init", { credentials: "include" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as any;
+        throw new Error(body?.error ?? "Server error");
+      }
+      const { authUrl } = await res.json() as { authUrl: string };
+      window.location.href = authUrl;
+    } catch (err: any) {
+      setLoginLoading(false);
+      setOauthError(err?.message ?? "Failed to start Facebook login. Please try again.");
+    }
+  };
+
+  const handlePickerSave = async () => {
+    if (!selectedPage || !selectedAccount) return;
+    setPickerSaving(true);
+    try {
+      await createConnection.mutateAsync({
+        data: {
+          fbPageId: selectedPage.id,
+          fbPageName: selectedPage.name,
+          adAccountId: selectedAccount.id,
+          adAccountName: selectedAccount.name,
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
+      setPickerPages(null);
+      setPickerAccounts(null);
     } catch {
-      setFormError("Couldn't save your details. Double-check the IDs and try again.");
+      setOauthError("Failed to save your selection. Please try again.");
+    } finally {
+      setPickerSaving(false);
     }
   };
 
   const handleDisconnect = async () => {
     await deleteConnection.mutateAsync();
     queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
+    setShowUpdate(false);
   };
 
-  // ── Step content ───────────────────────────────────────────────────────────
-  const steps = [
-    {
-      label: "Find your Page ID",
-      icon: <Monitor className="w-5 h-5" />,
-    },
-    {
-      label: "Find your Ad Account ID",
-      icon: <Hash className="w-5 h-5" />,
-    },
-    {
-      label: "Save & connect",
-      icon: <CheckCircle2 className="w-5 h-5" />,
-    },
-  ];
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <WizardProgress currentStep={1} />
@@ -102,9 +143,17 @@ export function Connect() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight">Connect Facebook</h1>
           <p className="text-muted-foreground mt-2">
-            Link your Facebook Business Page to start running targeted ads.
+            Log in with Facebook to link your Business Page and Ad Account — we'll pull the details automatically.
           </p>
         </div>
+
+        {/* OAuth error */}
+        {oauthError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{oauthError}</AlertDescription>
+          </Alert>
+        )}
 
         {isLoading ? (
           <Card>
@@ -114,7 +163,65 @@ export function Connect() {
               <Skeleton className="h-4 w-3/4" />
             </CardContent>
           </Card>
-        ) : isConnected && connection && !showForm ? (
+        ) : pickerPages && pickerAccounts ? (
+          /* ── Multi-account picker ── */
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                Facebook connected — choose your accounts
+              </CardTitle>
+              <CardDescription>
+                We found multiple Pages or Ad Accounts. Select which ones to use for your ads.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Facebook Page</label>
+                <div className="relative">
+                  <select
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={selectedPage?.id ?? ""}
+                    onChange={(e) => setSelectedPage(pickerPages.find((p) => p.id === e.target.value) ?? null)}
+                  >
+                    {pickerPages.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.id})</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Ad Account</label>
+                <div className="relative">
+                  <select
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={selectedAccount?.id ?? ""}
+                    onChange={(e) => setSelectedAccount(pickerAccounts.find((a) => a.id === e.target.value) ?? null)}
+                  >
+                    {pickerAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.id})</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={handlePickerSave}
+                disabled={!selectedPage || !selectedAccount || pickerSaving}
+              >
+                {pickerSaving ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>
+                ) : (
+                  <>Connect <ChevronRight className="w-4 h-4 ml-2" /></>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : isConnected && connection && !showUpdate ? (
           /* ── Already connected ── */
           <Card className="border-green-200 bg-green-50/50">
             <CardHeader>
@@ -150,8 +257,8 @@ export function Connect() {
                   Continue to Ad Creative
                   <ChevronRight className="w-4 h-4 ml-2" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => { setShowForm(true); setStep(1); }}>
-                  <RefreshCw className="w-4 h-4 mr-1" /> Update
+                <Button variant="outline" size="sm" onClick={() => setShowUpdate(true)}>
+                  <RefreshCw className="w-4 h-4 mr-1" /> Switch account
                 </Button>
                 <Button
                   variant="ghost" size="sm"
@@ -165,257 +272,44 @@ export function Connect() {
             </CardContent>
           </Card>
         ) : (
-          /* ── Step-by-step guide ── */
+          /* ── Login button (initial or update) ── */
           <>
-            {/* Step progress pills */}
-            <div className="flex items-center gap-2">
-              {steps.map((s, i) => {
-                const n = (i + 1) as 1 | 2 | 3;
-                const active = step === n;
-                const done = step > n;
-                return (
-                  <div key={n} className="flex items-center gap-2 flex-1">
-                    <button
-                      onClick={() => done && setStep(n)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                        active
-                          ? "bg-primary text-primary-foreground"
-                          : done
-                          ? "bg-green-100 text-green-700 cursor-pointer hover:bg-green-200"
-                          : "bg-secondary text-muted-foreground cursor-default"
-                      }`}
-                    >
-                      <span className="w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold
-                        bg-white/20">
-                        {done ? <CheckCircle2 className="w-3.5 h-3.5" /> : n}
-                      </span>
-                      <span className="hidden sm:inline">{s.label}</span>
-                    </button>
-                    {i < steps.length - 1 && (
-                      <div className={`flex-1 h-0.5 rounded ${step > n ? "bg-green-300" : "bg-border"}`} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Step 1 — Page ID */}
-            {step === 1 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Monitor className="w-5 h-5 text-primary" />
-                    Find your Facebook Page ID
-                  </CardTitle>
-                  <CardDescription>
-                    This is the unique number that identifies your business's Facebook Page.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-lg border bg-secondary/30 p-4 space-y-3 text-sm">
-                    <p className="font-medium">How to find it:</p>
-                    <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                      <li>
-                        Go to your{" "}
-                        <a
-                          href="https://www.facebook.com/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary underline underline-offset-2 inline-flex items-center gap-1"
-                        >
-                          Facebook Page <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </li>
-                      <li>Click <strong>About</strong> in the left sidebar</li>
-                      <li>
-                        Scroll down to <strong>Page transparency</strong> — your Page ID is the number
-                        shown there (e.g. <code className="bg-secondary px-1.5 py-0.5 rounded text-xs">123456789012345</code>)
-                      </li>
-                    </ol>
-                    <p className="text-xs text-muted-foreground pt-1">
-                      Alternatively, open your page URL and look for <code className="bg-secondary px-1.5 py-0.5 rounded">id=</code> in the address bar.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="fbPageId">Paste your Page ID</Label>
-                    <Input
-                      id="fbPageId"
-                      placeholder="e.g. 123456789012345"
-                      value={fields.fbPageId}
-                      onChange={set("fbPageId")}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="fbPageName">
-                      Page name <span className="text-muted-foreground text-xs">(optional — just for display)</span>
-                    </Label>
-                    <Input
-                      id="fbPageName"
-                      placeholder="e.g. Acme HVAC"
-                      value={fields.fbPageName}
-                      onChange={set("fbPageName")}
-                    />
-                  </div>
-
-                  <Button
-                    className="w-full"
-                    onClick={() => {
-                      if (!fields.fbPageId.trim()) { setFormError("Please enter your Page ID first."); return; }
-                      setFormError(null);
-                      setStep(2);
-                    }}
-                  >
-                    Next — Find Ad Account ID
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  {formError && <p className="text-sm text-destructive">{formError}</p>}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 2 — Ad Account ID */}
-            {step === 2 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Hash className="w-5 h-5 text-primary" />
-                    Find your Ad Account ID
-                  </CardTitle>
-                  <CardDescription>
-                    This is in your Facebook Business Manager and always starts with <code className="bg-secondary px-1 rounded text-xs">act_</code>.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-lg border bg-secondary/30 p-4 space-y-3 text-sm">
-                    <p className="font-medium">How to find it:</p>
-                    <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-                      <li>
-                        Open{" "}
-                        <a
-                          href="https://business.facebook.com/settings/ad-accounts"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary underline underline-offset-2 inline-flex items-center gap-1"
-                        >
-                          Facebook Business Settings → Ad Accounts <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </li>
-                      <li>Click on your ad account name</li>
-                      <li>
-                        Copy the <strong>Account ID</strong> shown on the right — it looks like{" "}
-                        <code className="bg-secondary px-1.5 py-0.5 rounded text-xs">act_123456789</code>
-                      </li>
-                    </ol>
-                    <p className="text-xs text-muted-foreground pt-1">
-                      If you only see the number without <code className="bg-secondary px-1.5 py-0.5 rounded">act_</code>, add it in front — e.g. <code className="bg-secondary px-1.5 py-0.5 rounded">act_987654321</code>.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="adAccountId">Paste your Ad Account ID</Label>
-                    <Input
-                      id="adAccountId"
-                      placeholder="act_123456789"
-                      value={fields.adAccountId}
-                      onChange={set("adAccountId")}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="adAccountName">
-                      Account name <span className="text-muted-foreground text-xs">(optional)</span>
-                    </Label>
-                    <Input
-                      id="adAccountName"
-                      placeholder="e.g. Acme Ads"
-                      value={fields.adAccountName}
-                      onChange={set("adAccountName")}
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setStep(1)}>
-                      <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={() => {
-                        if (!fields.adAccountId.trim()) { setFormError("Please enter your Ad Account ID."); return; }
-                        if (!fields.adAccountId.startsWith("act_")) {
-                          setFormError("Ad Account ID must start with act_");
-                          return;
-                        }
-                        setFormError(null);
-                        setStep(3);
-                      }}
-                    >
-                      Next — Review & connect
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                  {formError && <p className="text-sm text-destructive">{formError}</p>}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 3 — Review & save */}
-            {step === 3 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-primary" />
-                    Review & connect
-                  </CardTitle>
-                  <CardDescription>
-                    Make sure these look right, then hit Connect to link your account.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="rounded-lg border divide-y">
-                    <div className="flex items-center justify-between px-4 py-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Facebook Page</p>
-                        <p className="font-medium">{fields.fbPageName || "—"}</p>
-                      </div>
-                      <code className="text-xs bg-secondary px-2 py-1 rounded">{fields.fbPageId}</code>
-                    </div>
-                    <div className="flex items-center justify-between px-4 py-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Ad Account</p>
-                        <p className="font-medium">{fields.adAccountName || "—"}</p>
-                      </div>
-                      <code className="text-xs bg-secondary px-2 py-1 rounded">{fields.adAccountId}</code>
-                    </div>
-                  </div>
-
-                  {formError && <p className="text-sm text-destructive">{formError}</p>}
-
-                  <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setStep(2)}>
-                      <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                    </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={handleSave}
-                      disabled={createConnection.isPending}
-                    >
-                      {createConnection.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Connecting…</>
-                      ) : (
-                        <>Connect Facebook <ChevronRight className="w-4 h-4 ml-2" /></>
-                      )}
-                    </Button>
-                  </div>
-
-                  <p className="text-xs text-center text-muted-foreground">
-                    Your ad account is accessed securely through our platform — we never post on your behalf or touch anything outside of the campaigns you create here.
+            <Card>
+              <CardContent className="p-8 flex flex-col items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-[#1877F2]/10 flex items-center justify-center">
+                  <Facebook className="w-7 h-7 text-[#1877F2]" />
+                </div>
+                <div className="text-center space-y-1.5">
+                  <p className="font-semibold text-lg">One click to connect</p>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Log in with Facebook and we'll automatically find your Business Page and Ad Account — no copying IDs.
                   </p>
-                </CardContent>
-              </Card>
-            )}
+                </div>
 
-            {isConnected && (
-              <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={() => setShowForm(false)}>
+                <Button
+                  className="w-full max-w-xs h-11 text-base font-semibold gap-3 bg-[#1877F2] hover:bg-[#166fe5] text-white"
+                  onClick={handleFacebookLogin}
+                  disabled={loginLoading}
+                >
+                  {loginLoading ? (
+                    <><Loader2 className="w-5 h-5 animate-spin" />Redirecting to Facebook…</>
+                  ) : (
+                    <><Facebook className="w-5 h-5" />Continue with Facebook</>
+                  )}
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center max-w-xs">
+                  We request read-only access to your Pages and Ad Accounts. We never post on your behalf or access private messages.
+                </p>
+              </CardContent>
+            </Card>
+
+            {showUpdate && (
+              <Button
+                variant="ghost" size="sm"
+                className="w-full text-muted-foreground"
+                onClick={() => setShowUpdate(false)}
+              >
                 Cancel
               </Button>
             )}

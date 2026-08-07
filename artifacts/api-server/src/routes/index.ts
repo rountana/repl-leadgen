@@ -6,6 +6,7 @@ import industriesRouter from "./industries";
 import examplesRouter from "./examples";
 import aiRouter from "./ai";
 import fbRouter from "./fb";
+import fbAuthRouter from "./fbAuth";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(industriesRouter);
 router.use(examplesRouter);
 router.use(aiRouter);
 router.use(fbRouter);
+router.use(fbAuthRouter);
 
 export default router;
