@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   useCreateFbCampaign,
   useLaunchFbCampaign,
+  useUpdateFbCampaign,
   useGetFbCampaignLeadStatus,
   getGetFbCampaignLeadStatusQueryKey,
   type FbAdDraft,
@@ -29,11 +30,13 @@ interface LaunchConfirmProps {
   dailyBudget: number;
   radiusMiles: number;
   onReset: () => void;
+  /** When set, patch-then-launch this existing campaign instead of creating a new one */
+  campaignId?: number;
 }
 
 type LaunchPhase = "creating" | "launching" | "done" | "error";
 
-export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset }: LaunchConfirmProps) {
+export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, campaignId }: LaunchConfirmProps) {
   const [, setLocation] = useLocation();
   const [phase, setPhase] = useState<LaunchPhase>("creating");
   const [campaign, setCampaign] = useState<FbCampaign | null>(null);
@@ -41,6 +44,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset }: La
   const hasFired = useRef(false);
 
   const createCampaign = useCreateFbCampaign();
+  const updateCampaign = useUpdateFbCampaign();
   const launchCampaign = useLaunchFbCampaign();
 
   const { data: leadStatus, isLoading: isLeadLoading } = useGetFbCampaignLeadStatus(
@@ -48,27 +52,37 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset }: La
     { query: { queryKey: getGetFbCampaignLeadStatusQueryKey(campaign?.id ?? 0), enabled: !!campaign && phase === "done" } },
   );
 
+  const campaignFields = {
+    headline: adDraft.headline,
+    bodyText: adDraft.bodyText,
+    imageUrl: adDraft.imageUrl,
+    dailyBudgetCents: dailyBudget * 100,
+    targetingRadiusMiles: radiusMiles,
+    targetingLatitude: 37.7749,  // Phase 1 mock — geocoded from connection in Phase 2
+    targetingLongitude: -122.4194,
+  };
+
   const runLaunchSequence = async () => {
     if (hasFired.current) return;
     hasFired.current = true;
 
     try {
-      setPhase("creating");
+      let targetId: number;
 
-      const newCampaign = await createCampaign.mutateAsync({
-        data: {
-          headline: adDraft.headline,
-          bodyText: adDraft.bodyText,
-          imageUrl: adDraft.imageUrl,
-          dailyBudgetCents: dailyBudget * 100,
-          targetingRadiusMiles: radiusMiles,
-          targetingLatitude: 37.7749,  // Phase 1 mock — geocoded from connection in Phase 2
-          targetingLongitude: -122.4194,
-        },
-      });
+      if (campaignId) {
+        // Edit & retry mode — patch the existing campaign then launch it
+        setPhase("creating");
+        await updateCampaign.mutateAsync({ id: campaignId, data: campaignFields });
+        targetId = campaignId;
+      } else {
+        // New campaign mode — create then launch
+        setPhase("creating");
+        const newCampaign = await createCampaign.mutateAsync({ data: campaignFields });
+        targetId = newCampaign.id;
+      }
 
       setPhase("launching");
-      const launched = await launchCampaign.mutateAsync({ id: newCampaign.id });
+      const launched = await launchCampaign.mutateAsync({ id: targetId });
       setCampaign(launched);
       setPhase("done");
     } catch (err: unknown) {

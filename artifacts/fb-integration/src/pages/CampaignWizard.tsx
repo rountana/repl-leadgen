@@ -1,12 +1,17 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WizardProgress } from "@/components/WizardProgress";
 import { AdPreview } from "@/pages/AdPreview";
 import { BudgetTargeting } from "@/pages/BudgetTargeting";
 import { LaunchConfirm } from "@/pages/LaunchConfirm";
-import { useGetFbConnection, getGetFbConnectionQueryKey, type FbAdDraft } from "@workspace/api-client-react";
+import {
+  useGetFbConnection,
+  useGetFbCampaign,
+  getGetFbConnectionQueryKey,
+  type FbAdDraft,
+} from "@workspace/api-client-react";
 
 type WizardStep = 2 | 3 | 4;
 
@@ -19,20 +24,52 @@ interface WizardState {
 
 export function CampaignWizard() {
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const editId = new URLSearchParams(search).get("edit")
+    ? Number(new URLSearchParams(search).get("edit"))
+    : null;
+
   const [wizard, setWizard] = useState<WizardState>({
     step: 2,
     adDraft: null,
     dailyBudget: 10,
     radiusMiles: 10,
   });
+  const [preloaded, setPreloaded] = useState(false);
 
   const { data: connection, isLoading, isError } = useGetFbConnection({
     query: { queryKey: getGetFbConnectionQueryKey(), retry: false },
   });
 
+  // In edit mode, load existing campaign data and pre-fill the wizard
+  const { data: editCampaign, isLoading: isEditLoading } = useGetFbCampaign(
+    editId ?? 0,
+    { query: { enabled: !!editId } },
+  );
+
+  useEffect(() => {
+    if (editCampaign && !preloaded) {
+      setWizard({
+        step: 2,
+        adDraft: editCampaign.headline
+          ? {
+              headline: editCampaign.headline,
+              bodyText: editCampaign.bodyText ?? "",
+              imageUrl: editCampaign.imageUrl ?? "",
+            }
+          : null,
+        dailyBudget: editCampaign.dailyBudgetCents
+          ? Math.round(editCampaign.dailyBudgetCents / 100)
+          : 10,
+        radiusMiles: editCampaign.targetingRadiusMiles ?? 10,
+      });
+      setPreloaded(true);
+    }
+  }, [editCampaign, preloaded]);
+
   const isConnected = connection?.status === "connected";
 
-  if (isLoading) {
+  if (isLoading || (editId && isEditLoading)) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <WizardProgress currentStep={wizard.step} />
@@ -114,6 +151,7 @@ export function CampaignWizard() {
           dailyBudget={wizard.dailyBudget}
           radiusMiles={wizard.radiusMiles}
           onReset={handleReset}
+          campaignId={editId ?? undefined}
         />
       )}
     </div>

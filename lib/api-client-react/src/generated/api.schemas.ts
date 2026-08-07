@@ -294,6 +294,16 @@ export interface FbCampaign {
   updatedAt: string;
 }
 
+export interface FbCampaignUpdate {
+  headline?: string;
+  bodyText?: string;
+  imageUrl?: string;
+  dailyBudgetCents?: number;
+  targetingRadiusMiles?: number;
+  targetingLatitude?: number;
+  targetingLongitude?: number;
+}
+
 export interface FbCampaignInput {
   headline: string;
   bodyText: string;

@@ -415,6 +415,16 @@ export const CreateFbCampaignBody = zod.object({
   "targetingLongitude": zod.number()
 })
 
+export const UpdateFbCampaignBody = zod.object({
+  "headline": zod.string().optional(),
+  "bodyText": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "dailyBudgetCents": zod.number().optional(),
+  "targetingRadiusMiles": zod.number().optional(),
+  "targetingLatitude": zod.number().optional(),
+  "targetingLongitude": zod.number().optional(),
+})
+
 export const CreateFbCampaignResponse = zod.object({
   "id": zod.number(),
   "userId": zod.string(),

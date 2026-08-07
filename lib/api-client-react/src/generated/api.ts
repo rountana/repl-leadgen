@@ -30,6 +30,7 @@ import type {
   FbAdGenerationInput,
   FbCampaign,
   FbCampaignInput,
+  FbCampaignUpdate,
   FbConnection,
   FbConnectionInput,
   FbLeadStatus,
@@ -1665,6 +1666,38 @@ export const launchFbCampaign = async (id: number, options?: Parameters<typeof c
 
 
 
+
+export const getUpdateFbCampaignUrl = (id: number) => `/api/fb/campaigns/${id}`;
+
+export const updateFbCampaign = async (id: number, fbCampaignUpdate: FbCampaignUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign> => {
+  return customFetch<FbCampaign>(getUpdateFbCampaignUrl(id), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
+    body: JSON.stringify(fbCampaignUpdate),
+  });
+};
+
+export const getUpdateFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext>, request?: SecondParameter<typeof customFetch> }
+): UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext> => {
+  const mutationKey = ['updateFbCampaign'];
+  const { mutation: mutationOptions, request: requestOptions } = options ?? { mutation: { mutationKey } };
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFbCampaign>>, { id: number; data: BodyType<FbCampaignUpdate> }> = (props) => {
+    const { id, data } = props ?? {};
+    return updateFbCampaign(id, data, requestOptions);
+  };
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateFbCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof updateFbCampaign>>>;
+export type UpdateFbCampaignMutationError = ErrorType<ErrorResponse>;
+
+export const useUpdateFbCampaign = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext>, request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext> => {
+  return useMutation(getUpdateFbCampaignMutationOptions(options));
+};
 
 export const getLaunchFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}

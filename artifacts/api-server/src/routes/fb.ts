@@ -7,6 +7,7 @@ import {
   CreateFbConnectionBody,
   GenerateFbAdBody,
   CreateFbCampaignBody,
+  UpdateFbCampaignBody,
   GetFbCampaignParams,
   LaunchFbCampaignParams,
   GetFbCampaignLeadStatusParams,
@@ -234,6 +235,36 @@ router.get("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<void
     return;
   }
   res.json(serializeCampaign(campaign));
+});
+
+// PATCH /fb/campaigns/:id — update fields on a draft or failed campaign, reset to draft
+router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<void> => {
+  const params = GetFbCampaignParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const userId = req.userId as string;
+
+  const [existing] = await db
+    .select()
+    .from(fbCampaignsTable)
+    .where(and(eq(fbCampaignsTable.id, params.data.id), eq(fbCampaignsTable.userId, userId)));
+
+  if (!existing) { res.status(404).json({ error: "Campaign not found" }); return; }
+
+  if (!["draft", "error"].includes(existing.status)) {
+    res.status(409).json({ error: "Only draft or failed campaigns can be edited." });
+    return;
+  }
+
+  const patch = UpdateFbCampaignBody.safeParse(req.body);
+  if (!patch.success) { res.status(400).json({ error: patch.error.message }); return; }
+
+  const [updated] = await db
+    .update(fbCampaignsTable)
+    .set({ ...patch.data, status: "draft", leadDeliveryStatus: "unverified", errorMessage: null })
+    .where(eq(fbCampaignsTable.id, existing.id))
+    .returning();
+
+  res.json(serializeCampaign(updated));
 });
 
 // POST /fb/campaigns/:id/launch

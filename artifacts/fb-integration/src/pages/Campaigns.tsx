@@ -11,13 +11,19 @@ import {
   ArrowRight,
   ExternalLink,
   TrendingUp,
+  RefreshCw,
+  Pencil,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useListFbCampaigns,
+  useLaunchFbCampaign,
+  getListFbCampaignsQueryKey,
   type FbCampaign,
   type FbCampaignStatus,
   type FbCampaignLeadDeliveryStatus,
@@ -76,6 +82,14 @@ function LeadDeliveryPill({ status }: { status: FbCampaignLeadDeliveryStatus }) 
 }
 
 function CampaignCard({ campaign }: { campaign: FbCampaign }) {
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const launch = useLaunchFbCampaign({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListFbCampaignsQueryKey() }),
+    },
+  });
+
   const dailyBudgetDollars = campaign.dailyBudgetCents
     ? Math.round(campaign.dailyBudgetCents / 100)
     : null;
@@ -143,15 +157,37 @@ function CampaignCard({ campaign }: { campaign: FbCampaign }) {
                 <p className="text-xs text-muted-foreground mt-1">Usually live within minutes</p>
               </div>
             ) : campaign.status === "error" ? (
-              <div className="text-center space-y-1">
-                <p className="text-xs font-medium text-destructive">Failed to launch</p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-destructive text-center">Failed to launch</p>
                 {campaign.errorMessage && (
-                  <p className="text-xs text-muted-foreground break-words leading-relaxed">
-                    {campaign.errorMessage.length > 120
-                      ? campaign.errorMessage.slice(0, 120) + "…"
+                  <p className="text-xs text-muted-foreground break-words leading-relaxed text-center">
+                    {campaign.errorMessage.length > 100
+                      ? campaign.errorMessage.slice(0, 100) + "…"
                       : campaign.errorMessage}
                   </p>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1.5 bg-background text-xs"
+                  disabled={launch.isPending}
+                  onClick={() => launch.mutate({ id: campaign.id })}
+                >
+                  {launch.isPending ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" />Retrying…</>
+                  ) : (
+                    <><RefreshCw className="w-3 h-3" />Retry Launch</>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full gap-1.5 text-xs text-muted-foreground"
+                  onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit &amp; Retry
+                </Button>
               </div>
             ) : (
               <p className="text-xs text-muted-foreground text-center">Draft</p>
