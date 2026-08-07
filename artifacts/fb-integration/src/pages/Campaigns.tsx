@@ -143,7 +143,16 @@ function CampaignCard({ campaign }: { campaign: FbCampaign }) {
                 <p className="text-xs text-muted-foreground mt-1">Usually live within minutes</p>
               </div>
             ) : campaign.status === "error" ? (
-              <p className="text-xs text-destructive text-center">Campaign failed to launch</p>
+              <div className="text-center space-y-1">
+                <p className="text-xs font-medium text-destructive">Failed to launch</p>
+                {campaign.errorMessage && (
+                  <p className="text-xs text-muted-foreground break-words leading-relaxed">
+                    {campaign.errorMessage.length > 120
+                      ? campaign.errorMessage.slice(0, 120) + "…"
+                      : campaign.errorMessage}
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground text-center">Draft</p>
             )}

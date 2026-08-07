@@ -880,6 +880,8 @@ components:
         leadDeliveryStatus:
           type: string
           enum: [unverified, active, failed]
+        errorMessage:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:

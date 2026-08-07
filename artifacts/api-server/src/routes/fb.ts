@@ -323,9 +323,10 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       "FB campaign launched",
     );
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
     const [updated] = await db
       .update(fbCampaignsTable)
-      .set({ status: "error", leadDeliveryStatus: "failed" })
+      .set({ status: "error", leadDeliveryStatus: "failed", errorMessage })
       .where(eq(fbCampaignsTable.id, campaign.id))
       .returning();
 

@@ -288,6 +288,8 @@ export interface FbCampaign {
   partnerCampaignId?: string | null;
   status: FbCampaignStatus;
   leadDeliveryStatus: FbCampaignLeadDeliveryStatus;
+  /** @nullable */
+  errorMessage?: string | null;
   createdAt: string;
   updatedAt: string;
 }
