@@ -102,7 +102,10 @@ export function Connect() {
         throw new Error(body?.error ?? "Server error");
       }
       const { authUrl } = await res.json() as { authUrl: string };
-      window.location.href = authUrl;
+      // Use top-level navigation so the redirect escapes any iframe (e.g. the
+      // Replit preview pane). Facebook blocks loading inside iframes and returns
+      // "refused to connect" if we don't break out first.
+      (window.top ?? window).location.href = authUrl;
     } catch (err: any) {
       setLoginLoading(false);
       setOauthError(err?.message ?? "Failed to start Facebook login. Please try again.");
