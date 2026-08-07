@@ -24,14 +24,16 @@ function getAppSecret(): string {
 
 /** The OAuth redirect_uri registered in the Facebook Developer App */
 function getCallbackUrl(): string {
-  const domain = process.env.REPLIT_DEV_DOMAIN;
-  return `https://${domain}/api/auth/facebook/callback`;
+  const base =
+    process.env.APP_BASE_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  return `${base}/api/auth/facebook/callback`;
 }
 
 /** Base URL of the FB integration frontend */
 function getFrontendBase(): string {
-  const domain = process.env.REPLIT_DEV_DOMAIN;
-  return `https://${domain}/fb`;
+  const base =
+    process.env.APP_BASE_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  return `${base}/fb`;
 }
 
 /**
