@@ -58,7 +58,8 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   // ── Lead magnet destination state ──────────────────────────────────────
   const [destinationUrl, setDestinationUrl] = useState(initialDestinationUrl ?? "");
   const [selectedMagnet, setSelectedMagnet] = useState<SelectedMagnet | null>(null);
-  const [magnetOpen, setMagnetOpen] = useState(!!initialDestinationUrl);
+  // Keep this visible for new campaigns so the HVCG lead-magnet flow is easy to discover.
+  const [magnetOpen, setMagnetOpen] = useState(true);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 
