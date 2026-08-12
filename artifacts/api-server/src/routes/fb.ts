@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import { getAuth } from "@clerk/express";
 import { db, fbConnectionsTable, fbCampaignsTable, fbLeadsTable } from "@workspace/db";
@@ -265,6 +265,64 @@ router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<vo
     .returning();
 
   res.json(serializeCampaign(updated));
+});
+
+// POST /fb/campaigns/sync
+// Re-checks Zernio status for all live/launching campaigns and updates DB.
+// Must be registered before /fb/campaigns/:id to avoid the param route catching "sync".
+router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+
+  // Only campaigns that have been submitted to Zernio can be synced
+  const candidates = await db
+    .select()
+    .from(fbCampaignsTable)
+    .where(
+      and(
+        eq(fbCampaignsTable.userId, userId),
+        or(
+          eq(fbCampaignsTable.status, "live"),
+          eq(fbCampaignsTable.status, "launching"),
+          eq(fbCampaignsTable.status, "paused"),
+        ),
+      ),
+    );
+
+  const syncable = candidates.filter((c) => !!c.partnerCampaignId);
+  let updated = 0;
+
+  await Promise.all(
+    syncable.map(async (campaign) => {
+      try {
+        const result = await activeFbPartnerAdapter.verifyLeadDelivery(campaign.partnerCampaignId!);
+        const isActive = result.active;
+
+        // Determine new status based on Zernio's response
+        let newStatus: string;
+        if (isActive) {
+          newStatus = "live";
+        } else {
+          // Campaign exists in Zernio but is not delivering — paused/stopped in Ads Manager
+          newStatus = "paused";
+        }
+
+        const newLeadDelivery = isActive ? "active" : "failed";
+
+        if (newStatus !== campaign.status || newLeadDelivery !== campaign.leadDeliveryStatus) {
+          await db
+            .update(fbCampaignsTable)
+            .set({ status: newStatus, leadDeliveryStatus: newLeadDelivery })
+            .where(eq(fbCampaignsTable.id, campaign.id));
+          updated++;
+          req.log.info({ campaignId: campaign.id, oldStatus: campaign.status, newStatus }, "FB campaign sync: status updated");
+        }
+      } catch (err) {
+        req.log.error({ campaignId: campaign.id, err }, "FB campaign sync: failed to check status");
+      }
+    }),
+  );
+
+  res.json({ synced: syncable.length, updated });
 });
 
 // POST /fb/campaigns/:id/launch

@@ -394,7 +394,7 @@ export const ListFbCampaignsResponseItem = zod.object({
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -437,7 +437,7 @@ export const CreateFbCampaignResponse = zod.object({
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -463,7 +463,7 @@ export const GetFbCampaignResponse = zod.object({
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -489,7 +489,7 @@ export const LaunchFbCampaignResponse = zod.object({
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()

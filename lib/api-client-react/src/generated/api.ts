@@ -1699,6 +1699,42 @@ export const useUpdateFbCampaign = <TError = ErrorType<ErrorResponse>, TContext 
   return useMutation(getUpdateFbCampaignMutationOptions(options));
 };
 
+// ── Sync all campaigns ────────────────────────────────────────────────────
+
+export interface FbCampaignsSyncResult {
+  synced: number;
+  updated: number;
+}
+
+export const getSyncFbCampaignsUrl = () => `/api/fb/campaigns/sync`;
+
+export const syncFbCampaigns = async (options?: Parameters<typeof customFetch>[1]): Promise<FbCampaignsSyncResult> => {
+  return customFetch<FbCampaignsSyncResult>(getSyncFbCampaignsUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getSyncFbCampaignsMutationOptions = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext>, request?: SecondParameter<typeof customFetch> }
+): UseMutationOptions<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext> => {
+  const mutationKey = ['syncFbCampaigns'];
+  const { mutation: mutationOptions, request: requestOptions } = options ?? { mutation: { mutationKey } };
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncFbCampaigns>>, void> = () => {
+    return syncFbCampaigns(requestOptions);
+  };
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SyncFbCampaignsMutationResult = NonNullable<Awaited<ReturnType<typeof syncFbCampaigns>>>;
+export type SyncFbCampaignsMutationError = ErrorType<ErrorResponse>;
+
+export const useSyncFbCampaigns = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext>, request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext> => {
+  return useMutation(getSyncFbCampaignsMutationOptions(options));
+};
+
 export const getLaunchFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext> => {

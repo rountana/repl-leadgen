@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import {
   Plus,
@@ -23,6 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useListFbCampaigns,
   useLaunchFbCampaign,
+  useSyncFbCampaigns,
   getListFbCampaignsQueryKey,
   type FbCampaign,
   type FbCampaignStatus,
@@ -41,6 +43,12 @@ function StatusBadge({ status }: { status: FbCampaignStatus }) {
       return (
         <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100 gap-1">
           <Clock className="w-3 h-3" /> Launching
+        </Badge>
+      );
+    case "paused":
+      return (
+        <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
+          <Clock className="w-3 h-3" /> Paused
         </Badge>
       );
     case "error":
@@ -156,6 +164,20 @@ function CampaignCard({ campaign }: { campaign: FbCampaign }) {
                 <p className="text-xs text-muted-foreground">Under review by Facebook</p>
                 <p className="text-xs text-muted-foreground mt-1">Usually live within minutes</p>
               </div>
+            ) : campaign.status === "paused" ? (
+              <>
+                <p className="text-xs text-amber-700 font-medium text-center">Paused in Ads Manager</p>
+                <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
+                  <a
+                    href="https://www.facebook.com/adsmanager"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Reactivate
+                  </a>
+                </Button>
+              </>
             ) : campaign.status === "error" ? (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-destructive text-center">Failed to launch</p>
@@ -201,8 +223,23 @@ function CampaignCard({ campaign }: { campaign: FbCampaign }) {
 
 export function Campaigns() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const { data: campaigns, isLoading, isError, refetch } = useListFbCampaigns();
+
+  const sync = useSyncFbCampaigns({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListFbCampaignsQueryKey() });
+        setLastSynced(new Date());
+      },
+    },
+  });
+
+  const hasSyncable = campaigns?.some(
+    (c) => c.status === "live" || c.status === "launching" || c.status === "paused",
+  );
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -214,10 +251,31 @@ export function Campaigns() {
             Track your Facebook ad campaigns and lead delivery status.
           </p>
         </div>
-        <Button onClick={() => setLocation("/campaign/new")} className="gap-2">
-          <Plus className="w-4 h-4" />
-          New Campaign
-        </Button>
+        <div className="flex items-center gap-2">
+          {hasSyncable && (
+            <div className="flex flex-col items-end gap-0.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={sync.isPending}
+                onClick={() => sync.mutate()}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${sync.isPending ? "animate-spin" : ""}`} />
+                {sync.isPending ? "Refreshing…" : "Refresh Status"}
+              </Button>
+              {lastSynced && (
+                <span className="text-xs text-muted-foreground">
+                  Last synced {lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
+          )}
+          <Button onClick={() => setLocation("/campaign/new")} className="gap-2">
+            <Plus className="w-4 h-4" />
+            New Campaign
+          </Button>
+        </div>
       </div>
 
       {/* Content */}
