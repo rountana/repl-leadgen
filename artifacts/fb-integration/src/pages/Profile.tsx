@@ -29,6 +29,7 @@ export function Profile() {
   const [businessName, setBusinessName] = useState("");
   const [businessLocation, setBusinessLocation] = useState("");
   const [industry, setIndustry] = useState("");
+  const [industryIsOther, setIndustryIsOther] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [saved, setSaved] = useState(false);
 
@@ -37,9 +38,27 @@ export function Profile() {
     if (!profile) return;
     setBusinessName(profile.businessName ?? "");
     setBusinessLocation(profile.businessLocation ?? "");
-    setIndustry(profile.industry ?? "");
     setLogoUrl(profile.logoUrl ?? "");
+    setIndustry(profile.industry ?? "");
   }, [profile]);
+
+  // Once both profile and industries list are loaded, detect "other" industry
+  useEffect(() => {
+    if (!profile?.industry || !industries.length) return;
+    if (!industries.some((ind) => ind.name === profile.industry)) {
+      setIndustryIsOther(true);
+    }
+  }, [profile, industries]);
+
+  const handleIndustryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === "__other__") {
+      setIndustryIsOther(true);
+      setIndustry("");
+    } else {
+      setIndustryIsOther(false);
+      setIndustry(e.target.value);
+    }
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,7 +89,7 @@ export function Profile() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl flex items-center justify-center py-24">
+      <div className="container mx-auto px-4 max-w-2xl flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -86,7 +105,7 @@ export function Profile() {
         </p>
       </div>
 
-      {/* Notice if auto-populated */}
+      {/* Auto-populated notice */}
       {profile && (profile.businessName || profile.businessLocation) && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
           <Info className="w-4 h-4 shrink-0 mt-0.5" />
@@ -105,7 +124,6 @@ export function Profile() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-6">
-          {/* Avatar preview */}
           <div className="relative shrink-0">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-primary/10 border-2 border-border flex items-center justify-center text-primary font-bold text-2xl">
               {logoUrl ? (
@@ -186,19 +204,26 @@ export function Profile() {
               <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
               Industry
             </Label>
-            <div className="relative">
-              <select
-                id="industry"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-ring"
+            <select
+              id="industry"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-ring"
+              value={industryIsOther ? "__other__" : industry}
+              onChange={handleIndustryChange}
+            >
+              <option value="">Select your industry…</option>
+              {industries.map((ind) => (
+                <option key={ind.id} value={ind.name}>{ind.name}</option>
+              ))}
+              <option value="__other__">Other…</option>
+            </select>
+            {industryIsOther && (
+              <Input
+                placeholder="Describe your industry"
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
-              >
-                <option value="">Select your industry…</option>
-                {industries.map((ind) => (
-                  <option key={ind.id} value={ind.name}>{ind.name}</option>
-                ))}
-              </select>
-            </div>
+                autoFocus
+              />
+            )}
           </div>
         </CardContent>
       </Card>

@@ -25,11 +25,23 @@ import {
   useListFbCampaigns,
   useLaunchFbCampaign,
   useSyncFbCampaigns,
+  useGetFbConnection,
   getListFbCampaignsQueryKey,
   type FbCampaign,
   type FbCampaignStatus,
   type FbCampaignLeadDeliveryStatus,
 } from "@workspace/api-client-react";
+
+function adsManagerUrl(adAccountId?: string | null, partnerCampaignId?: string | null): string {
+  const act = adAccountId?.replace(/^act_/, "");
+  if (act && partnerCampaignId) {
+    return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${act}&selected_campaign_ids=${partnerCampaignId}`;
+  }
+  if (act) {
+    return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${act}`;
+  }
+  return "https://adsmanager.facebook.com/adsmanager/manage/campaigns";
+}
 
 function StatusBadge({ status }: { status: FbCampaignStatus }) {
   switch (status) {
@@ -89,7 +101,7 @@ function LeadDeliveryPill({ status }: { status: FbCampaignLeadDeliveryStatus }) 
   }
 }
 
-function CampaignCard({ campaign }: { campaign: FbCampaign }) {
+function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccountId?: string | null }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const launch = useLaunchFbCampaign({
@@ -146,12 +158,12 @@ function CampaignCard({ campaign }: { campaign: FbCampaign }) {
               <>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
                   <a
-                    href="https://www.facebook.com/adsmanager"
+                    href={adsManagerUrl(adAccountId, campaign.partnerCampaignId)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Ads Manager
+                    View in Ads Manager
                   </a>
                 </Button>
                 <Button size="sm" variant="ghost" className="w-full gap-2 text-muted-foreground">
@@ -169,12 +181,12 @@ function CampaignCard({ campaign }: { campaign: FbCampaign }) {
                 <p className="text-xs text-amber-700 font-medium text-center">Paused in Ads Manager</p>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
                   <a
-                    href="https://www.facebook.com/adsmanager"
+                    href={adsManagerUrl(adAccountId, campaign.partnerCampaignId)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Reactivate
+                    Reactivate in Ads Manager
                   </a>
                 </Button>
               </>
@@ -227,6 +239,7 @@ export function Campaigns() {
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
 
   const { data: campaigns, isLoading, isError, refetch } = useListFbCampaigns();
+  const { data: connection } = useGetFbConnection();
 
   const sync = useSyncFbCampaigns({
     mutation: {
@@ -332,7 +345,7 @@ export function Campaigns() {
       ) : (
         <div className="space-y-4">
           {campaigns.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
+            <CampaignCard key={campaign.id} campaign={campaign} adAccountId={connection?.adAccountId} />
           ))}
         </div>
       )}
