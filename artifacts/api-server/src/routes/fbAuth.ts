@@ -40,39 +40,73 @@ function getFrontendBase(): string {
  * Build a CSRF state token: base64url( userId:timestamp:hmac )
  * where hmac = HMAC-SHA256(userId:timestamp, SESSION_SECRET)
  */
-function makeState(userId: string): string {
+interface FbOAuthState {
+  userId: string;
+  timestamp: number;
+  returnFrontend: string;
+}
+
+function makeState(userId: string, returnFrontend: string): string {
   const secret = process.env.SESSION_SECRET ?? "fallback_dev_secret";
-  const ts = Date.now().toString();
-  const payload = `${userId}:${ts}`;
+  const payload = Buffer.from(
+    JSON.stringify({ userId, timestamp: Date.now(), returnFrontend }),
+  ).toString("base64url");
   const sig = createHmac("sha256", secret).update(payload).digest("hex");
-  return Buffer.from(`${payload}:${sig}`).toString("base64url");
+  return `${payload}.${sig}`;
 }
 
 /**
  * Verify the state token and extract the userId.
  * Returns null on any failure (invalid, tampered, or expired after 10 min).
  */
-function verifyState(state: string): string | null {
+function verifyState(state: string): FbOAuthState | null {
   try {
     const secret = process.env.SESSION_SECRET ?? "fallback_dev_secret";
-    const decoded = Buffer.from(state, "base64url").toString("utf8");
-    // Format: userId:timestamp:sig  (userId may contain colons, timestamp and sig don't)
-    const parts = decoded.split(":");
-    if (parts.length < 3) return null;
-    const sig = parts[parts.length - 1];
-    const ts = parts[parts.length - 2];
-    const userId = parts.slice(0, parts.length - 2).join(":");
-    const payload = `${userId}:${ts}`;
-    if (Date.now() - parseInt(ts, 10) > 10 * 60 * 1000) return null; // 10-min expiry
+    const separator = state.lastIndexOf(".");
+    if (separator <= 0) return null;
+    const payload = state.slice(0, separator);
+    const sig = state.slice(separator + 1);
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as FbOAuthState;
+    if (!decoded.userId || !decoded.timestamp || !decoded.returnFrontend) return null;
+    if (Date.now() - decoded.timestamp > 10 * 60 * 1000) return null; // 10-min expiry
     const expected = createHmac("sha256", secret).update(payload).digest("hex");
     const eBuf = Buffer.from(expected);
     const sBuf = Buffer.from(sig);
     if (eBuf.length !== sBuf.length) return null;
     if (!timingSafeEqual(eBuf, sBuf)) return null;
-    return userId;
+    return decoded;
   } catch {
     return null;
   }
+}
+
+/** Resolve the frontend host that initiated OAuth, without exposing internal API ports. */
+function getRequestFrontendBase(req: any): string {
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin.replace(/\/$/, "") : "";
+  if (/^https?:\/\/[^/]+$/.test(origin)) {
+    return `${origin}/fb`;
+  }
+
+  const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
+  try {
+    const refererUrl = new URL(referer);
+    return `${refererUrl.origin}/fb`;
+  } catch {
+    // Continue to forwarded-host detection when no valid browser referer exists.
+  }
+
+  const forwardedHost = req.headers["x-forwarded-host"] ?? req.headers.host;
+  const forwardedProto = req.headers["x-forwarded-proto"] ?? "https";
+  if (
+    typeof forwardedHost === "string" &&
+    forwardedHost &&
+    !/^localhost(?::\d+)?$/.test(forwardedHost) &&
+    !/^127\.0\.0\.1(?::\d+)?$/.test(forwardedHost)
+  ) {
+    return `${forwardedProto}://${forwardedHost}/fb`;
+  }
+
+  return getFrontendBase();
 }
 
 // ── Short-lived callback result cache ──────────────────────────────────────
@@ -158,7 +192,8 @@ async function upsertConnection(
 
 async function handleFacebookCallback(req: any, res: any): Promise<void> {
   const { code, state, error: fbError, error_description } = req.query as Record<string, string>;
-  const frontend = getFrontendBase();
+  const stateData = verifyState(state ?? "");
+  const frontend = stateData?.returnFrontend ?? getFrontendBase();
 
   // User denied the dialog
   if (fbError || !code) {
@@ -168,11 +203,11 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
   }
 
   // Validate CSRF state
-  const userId = verifyState(state ?? "");
-  if (!userId) {
+  if (!stateData) {
     res.redirect(`${frontend}/connect?fb_error=${encodeURIComponent("Login session expired. Please try again.")}`);
     return;
   }
+  const { userId } = stateData;
 
   // Return the cached redirect if this state was already processed successfully.
   const cached = getCachedResult(state);
@@ -297,7 +332,7 @@ const router = Router();
 router.get("/auth/facebook/init", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const userId = req.userId as string;
-    const state = makeState(userId);
+    const state = makeState(userId, getRequestFrontendBase(req));
     const params = new URLSearchParams({
       client_id: getAppId(),
       redirect_uri: getCallbackUrl(),

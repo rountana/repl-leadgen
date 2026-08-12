@@ -26,6 +26,12 @@ const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {
+  try {
+    const parsed = new URL(path, window.location.origin);
+    path = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    // Keep the original path when Clerk supplies a relative route.
+  }
   return basePath && path.startsWith(basePath)
     ? path.slice(basePath.length) || "/"
     : path;
@@ -89,7 +95,12 @@ function SignInPage() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 relative overflow-hidden">
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
       <div className="z-10 w-full flex justify-center">
-        <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+        <SignIn
+          routing="path"
+          path={`${basePath}/sign-in`}
+          signUpUrl={`${basePath}/sign-up`}
+          fallbackRedirectUrl={`${window.location.origin}${basePath}/dashboard`}
+        />
       </div>
     </div>
   );
