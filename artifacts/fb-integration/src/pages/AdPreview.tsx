@@ -13,6 +13,8 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Magnet,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,17 +28,19 @@ import {
   useListIndustries,
   getListIndustriesQueryKey,
 } from "@workspace/api-client-react";
+import { LeadMagnetPicker, type SelectedMagnet } from "@/components/LeadMagnetPicker";
 
 interface AdPreviewProps {
   connection: FbConnection;
-  onNext: (adDraft: FbAdDraft) => void;
+  onNext: (adDraft: FbAdDraft, destinationUrl: string) => void;
   initialDraft?: FbAdDraft | null;
+  initialDestinationUrl?: string;
 }
 
 const HEADLINE_LIMIT = 40;
 const BODY_LIMIT = 90;
 
-export function AdPreview({ connection, onNext, initialDraft }: AdPreviewProps) {
+export function AdPreview({ connection, onNext, initialDraft, initialDestinationUrl }: AdPreviewProps) {
   // ── Business info state ────────────────────────────────────────────────
   const [businessName, setBusinessName] = useState(connection.fbPageName ?? "");
   const [industry, setIndustry] = useState("");
@@ -48,6 +52,11 @@ export function AdPreview({ connection, onNext, initialDraft }: AdPreviewProps) 
   const [headline, setHeadline] = useState(initialDraft?.headline ?? "");
   const [bodyText, setBodyText] = useState(initialDraft?.bodyText ?? "");
   const [imageUrl, setImageUrl] = useState(initialDraft?.imageUrl ?? "");
+
+  // ── Lead magnet destination state ──────────────────────────────────────
+  const [destinationUrl, setDestinationUrl] = useState(initialDestinationUrl ?? "");
+  const [selectedMagnet, setSelectedMagnet] = useState<SelectedMagnet | null>(null);
+  const [magnetOpen, setMagnetOpen] = useState(!!initialDestinationUrl);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,6 +109,13 @@ export function AdPreview({ connection, onNext, initialDraft }: AdPreviewProps) 
     reader.readAsDataURL(file);
     // Reset input so the same file can be re-selected
     e.target.value = "";
+  };
+
+  const handleMagnetSelect = (magnet: SelectedMagnet | null) => {
+    setSelectedMagnet(magnet);
+    setDestinationUrl(magnet?.shareUrl ?? "");
+    // Auto-close the picker after selecting
+    if (magnet) setMagnetOpen(false);
   };
 
   const canContinue = headline.trim().length > 0 && bodyText.trim().length > 0;
@@ -302,11 +318,84 @@ export function AdPreview({ connection, onNext, initialDraft }: AdPreviewProps) 
             />
           </div>
 
+          {/* ── Lead Magnet Destination ──────────────────────────────────── */}
+          <Card className={destinationUrl ? "border-primary/30 bg-primary/5" : ""}>
+            <CardHeader
+              className="py-3 px-4 cursor-pointer select-none"
+              onClick={() => setMagnetOpen((v) => !v)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Magnet className="w-3.5 h-3.5 text-primary" />
+                  <CardTitle className="text-sm font-semibold">
+                    Link a Lead Magnet
+                  </CardTitle>
+                  {destinationUrl ? (
+                    <Badge className="text-[10px] py-0 px-1.5 bg-green-100 text-green-700 border-green-200 hover:bg-green-100">
+                      Linked
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] py-0 px-1.5 text-muted-foreground">
+                      Optional
+                    </Badge>
+                  )}
+                </div>
+                {magnetOpen
+                  ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                  : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </div>
+              {/* Show linked URL when collapsed */}
+              {!magnetOpen && destinationUrl && (
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <Link2 className="w-3 h-3 text-primary shrink-0" />
+                  <p className="text-xs text-primary truncate font-medium">{destinationUrl}</p>
+                </div>
+              )}
+              {!magnetOpen && !destinationUrl && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Send ad clicks to your lead magnet page — or leave blank to use your Facebook Page.
+                </p>
+              )}
+            </CardHeader>
+
+            {magnetOpen && (
+              <CardContent className="pt-0 pb-4 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Select a published lead magnet below. Ad clicks will go to that page so visitors
+                  can sign up. Leave unlinked to default to your Facebook Page.
+                </p>
+                <LeadMagnetPicker
+                  selected={selectedMagnet}
+                  onSelect={handleMagnetSelect}
+                />
+                {/* Manual URL override */}
+                <div className="space-y-1.5 pt-1 border-t border-border">
+                  <Label htmlFor="destUrl" className="text-xs text-muted-foreground">
+                    Or paste a URL directly
+                  </Label>
+                  <Input
+                    id="destUrl"
+                    type="url"
+                    placeholder="https://your-landing-page.com"
+                    value={destinationUrl}
+                    onChange={(e) => {
+                      setDestinationUrl(e.target.value);
+                      if (e.target.value !== selectedMagnet?.shareUrl) {
+                        setSelectedMagnet(null);
+                      }
+                    }}
+                    className="text-xs h-8"
+                  />
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
           {/* Continue */}
           <Button
             className="w-full h-11 text-base font-semibold gap-2"
             disabled={!canContinue}
-            onClick={() => onNext(draft)}
+            onClick={() => onNext(draft, destinationUrl)}
           >
             Continue to Budget & Targeting
             <ChevronRight className="w-5 h-5" />
@@ -390,6 +479,12 @@ export function AdPreview({ connection, onNext, initialDraft }: AdPreviewProps) 
                     </>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">Headline…</p>
+                  )}
+                  {/* Destination URL chip in preview */}
+                  {destinationUrl && (
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                      {destinationUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </p>
                   )}
                 </div>
                 <Button

@@ -1,0 +1,1 @@
+- [HVCG ↔ Facebook Ads integration](hvcg-fb-integration.md) — deep-link params, destinationUrl flow, LeadMagnetPicker, cross-artifact nav pattern.

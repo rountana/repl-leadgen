@@ -194,6 +194,7 @@ router.post("/fb/campaigns", requireAuth, async (req: any, res): Promise<void> =
     targetingRadiusMiles,
     targetingLatitude,
     targetingLongitude,
+    destinationUrl,
   } = parsed.data;
 
   const [campaign] = await db
@@ -208,6 +209,7 @@ router.post("/fb/campaigns", requireAuth, async (req: any, res): Promise<void> =
       targetingRadiusMiles,
       targetingLatitude: String(targetingLatitude),
       targetingLongitude: String(targetingLongitude),
+      destinationUrl: destinationUrl ?? null,
       status: "draft",
       leadDeliveryStatus: "unverified",
     })
@@ -412,6 +414,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       fbPageId: conn.fbPageId,
       adAccountId: conn.adAccountId,
       accessToken: conn.partnerToken!,
+      destinationUrl: campaign.destinationUrl ?? undefined,
     });
 
     // 2. Atomically verify campaign delivery status right after launch

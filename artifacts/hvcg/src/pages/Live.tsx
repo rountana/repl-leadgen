@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { Copy, ExternalLink, ArrowRight, ArrowLeft, PartyPopper, CheckCircle2, Share2, Facebook, Twitter, Linkedin } from "lucide-react";
+import { Copy, ExternalLink, ArrowRight, ArrowLeft, PartyPopper, CheckCircle2, Share2, Facebook, Twitter, Linkedin, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -85,6 +85,35 @@ export function Live() {
           
         </CardContent>
       </Card>
+
+      {/* Promote with Facebook Ads CTA */}
+      {magnet.shareUrl && (
+        <div className="mb-8 p-5 rounded-2xl border-2 border-dashed border-[#1877F2]/30 bg-[#1877F2]/5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <div className="w-12 h-12 rounded-full bg-[#1877F2]/10 flex items-center justify-center shrink-0">
+            <Facebook className="w-6 h-6 text-[#1877F2]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm">Promote this page with Facebook Ads</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Drive targeted traffic to your lead magnet — your page link is pre-filled automatically.
+            </p>
+          </div>
+          <Button
+            className="shrink-0 gap-2 bg-[#1877F2] hover:bg-[#1877F2]/90 text-white"
+            onClick={() => {
+              const params = new URLSearchParams({
+                magnet_title: magnet.title ?? "",
+                magnet_url: magnet.shareUrl ?? "",
+                magnet_desc: magnet.description ?? "",
+              });
+              window.location.href = `/fb/campaign/new?${params.toString()}`;
+            }}
+          >
+            <Megaphone className="w-4 h-4" />
+            Create Facebook Ad
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row justify-center gap-4">
         <Button variant="outline" size="lg" asChild className="h-14 px-8">

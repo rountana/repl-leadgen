@@ -32,11 +32,13 @@ interface LaunchConfirmProps {
   onReset: () => void;
   /** When set, patch-then-launch this existing campaign instead of creating a new one */
   campaignId?: number;
+  /** Where ad clicks land — a HVCG lead magnet URL or other landing page */
+  destinationUrl?: string;
 }
 
 type LaunchPhase = "creating" | "launching" | "done" | "error";
 
-export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, campaignId }: LaunchConfirmProps) {
+export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, campaignId, destinationUrl }: LaunchConfirmProps) {
   const [, setLocation] = useLocation();
   const [phase, setPhase] = useState<LaunchPhase>("creating");
   const [campaign, setCampaign] = useState<FbCampaign | null>(null);
@@ -60,6 +62,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
     targetingRadiusMiles: radiusMiles,
     targetingLatitude: 37.7749,  // Phase 1 mock — geocoded from connection in Phase 2
     targetingLongitude: -122.4194,
+    ...(destinationUrl ? { destinationUrl } : {}),
   };
 
   const runLaunchSequence = async () => {
@@ -226,6 +229,15 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
               </div>
             </div>
           </div>
+          {destinationUrl && (
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-start gap-2">
+              <ExternalLink className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Ad destination</p>
+                <p className="font-medium text-sm truncate text-primary">{destinationUrl}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

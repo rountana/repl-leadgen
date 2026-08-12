@@ -19,6 +19,7 @@ export const fbCampaignsTable = pgTable(
     partnerCampaignId: text("partner_campaign_id"),
     status: text("status").notNull().default("draft"), // 'draft' | 'launching' | 'live' | 'error'
     leadDeliveryStatus: text("lead_delivery_status").notNull().default("unverified"), // 'unverified' | 'active' | 'failed'
+    destinationUrl: text("destination_url"),
     errorMessage: text("error_message"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

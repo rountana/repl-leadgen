@@ -412,7 +412,8 @@ export const CreateFbCampaignBody = zod.object({
   "dailyBudgetCents": zod.number(),
   "targetingRadiusMiles": zod.number(),
   "targetingLatitude": zod.number(),
-  "targetingLongitude": zod.number()
+  "targetingLongitude": zod.number(),
+  "destinationUrl": zod.string().optional(),
 })
 
 export const UpdateFbCampaignBody = zod.object({
@@ -423,6 +424,7 @@ export const UpdateFbCampaignBody = zod.object({
   "targetingRadiusMiles": zod.number().optional(),
   "targetingLatitude": zod.number().optional(),
   "targetingLongitude": zod.number().optional(),
+  "destinationUrl": zod.string().optional(),
 })
 
 export const CreateFbCampaignResponse = zod.object({
@@ -436,6 +438,7 @@ export const CreateFbCampaignResponse = zod.object({
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
   "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
@@ -462,6 +465,7 @@ export const GetFbCampaignResponse = zod.object({
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
+  "destinationUrl": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
   "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),

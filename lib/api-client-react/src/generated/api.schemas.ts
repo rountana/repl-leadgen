@@ -286,6 +286,8 @@ export interface FbCampaign {
   /** @nullable */
   targetingLongitude?: string | null;
   /** @nullable */
+  destinationUrl?: string | null;
+  /** @nullable */
   partnerCampaignId?: string | null;
   status: FbCampaignStatus;
   leadDeliveryStatus: FbCampaignLeadDeliveryStatus;
@@ -303,6 +305,7 @@ export interface FbCampaignUpdate {
   targetingRadiusMiles?: number;
   targetingLatitude?: number;
   targetingLongitude?: number;
+  destinationUrl?: string;
 }
 
 export interface FbCampaignInput {
@@ -313,6 +316,7 @@ export interface FbCampaignInput {
   targetingRadiusMiles: number;
   targetingLatitude: number;
   targetingLongitude: number;
+  destinationUrl?: string;
 }
 
 export type FbLeadStatusStatus = typeof FbLeadStatusStatus[keyof typeof FbLeadStatusStatus];

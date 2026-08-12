@@ -17,6 +17,8 @@ export interface CreateCampaignParams {
   adAccountId: string;
   /** Facebook user access token obtained during OAuth. */
   accessToken: string;
+  /** Where ad clicks should land. Defaults to the Facebook Page URL if not provided. */
+  destinationUrl?: string;
 }
 
 export interface CreateCampaignResult {
@@ -183,10 +185,9 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     }
 
     // ── 4. Ad Creative ─────────────────────────────────────────────────────
-    // Landing page: use the user's Facebook Page URL as the default destination.
-    // TODO: replace with the real lead-magnet or business website URL once
-    // the campaign model stores a destination URL.
-    const destinationUrl = `https://www.facebook.com/${fbPageId}`;
+    // Use the caller-provided destination URL (e.g. a HVCG lead magnet page),
+    // falling back to the Facebook Page if none was supplied.
+    const adDestinationUrl = params.destinationUrl || `https://www.facebook.com/${fbPageId}`;
 
     const creativeData = await graphPost(
       `/${actId}/adcreatives`,
@@ -196,7 +197,7 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
           page_id: fbPageId,
           link_data: {
             message: bodyText,
-            link: destinationUrl,
+            link: adDestinationUrl,
             name: headline,
             call_to_action: { type: "LEARN_MORE" },
             ...imageSpec,

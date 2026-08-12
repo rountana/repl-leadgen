@@ -21,25 +21,45 @@ interface WizardState {
   adDraft: FbAdDraft | null;
   dailyBudget: number;
   radiusMiles: number;
+  /** Where ad clicks land — HVCG lead magnet URL or any landing page */
+  destinationUrl: string;
 }
 
 export function CampaignWizard() {
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const editId = new URLSearchParams(search).get("edit")
-    ? Number(new URLSearchParams(search).get("edit"))
+  const searchParams = new URLSearchParams(search);
+
+  const editId = searchParams.get("edit") ? Number(searchParams.get("edit")) : null;
+
+  // ── HVCG deep-link params ──────────────────────────────────────────────
+  // When the user clicks "Create Facebook Ad" from the HVCG Live page, these
+  // params are present. We use them to skip the template gallery and pre-fill.
+  const magnetUrl   = searchParams.get("magnet_url") ?? "";
+  const magnetTitle = searchParams.get("magnet_title") ?? "";
+  const magnetDesc  = searchParams.get("magnet_desc") ?? "";
+  const hasMagnetLink = !!magnetUrl;
+
+  // ── Wizard state ───────────────────────────────────────────────────────
+  const initialDraft: FbAdDraft | null = hasMagnetLink
+    ? {
+        headline: magnetTitle.slice(0, 40),
+        bodyText:  magnetDesc.slice(0, 90),
+        imageUrl:  "",
+      }
     : null;
 
   const [wizard, setWizard] = useState<WizardState>({
     step: 2,
-    adDraft: null,
+    adDraft: initialDraft,
     dailyBudget: 10,
     radiusMiles: 10,
+    destinationUrl: magnetUrl,
   });
   const [preloaded, setPreloaded] = useState(false);
-  // Show template gallery for new campaigns (not in edit mode).
-  // Dismissed when user picks a template or clicks "start from scratch".
-  const [showTemplates, setShowTemplates] = useState(!editId);
+
+  // Template gallery: skip for HVCG deep links and edit mode
+  const [showTemplates, setShowTemplates] = useState(!editId && !hasMagnetLink);
 
   const { data: connection, isLoading, isError } = useGetFbConnection({
     query: { queryKey: getGetFbConnectionQueryKey(), retry: false },
@@ -66,6 +86,7 @@ export function CampaignWizard() {
           ? Math.round(editCampaign.dailyBudgetCents / 100)
           : 10,
         radiusMiles: editCampaign.targetingRadiusMiles ?? 10,
+        destinationUrl: editCampaign.destinationUrl ?? "",
       });
       setPreloaded(true);
     }
@@ -114,7 +135,7 @@ export function CampaignWizard() {
   };
 
   const handleReset = () => {
-    setWizard({ step: 2, adDraft: null, dailyBudget: 10, radiusMiles: 10 });
+    setWizard({ step: 2, adDraft: null, dailyBudget: 10, radiusMiles: 10, destinationUrl: "" });
     if (!editId) setShowTemplates(true);
   };
 
@@ -122,7 +143,7 @@ export function CampaignWizard() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <WizardProgress currentStep={wizard.step} />
 
-      {/* Template gallery — shown before step 2 for new campaigns */}
+      {/* Template gallery — shown before step 2 for new campaigns without a HVCG deep-link */}
       {showTemplates && wizard.step === 2 && !editId ? (
         <TemplateGallery
           onSelectTemplate={(draft, budget, radius) => {
@@ -152,8 +173,9 @@ export function CampaignWizard() {
             <AdPreview
               connection={connection}
               initialDraft={wizard.adDraft}
-              onNext={(adDraft) =>
-                setWizard((prev) => ({ ...prev, step: 3, adDraft }))
+              initialDestinationUrl={wizard.destinationUrl}
+              onNext={(adDraft, destinationUrl) =>
+                setWizard((prev) => ({ ...prev, step: 3, adDraft, destinationUrl }))
               }
             />
           )}
@@ -174,6 +196,7 @@ export function CampaignWizard() {
               adDraft={wizard.adDraft}
               dailyBudget={wizard.dailyBudget}
               radiusMiles={wizard.radiusMiles}
+              destinationUrl={wizard.destinationUrl || undefined}
               onReset={handleReset}
               campaignId={editId ?? undefined}
             />
