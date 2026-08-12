@@ -6,6 +6,7 @@ import { WizardProgress } from "@/components/WizardProgress";
 import { AdPreview } from "@/pages/AdPreview";
 import { BudgetTargeting } from "@/pages/BudgetTargeting";
 import { LaunchConfirm } from "@/pages/LaunchConfirm";
+import { TemplateGallery } from "@/pages/TemplateGallery";
 import {
   useGetFbConnection,
   useGetFbCampaign,
@@ -36,6 +37,9 @@ export function CampaignWizard() {
     radiusMiles: 10,
   });
   const [preloaded, setPreloaded] = useState(false);
+  // Show template gallery for new campaigns (not in edit mode).
+  // Dismissed when user picks a template or clicks "start from scratch".
+  const [showTemplates, setShowTemplates] = useState(!editId);
 
   const { data: connection, isLoading, isError } = useGetFbConnection({
     query: { queryKey: getGetFbConnectionQueryKey(), retry: false },
@@ -99,7 +103,10 @@ export function CampaignWizard() {
   }
 
   const handleBack = () => {
-    if (wizard.step === 2) {
+    if (wizard.step === 2 && !editId) {
+      // Go back to template picker instead of leaving the wizard
+      setShowTemplates(true);
+    } else if (wizard.step === 2) {
       setLocation("/connect");
     } else {
       setWizard((prev) => ({ ...prev, step: (prev.step - 1) as WizardStep }));
@@ -108,51 +115,70 @@ export function CampaignWizard() {
 
   const handleReset = () => {
     setWizard({ step: 2, adDraft: null, dailyBudget: 10, radiusMiles: 10 });
+    if (!editId) setShowTemplates(true);
   };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <WizardProgress currentStep={wizard.step} />
 
-      {/* Back button (not shown on step 4 — no going back after launch) */}
-      {wizard.step < 4 && (
-        <div className="mb-4">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1 text-muted-foreground">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-        </div>
-      )}
-
-      {wizard.step === 2 && (
-        <AdPreview
-          connection={connection}
-          initialDraft={wizard.adDraft}
-          onNext={(adDraft) =>
-            setWizard((prev) => ({ ...prev, step: 3, adDraft }))
-          }
+      {/* Template gallery — shown before step 2 for new campaigns */}
+      {showTemplates && wizard.step === 2 && !editId ? (
+        <TemplateGallery
+          onSelectTemplate={(draft, budget, radius) => {
+            setWizard((prev) => ({
+              ...prev,
+              adDraft: draft,
+              dailyBudget: budget,
+              radiusMiles: radius,
+            }));
+            setShowTemplates(false);
+          }}
+          onStartScratch={() => setShowTemplates(false)}
         />
-      )}
+      ) : (
+        <>
+          {/* Back button (not shown on step 4 — no going back after launch) */}
+          {wizard.step < 4 && (
+            <div className="mb-4">
+              <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1 text-muted-foreground">
+                <ArrowLeft className="w-4 h-4" />
+                {wizard.step === 2 && !editId ? "Templates" : "Back"}
+              </Button>
+            </div>
+          )}
 
-      {wizard.step === 3 && (
-        <BudgetTargeting
-          connection={connection}
-          initialBudget={wizard.dailyBudget}
-          initialRadius={wizard.radiusMiles}
-          onNext={(dailyBudget, radiusMiles) =>
-            setWizard((prev) => ({ ...prev, step: 4, dailyBudget, radiusMiles }))
-          }
-        />
-      )}
+          {wizard.step === 2 && (
+            <AdPreview
+              connection={connection}
+              initialDraft={wizard.adDraft}
+              onNext={(adDraft) =>
+                setWizard((prev) => ({ ...prev, step: 3, adDraft }))
+              }
+            />
+          )}
 
-      {wizard.step === 4 && wizard.adDraft && (
-        <LaunchConfirm
-          adDraft={wizard.adDraft}
-          dailyBudget={wizard.dailyBudget}
-          radiusMiles={wizard.radiusMiles}
-          onReset={handleReset}
-          campaignId={editId ?? undefined}
-        />
+          {wizard.step === 3 && (
+            <BudgetTargeting
+              connection={connection}
+              initialBudget={wizard.dailyBudget}
+              initialRadius={wizard.radiusMiles}
+              onNext={(dailyBudget, radiusMiles) =>
+                setWizard((prev) => ({ ...prev, step: 4, dailyBudget, radiusMiles }))
+              }
+            />
+          )}
+
+          {wizard.step === 4 && wizard.adDraft && (
+            <LaunchConfirm
+              adDraft={wizard.adDraft}
+              dailyBudget={wizard.dailyBudget}
+              radiusMiles={wizard.radiusMiles}
+              onReset={handleReset}
+              campaignId={editId ?? undefined}
+            />
+          )}
+        </>
       )}
     </div>
   );
