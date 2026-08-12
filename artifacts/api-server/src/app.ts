@@ -9,6 +9,7 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import router from "./routes";
+import { callbackRouter as fbCallbackRouter } from "./routes/fbAuth";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -46,6 +47,11 @@ app.use(
   }),
 );
 app.use(express.urlencoded({ extended: true }));
+
+// Mount the OAuth callback BEFORE Clerk middleware. The callback arrives from
+// Facebook without a Clerk session; if Clerk's dev-instance handshake runs
+// first it consumes the one-time code before our handler can exchange it.
+app.use("/api", fbCallbackRouter);
 
 app.use(
   clerkMiddleware((req) => ({

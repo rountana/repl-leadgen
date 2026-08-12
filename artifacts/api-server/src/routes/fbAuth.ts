@@ -111,7 +111,7 @@ async function graphGet(path: string, accessToken: string): Promise<any> {
   return body;
 }
 
-// ── Auth middleware (inline — same pattern as other routes) ────────────────
+// ── Auth middleware ────────────────────────────────────────────────────────
 
 function requireAuth(req: any, res: any, next: any) {
   const { userId } = getAuth(req);
@@ -123,41 +123,39 @@ function requireAuth(req: any, res: any, next: any) {
   next();
 }
 
-// ── Router ─────────────────────────────────────────────────────────────────
+// ── DB helper ──────────────────────────────────────────────────────────────
 
-const router = Router();
+async function upsertConnection(
+  userId: string,
+  fbPageId: string,
+  fbPageName: string,
+  adAccountId: string,
+  adAccountName: string,
+) {
+  const [existing] = await db
+    .select({ id: fbConnectionsTable.id })
+    .from(fbConnectionsTable)
+    .where(eq(fbConnectionsTable.userId, userId));
 
-/**
- * GET /auth/facebook/init
- * Called by the frontend (with Clerk session cookies) to get the Meta OAuth URL.
- * Returns { authUrl } which the client should redirect to.
- */
-router.get("/auth/facebook/init", requireAuth, async (req: any, res): Promise<void> => {
-  try {
-    const userId = req.userId as string;
-    const state = makeState(userId);
-    const params = new URLSearchParams({
-      client_id: getAppId(),
-      redirect_uri: getCallbackUrl(),
-      scope: SCOPES,
-      state,
-      response_type: "code",
-    });
-    const authUrl = `https://www.facebook.com/${FB_VERSION}/dialog/oauth?${params}`;
-    res.json({ authUrl });
-  } catch (err) {
-    logger.error({ err }, "FB OAuth init failed");
-    res.status(500).json({ error: "Failed to start Facebook login. Check FB_APP_ID is configured." });
+  if (existing) {
+    await db
+      .update(fbConnectionsTable)
+      .set({ fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
+      .where(eq(fbConnectionsTable.userId, userId));
+  } else {
+    await db
+      .insert(fbConnectionsTable)
+      .values({ userId, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" });
   }
-});
+}
 
-/**
- * GET /auth/facebook/callback
- * Meta redirects the user's browser here after they approve or deny.
- * We validate state, exchange the code, fetch their pages + ad accounts,
- * then redirect back to the frontend with the result.
- */
-router.get("/auth/facebook/callback", async (req, res): Promise<void> => {
+// ── OAuth callback handler (standalone — mounted pre-Clerk in app.ts) ──────
+//
+// The callback arrives from Facebook without a Clerk session. Mounting it
+// before clerkMiddleware() prevents Clerk's development-instance handshake
+// from intercepting the request and eating the one-time OAuth code.
+
+async function handleFacebookCallback(req: any, res: any): Promise<void> {
   const { code, state, error: fbError, error_description } = req.query as Record<string, string>;
   const frontend = getFrontendBase();
 
@@ -176,9 +174,6 @@ router.get("/auth/facebook/callback", async (req, res): Promise<void> => {
   }
 
   // Return the cached redirect if this state was already processed successfully.
-  // This handles browsers (e.g. Chrome Safe Browsing interstitial) that replay
-  // the callback URL — the code is single-use, so the second hit would fail
-  // without the cache.
   const cached = getCachedResult(state);
   if (cached) {
     logger.info({ userId }, "FB OAuth: serving cached callback result");
@@ -199,8 +194,6 @@ router.get("/auth/facebook/callback", async (req, res): Promise<void> => {
     );
     const tokenData = (await tokenRes.json()) as any;
     if (tokenData.error) {
-      // "This authorization code has been used" means the browser replayed the
-      // callback but the cache missed (server restarted between hits, etc).
       if (
         typeof tokenData.error.message === "string" &&
         tokenData.error.message.toLowerCase().includes("authorization code has been used")
@@ -249,12 +242,10 @@ router.get("/auth/facebook/callback", async (req, res): Promise<void> => {
       redirectUrl = `${frontend}/connect?fb_connected=1`;
     } else {
       // 3b. Multiple options → let the frontend show a picker.
-      // Use standard base64 (not base64url) so the browser's atob() can decode it.
       const fbData = Buffer.from(JSON.stringify({ pages, adAccounts })).toString("base64");
       redirectUrl = `${frontend}/connect?fb_data=${encodeURIComponent(fbData)}`;
     }
 
-    // Cache the result so replayed callback requests return the same redirect.
     cacheResult(state, redirectUrl);
     res.redirect(redirectUrl);
   } catch (err: any) {
@@ -263,30 +254,43 @@ router.get("/auth/facebook/callback", async (req, res): Promise<void> => {
       `${frontend}/connect?fb_error=${encodeURIComponent("Something went wrong connecting Facebook. Please try again.")}`,
     );
   }
+}
+
+// ── Routers ────────────────────────────────────────────────────────────────
+
+/**
+ * callbackRouter — mounted BEFORE clerkMiddleware() in app.ts so Clerk's
+ * development-instance handshake cannot intercept the one-time OAuth code.
+ */
+export const callbackRouter = Router();
+callbackRouter.get("/auth/facebook/callback", handleFacebookCallback);
+
+/**
+ * Default router — mounted after clerkMiddleware() via routes/index.ts.
+ * Contains the authenticated /init route (and the callback as a fallback).
+ */
+const router = Router();
+
+router.get("/auth/facebook/init", requireAuth, async (req: any, res): Promise<void> => {
+  try {
+    const userId = req.userId as string;
+    const state = makeState(userId);
+    const params = new URLSearchParams({
+      client_id: getAppId(),
+      redirect_uri: getCallbackUrl(),
+      scope: SCOPES,
+      state,
+      response_type: "code",
+    });
+    const authUrl = `https://www.facebook.com/${FB_VERSION}/dialog/oauth?${params}`;
+    res.json({ authUrl });
+  } catch (err) {
+    logger.error({ err }, "FB OAuth init failed");
+    res.status(500).json({ error: "Failed to start Facebook login. Check FB_APP_ID is configured." });
+  }
 });
 
-async function upsertConnection(
-  userId: string,
-  fbPageId: string,
-  fbPageName: string,
-  adAccountId: string,
-  adAccountName: string,
-) {
-  const [existing] = await db
-    .select({ id: fbConnectionsTable.id })
-    .from(fbConnectionsTable)
-    .where(eq(fbConnectionsTable.userId, userId));
-
-  if (existing) {
-    await db
-      .update(fbConnectionsTable)
-      .set({ fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
-      .where(eq(fbConnectionsTable.userId, userId));
-  } else {
-    await db
-      .insert(fbConnectionsTable)
-      .values({ userId, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" });
-  }
-}
+// Fallback registration (pre-Clerk router wins first, but kept for completeness)
+router.get("/auth/facebook/callback", handleFacebookCallback);
 
 export default router;
