@@ -268,12 +268,11 @@ router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<vo
 });
 
 // POST /fb/campaigns/sync
-// Re-checks Zernio status for all live/launching campaigns and updates DB.
+// Re-checks Meta campaign status for all live/launching/paused campaigns and updates DB.
 // Must be registered before /fb/campaigns/:id to avoid the param route catching "sync".
 router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<void> => {
   const userId = req.userId as string;
 
-  // Only campaigns that have been submitted to Zernio can be synced
   const candidates = await db
     .select()
     .from(fbCampaignsTable)
@@ -288,24 +287,41 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
       ),
     );
 
-  const syncable = candidates.filter((c) => !!c.partnerCampaignId);
+  const syncable = candidates.filter((c) => !!c.partnerCampaignId && !!c.connectionId);
+  if (syncable.length === 0) {
+    res.json({ synced: 0, updated: 0 });
+    return;
+  }
+
+  // Batch-fetch all unique connections so we have access tokens
+  const uniqueConnIds = [...new Set(syncable.map((c) => c.connectionId!))];
+  const connections = await db
+    .select()
+    .from(fbConnectionsTable)
+    .where(
+      and(
+        eq(fbConnectionsTable.userId, userId),
+        or(...uniqueConnIds.map((id) => eq(fbConnectionsTable.id, id))),
+      ),
+    );
+  const connById = new Map(connections.map((c) => [c.id, c]));
+
   let updated = 0;
 
   await Promise.all(
     syncable.map(async (campaign) => {
+      const conn = connById.get(campaign.connectionId!);
+      if (!conn?.partnerToken) {
+        req.log.warn({ campaignId: campaign.id }, "FB campaign sync: no access token on connection, skipping");
+        return;
+      }
       try {
-        const result = await activeFbPartnerAdapter.verifyLeadDelivery(campaign.partnerCampaignId!);
+        const result = await activeFbPartnerAdapter.verifyLeadDelivery(
+          campaign.partnerCampaignId!,
+          conn.partnerToken,
+        );
         const isActive = result.active;
-
-        // Determine new status based on Zernio's response
-        let newStatus: string;
-        if (isActive) {
-          newStatus = "live";
-        } else {
-          // Campaign exists in Zernio but is not delivering — paused/stopped in Ads Manager
-          newStatus = "paused";
-        }
-
+        const newStatus = isActive ? "live" : "paused";
         const newLeadDelivery = isActive ? "active" : "failed";
 
         if (newStatus !== campaign.status || newLeadDelivery !== campaign.leadDeliveryStatus) {
@@ -314,7 +330,10 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
             .set({ status: newStatus, leadDeliveryStatus: newLeadDelivery })
             .where(eq(fbCampaignsTable.id, campaign.id));
           updated++;
-          req.log.info({ campaignId: campaign.id, oldStatus: campaign.status, newStatus }, "FB campaign sync: status updated");
+          req.log.info(
+            { campaignId: campaign.id, oldStatus: campaign.status, newStatus },
+            "FB campaign sync: status updated",
+          );
         }
       } catch (err) {
         req.log.error({ campaignId: campaign.id, err }, "FB campaign sync: failed to check status");
@@ -365,6 +384,14 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
     return;
   }
 
+  if (!conn.partnerToken) {
+    res.status(400).json({
+      error:
+        "No Facebook access token found. Please disconnect and reconnect your Facebook account to refresh your credentials.",
+    });
+    return;
+  }
+
   // Mark as launching
   await db
     .update(fbCampaignsTable)
@@ -373,7 +400,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
 
   let updatedCampaign: typeof campaign;
   try {
-    // 1. Create the campaign via the partner adapter
+    // 1. Create the campaign via Meta Marketing API
     const createResult = await activeFbPartnerAdapter.createCampaign({
       headline: campaign.headline ?? "",
       bodyText: campaign.bodyText ?? "",
@@ -384,11 +411,13 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       targetingLongitude: Number(campaign.targetingLongitude ?? 0),
       fbPageId: conn.fbPageId,
       adAccountId: conn.adAccountId,
+      accessToken: conn.partnerToken!,
     });
 
-    // 2. Atomically verify lead delivery right after launch
+    // 2. Atomically verify campaign delivery status right after launch
     const verifyResult = await activeFbPartnerAdapter.verifyLeadDelivery(
       createResult.partnerCampaignId,
+      conn.partnerToken!,
     );
     const leadDeliveryStatus: "active" | "failed" = verifyResult.active ? "active" : "failed";
 
@@ -454,9 +483,23 @@ router.get(
       return;
     }
 
-    // Verify lead delivery via the partner adapter (uses server-side ZERNIO_API_KEY)
+    // Fetch connection to get the access token
+    const [conn] = campaign.connectionId
+      ? await db
+          .select()
+          .from(fbConnectionsTable)
+          .where(eq(fbConnectionsTable.id, campaign.connectionId))
+      : [];
+
+    if (!conn?.partnerToken) {
+      res.status(400).json({ error: "No access token found. Please reconnect your Facebook account." });
+      return;
+    }
+
+    // Verify campaign status via Meta Marketing API
     const result = await activeFbPartnerAdapter.verifyLeadDelivery(
       campaign.partnerCampaignId,
+      conn.partnerToken,
     );
     const deliveryStatus: "active" | "failed" | "unverified" = result.active ? "active" : "failed";
 

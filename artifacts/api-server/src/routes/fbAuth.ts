@@ -131,6 +131,7 @@ async function upsertConnection(
   fbPageName: string,
   adAccountId: string,
   adAccountName: string,
+  accessToken: string,
 ) {
   const [existing] = await db
     .select({ id: fbConnectionsTable.id })
@@ -140,12 +141,12 @@ async function upsertConnection(
   if (existing) {
     await db
       .update(fbConnectionsTable)
-      .set({ fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
+      .set({ fbPageId, fbPageName, adAccountId, adAccountName, status: "connected", partnerToken: accessToken })
       .where(eq(fbConnectionsTable.userId, userId));
   } else {
     await db
       .insert(fbConnectionsTable)
-      .values({ userId, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" });
+      .values({ userId, fbPageId, fbPageName, adAccountId, adAccountName, status: "connected", partnerToken: accessToken });
   }
 }
 
@@ -182,7 +183,7 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
   }
 
   try {
-    // 1. Exchange code → access token
+    // 1. Exchange code → short-lived access token
     const tokenParams = new URLSearchParams({
       client_id: getAppId(),
       client_secret: getAppSecret(),
@@ -205,7 +206,29 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
       }
       throw new Error(tokenData.error.message);
     }
-    const accessToken: string = tokenData.access_token;
+    const shortLivedToken: string = tokenData.access_token;
+
+    // 1b. Exchange short-lived token → long-lived token (valid ~60 days).
+    //     This ensures the stored token doesn't expire within an hour.
+    let accessToken = shortLivedToken;
+    try {
+      const llParams = new URLSearchParams({
+        grant_type: "fb_exchange_token",
+        client_id: getAppId(),
+        client_secret: getAppSecret(),
+        fb_exchange_token: shortLivedToken,
+      });
+      const llRes = await fetch(
+        `https://graph.facebook.com/${FB_VERSION}/oauth/access_token?${llParams}`,
+      );
+      const llData = (await llRes.json()) as any;
+      if (llData.access_token) {
+        accessToken = llData.access_token;
+        logger.info({ userId }, "FB OAuth: exchanged for long-lived token");
+      }
+    } catch (llErr) {
+      logger.warn({ llErr }, "FB OAuth: long-lived token exchange failed, using short-lived token");
+    }
 
     // 2. Fetch pages and ad accounts in parallel
     const [pagesData, accountsData] = await Promise.all([
@@ -237,7 +260,7 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
     if (pages.length === 1 && adAccounts.length === 1) {
       const page = pages[0];
       const account = adAccounts[0];
-      await upsertConnection(userId, page.id, page.name, account.id, account.name);
+      await upsertConnection(userId, page.id, page.name, account.id, account.name, accessToken);
       logger.info({ userId, fbPageId: page.id, adAccountId: account.id }, "FB OAuth: auto-connected");
       redirectUrl = `${frontend}/connect?fb_connected=1`;
     } else {
