@@ -67,9 +67,9 @@ export function Connect() {
     const fbData = params.get("fb_data");
 
     if (fbConnected === "1") {
-      // Auto-connected — invalidate and clean up URL
+      // Auto-connected — invalidate query then skip straight to the campaign wizard
       queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
-      window.history.replaceState({}, "", `${basePath}/connect`);
+      setLocation("/campaign/new");
     } else if (fbError) {
       setOauthError(decodeURIComponent(fbError));
       window.history.replaceState({}, "", `${basePath}/connect`);
