@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import { User, LogOut, Loader2, LayoutDashboard, Facebook } from "lucide-react";
+import { User, LogOut, Loader2, LayoutDashboard, Facebook, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -26,6 +26,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
             >
               <LayoutDashboard className="w-4 h-4" />
               My Campaigns
+            </Link>
+
+            <Link
+              href="/profile"
+              className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <UserCircle className="w-4 h-4" />
+              Profile
             </Link>
 
             {!isLoaded ? (

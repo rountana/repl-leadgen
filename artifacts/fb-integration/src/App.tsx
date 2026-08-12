@@ -10,6 +10,7 @@ import { Connect } from "@/pages/Connect";
 import { MockOAuthCallback } from "@/pages/MockOAuthCallback";
 import { CampaignWizard } from "@/pages/CampaignWizard";
 import { Campaigns } from "@/pages/Campaigns";
+import { Profile } from "@/pages/Profile";
 import { Shell } from "@/components/layout/Shell";
 
 const queryClient = new QueryClient({
@@ -142,6 +143,9 @@ function ClerkProviderWithRoutes() {
           </Route>
           <Route path="/campaigns">
             <ProtectedRoute component={Campaigns} />
+          </Route>
+          <Route path="/profile">
+            <ProtectedRoute component={Profile} />
           </Route>
           <Route>
             <div className="flex min-h-screen items-center justify-center">

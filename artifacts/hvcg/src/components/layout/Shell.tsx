@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import { User, LogOut, ArrowRight, Loader2 } from "lucide-react";
+import { User, LogOut, ArrowRight, Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -24,7 +24,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             ) : (
               <>
-                <div className="hidden sm:flex items-center gap-2 mr-4">
+                <Link
+                  href="/profile"
+                  className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <UserCircle className="w-4 h-4" />
+                  Profile
+                </Link>
+                <div className="hidden sm:flex items-center gap-2 ml-2">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
                     {user?.firstName?.[0] || <User className="w-4 h-4" />}
                   </div>

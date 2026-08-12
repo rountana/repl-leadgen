@@ -6,3 +6,4 @@ export * from "./leads";
 export * from "./fbConnections";
 export * from "./fbCampaigns";
 export * from "./fbLeads";
+export * from "./userProfiles";

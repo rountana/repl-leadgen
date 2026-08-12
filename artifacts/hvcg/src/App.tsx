@@ -12,6 +12,7 @@ import { NewPath } from "@/pages/NewPath";
 import { Create } from "@/pages/Create";
 import { Review } from "@/pages/Review";
 import { Live } from "@/pages/Live";
+import { Profile } from "@/pages/Profile";
 import { PublicCapture } from "@/pages/PublicCapture";
 import { Shell } from "@/components/layout/Shell";
 
@@ -194,6 +195,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/create"><ProtectedRoute component={Create} /></Route>
           <Route path="/review/:id"><ProtectedRoute component={Review} /></Route>
           <Route path="/live/:id"><ProtectedRoute component={Live} /></Route>
+          <Route path="/profile"><ProtectedRoute component={Profile} /></Route>
           <Route path="/lm/:id" component={PublicCapture} />
           
           <Route>

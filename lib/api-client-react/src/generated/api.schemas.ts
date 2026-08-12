@@ -333,6 +333,28 @@ export interface FbLeadStatus {
   checkedAt: string;
 }
 
+export interface UserProfile {
+  id: number;
+  userId: string;
+  /** @nullable */
+  businessName?: string | null;
+  /** @nullable */
+  businessLocation?: string | null;
+  /** @nullable */
+  industry?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfileUpdate {
+  businessName?: string;
+  businessLocation?: string;
+  industry?: string;
+  logoUrl?: string;
+}
+
 export interface FbLeadWebhookPayload {
   campaignId: number;
   firstName: string;

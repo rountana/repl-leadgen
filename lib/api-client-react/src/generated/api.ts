@@ -1999,3 +1999,57 @@ export const useAiExtractBranding = <TError = ErrorType<unknown>,
       return useMutation(getAiExtractBrandingMutationOptions(options));
     }
 
+// ── User Business Profile ─────────────────────────────────────────────────────
+
+export const getProfile = async (options?: Parameters<typeof customFetch>[1]): Promise<UserProfile> => {
+  return customFetch<UserProfile>({ url: `/api/profile`, method: 'GET' }, options);
+};
+
+export const getGetProfileQueryKey = () => ['getProfile'] as const;
+
+export const getGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetProfileQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({ signal }) => getProfile({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData> & { queryKey: QueryKey };
+};
+
+export type GetProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getProfile>>>;
+export type GetProfileQueryError = ErrorType<unknown>;
+
+export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(
+  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProfileQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  query.queryKey = queryOptions.queryKey;
+  return query;
+}
+
+export const updateProfile = async (userProfileUpdate: UserProfileUpdate, options?: Parameters<typeof customFetch>[1]): Promise<UserProfile> => {
+  return customFetch<UserProfile>(
+    { url: `/api/profile`, method: 'PUT', headers: { 'Content-Type': 'application/json' }, data: userProfileUpdate },
+    options,
+  );
+};
+
+export const getUpdateProfileMutationOptions = <TError = ErrorType<unknown>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationOptions<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProfile>>, UserProfileUpdate> = (data) =>
+    updateProfile(data, requestOptions);
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateProfile>>>;
+export type UpdateProfileMutationError = ErrorType<unknown>;
+
+export function useUpdateProfile<TError = ErrorType<unknown>, TContext = unknown>(
+  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext>; request?: SecondParameter<typeof customFetch> }
+): UseMutationResult<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext> {
+  return useMutation(getUpdateProfileMutationOptions(options));
+}
+

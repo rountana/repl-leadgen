@@ -23,7 +23,9 @@ import {
   useListExamples,
   useListIndustries,
   useAiPrefill,
-  useAiExtractBranding
+  useAiExtractBranding,
+  useGetProfile,
+  getGetProfileQueryKey,
 } from "@workspace/api-client-react";
 
 const CTA_PRESETS = [
@@ -75,7 +77,11 @@ export function Create() {
   const { data: existingMagnet } = useGetLeadMagnet(editId ?? 0, {
     query: { enabled: isEditMode && editId !== null },
   });
-  
+
+  const { data: profile } = useGetProfile({
+    query: { queryKey: getGetProfileQueryKey(), staleTime: 60_000 },
+  });
+
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const { data: examples } = useListExamples(
     selectedIndustry ? { industry: selectedIndustry } : undefined
@@ -92,6 +98,15 @@ export function Create() {
       ctaText: CTA_PRESETS[0],
     },
   });
+
+  // Pre-populate from business profile when creating a new magnet
+  const profileApplied = useRef(false);
+  useEffect(() => {
+    if (!profile || profileApplied.current || isEditMode) return;
+    profileApplied.current = true;
+    if (profile.businessName) form.setValue("businessName", profile.businessName);
+    if (profile.businessLocation) form.setValue("businessLocation", profile.businessLocation);
+  }, [profile, isEditMode]);
 
   // Pre-populate form when editing an existing lead magnet
   useEffect(() => {

@@ -543,4 +543,24 @@ export const AiExtractBrandingResponse = zod.object({
   "primaryColor": zod.string().nullish()
 })
 
+// ── User Business Profile ─────────────────────────────────────────────────────
+
+export const GetProfileResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "businessName": zod.string().nullish(),
+  "businessLocation": zod.string().nullish(),
+  "industry": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+})
+
+export const UpdateProfileBody = zod.object({
+  "businessName": zod.string().optional(),
+  "businessLocation": zod.string().optional(),
+  "industry": zod.string().optional(),
+  "logoUrl": zod.string().optional(),
+})
+
 

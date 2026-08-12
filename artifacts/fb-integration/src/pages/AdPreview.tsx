@@ -26,7 +26,9 @@ import type { FbAdDraft, FbConnection } from "@workspace/api-client-react";
 import {
   useGenerateFbAd,
   useListIndustries,
+  useGetProfile,
   getListIndustriesQueryKey,
+  getGetProfileQueryKey,
 } from "@workspace/api-client-react";
 import { LeadMagnetPicker, type SelectedMagnet } from "@/components/LeadMagnetPicker";
 
@@ -64,6 +66,20 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   const { data: industries = [] } = useListIndustries({
     query: { queryKey: getListIndustriesQueryKey() },
   });
+
+  const { data: profile } = useGetProfile({
+    query: { queryKey: getGetProfileQueryKey(), staleTime: 60_000 },
+  });
+
+  // Apply profile data once on first load (profile wins over FB page name fallback)
+  const profileApplied = useRef(false);
+  useEffect(() => {
+    if (!profile || profileApplied.current) return;
+    profileApplied.current = true;
+    if (profile.businessName) setBusinessName(profile.businessName);
+    if (profile.industry) setIndustry(profile.industry);
+    if (profile.businessLocation) setLocation(profile.businessLocation);
+  }, [profile]);
 
   const generateAd = useGenerateFbAd({
     mutation: {
