@@ -204,22 +204,19 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     const actId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
 
     // Create a shared PAUSED campaign for this user's ad account.
-    // campaign_budget_optimization: false → Ad Set Budget Optimization (ASBO),
-    // meaning each ad set carries its own daily_budget independently.
-    // This is the correct mode for per-ad budgets and avoids Meta error
-    // code 100 / subcode 1885272 that appears when an ad set tries to set
-    // a budget under a CBO campaign.
+    // We do NOT set campaign_budget_optimization or buying_type — both default
+    // to the values we want (ASBO / AUCTION) and passing them explicitly causes
+    // Meta error 100/4834011 on accounts that don't have the CBO toggle enabled.
+    // ASBO is Meta's default when no daily_budget is set on the campaign;
+    // each ad set carries its own daily_budget independently.
     const campaignData = await graphPost(
       `/${actId}/campaigns`,
       {
         name: "Lead Gen — Shared Campaign",
         objective: "OUTCOME_TRAFFIC",
         special_ad_categories: [],
-        // Explicitly disable CBO so ad sets can have individual budgets.
-        campaign_budget_optimization: false,
         // Submit as PAUSED — the user activates from Ads Manager.
         status: "PAUSED",
-        buying_type: "AUCTION",
       },
       accessToken,
     );
