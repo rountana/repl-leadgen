@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Loader2,
+  Pencil,
   RefreshCw,
   RotateCcw,
   DollarSign,
@@ -39,6 +40,9 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
   const [phase, setPhase] = useState<LaunchPhase>("creating");
   const [campaign, setCampaign] = useState<FbCampaign | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // Track whichever campaign ID was used/created so the Edit button can navigate
+  // back to the wizard in edit mode even for campaigns created during this session.
+  const [launchedCampaignId, setLaunchedCampaignId] = useState<number | null>(campaignId ?? null);
   const hasFired = useRef(false);
 
   const createCampaign = useCreateFbCampaign();
@@ -73,6 +77,9 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         setPhase("creating");
         const newCampaign = await createCampaign.mutateAsync({ data: campaignFields });
         targetId = newCampaign.id;
+        // Remember the ID so the Edit button can navigate back in edit mode
+        // even if the subsequent launch step fails.
+        setLaunchedCampaignId(targetId);
       }
 
       setPhase("launching");
@@ -174,11 +181,21 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
                 <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={onReset} className="gap-2">
                 <RotateCcw className="w-4 h-4" />
                 Start Over
               </Button>
+              {launchedCampaignId && (
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation(`/campaign/new?edit=${launchedCampaignId}`)}
+                  className="gap-2"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit Ad
+                </Button>
+              )}
               <Button onClick={handleTryAgain} className="gap-2">
                 <RefreshCw className="w-4 h-4" />
                 Try Again
