@@ -85,6 +85,72 @@ async function graphGet(
   return data;
 }
 
+interface MetaMinimumBudget {
+  currency?: string;
+  min_daily_budget_high_freq?: number;
+  min_daily_budget_imp?: number;
+}
+
+/**
+ * Meta's minimum ad-set budget varies by account currency and optimization
+ * goal. Fetch it before creating anything so a low budget does not leave an
+ * orphaned campaign behind when the ad set is rejected.
+ */
+async function getMinimumDailyBudget(
+  actId: string,
+  accessToken: string,
+): Promise<{ amount: number; currency: string } | null> {
+  try {
+    const result = await graphGet(
+      `/${actId}/minimum_budgets`,
+      {
+        fields: "currency,min_daily_budget_high_freq,min_daily_budget_imp",
+      },
+      accessToken,
+    );
+    const minimum = result?.data?.[0] as MetaMinimumBudget | undefined;
+    const amount = Number(
+      minimum?.min_daily_budget_high_freq ?? minimum?.min_daily_budget_imp,
+    );
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    return { amount, currency: minimum?.currency ?? "account currency" };
+  } catch (err) {
+    // Older API versions/accounts may not expose this edge. In that case,
+    // continue and let the ad-set request return Meta's native error.
+    logger.warn({ err }, "Meta: minimum budget lookup unavailable");
+    return null;
+  }
+}
+
+function formatBudget(amount: number, currency: string): string {
+  const zeroDecimalCurrencies = new Set([
+    "BIF",
+    "CLP",
+    "DJF",
+    "GNF",
+    "JPY",
+    "KMF",
+    "KRW",
+    "MGA",
+    "PYG",
+    "RWF",
+    "UGX",
+    "VND",
+    "VUV",
+    "XAF",
+    "XOF",
+    "XPF",
+  ]);
+  const divisor = zeroDecimalCurrencies.has(currency) ? 1 : 100;
+  const value = amount / divisor;
+  if (currency === "account currency") return `${amount} minor units`;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: zeroDecimalCurrencies.has(currency) ? 0 : 2,
+  }).format(value);
+}
+
 // ── Meta Marketing API adapter ─────────────────────────────────────────────
 
 export const metaFbPartnerAdapter: FbPartnerAdapter = {
@@ -104,6 +170,17 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
 
     // Meta requires the account ID in "act_NNNN" format
     const actId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
+
+    const minimumBudget = await getMinimumDailyBudget(actId, accessToken);
+    if (minimumBudget && dailyBudgetCents < minimumBudget.amount) {
+      throw new Error(
+        `Meta requires a minimum daily budget of ${formatBudget(
+          minimumBudget.amount,
+          minimumBudget.currency,
+        )} for link-click campaigns in this ad account. ` +
+          `Increase the daily budget and try again.`,
+      );
+    }
 
     // ── 1. Campaign ────────────────────────────────────────────────────────
     const campaignData = await graphPost(

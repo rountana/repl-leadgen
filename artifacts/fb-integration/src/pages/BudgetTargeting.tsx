@@ -110,7 +110,10 @@ export function BudgetTargeting({
             </Button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Minimum $1/day. You can pause or stop anytime.</p>
+        <p className="text-xs text-muted-foreground">
+          Minimum $1/day. Some Facebook ad accounts require a higher minimum for link-click campaigns.
+          You can pause or stop anytime.
+        </p>
       </div>
 
       {/* Targeting radius */}
