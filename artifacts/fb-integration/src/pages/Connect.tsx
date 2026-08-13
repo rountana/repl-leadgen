@@ -150,10 +150,11 @@ export function Connect() {
           },
         });
       }
-      queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
       setPickerPages(null);
       setPickerAccounts(null);
       setOauthState(null);
+      setLocation("/campaign/new");
     } catch (err: any) {
       setOauthError(err?.message ?? "Failed to save your selection. Please try again.");
     } finally {
