@@ -115,7 +115,7 @@ export function CampaignWizard() {
           <div>
             <p className="font-semibold">Facebook account not connected</p>
             <p className="text-sm text-muted-foreground mt-1">
-              You need to connect your Facebook account before creating a campaign.
+              You need to connect your Facebook account before creating an ad.
             </p>
           </div>
           <Button onClick={() => setLocation("/connect")}>Go to Connect</Button>

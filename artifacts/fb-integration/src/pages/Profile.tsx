@@ -101,7 +101,7 @@ export function Profile() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Business Profile</h1>
         <p className="text-muted-foreground mt-1">
-          Save your business details once — they'll be pre-filled in every new campaign.
+          Save your business details once — they'll be pre-filled in every new ad.
         </p>
       </div>
 

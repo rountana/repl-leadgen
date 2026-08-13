@@ -327,6 +327,7 @@ export const GetFbConnectionResponse = zod.object({
   "fbPageName": zod.string().nullish(),
   "adAccountId": zod.string().nullish(),
   "adAccountName": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
   "status": zod.enum(['connected', 'disconnected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -350,6 +351,7 @@ export const CreateFbConnectionResponse = zod.object({
   "fbPageName": zod.string().nullish(),
   "adAccountId": zod.string().nullish(),
   "adAccountName": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
   "status": zod.enum(['connected', 'disconnected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()

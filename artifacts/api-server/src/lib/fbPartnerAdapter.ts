@@ -5,7 +5,28 @@ const GRAPH_BASE = `https://graph.facebook.com/${FB_VERSION}`;
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export interface CreateCampaignParams {
+/**
+ * Creates the shared Meta campaign for a user's ad account.
+ * Called once; the campaign ID is stored on the FB connection and reused
+ * for every subsequent ad.
+ */
+export interface EnsureCampaignParams {
+  adAccountId: string;
+  /** Facebook user access token obtained during OAuth. */
+  accessToken: string;
+}
+
+export interface EnsureCampaignResult {
+  partnerCampaignId: string;
+}
+
+/**
+ * Creates a new ad set + creative + ad under the user's shared campaign.
+ * Each "ad" the user creates in our app maps to one Meta ad set + ad.
+ */
+export interface CreateAdParams {
+  /** The shared Meta campaign ID (from EnsureCampaignResult). */
+  partnerCampaignId: string;
   headline: string;
   bodyText: string;
   imageUrl: string;
@@ -21,8 +42,7 @@ export interface CreateCampaignParams {
   destinationUrl?: string;
 }
 
-export interface CreateCampaignResult {
-  partnerCampaignId: string;
+export interface CreateAdResult {
   partnerAdSetId: string;
   partnerAdId: string;
 }
@@ -36,14 +56,34 @@ export interface VerifyLeadDeliveryResult {
 }
 
 export interface FbPartnerAdapter {
-  createCampaign(params: CreateCampaignParams): Promise<CreateCampaignResult>;
   /**
-   * Check whether a campaign is currently delivering.
-   * @param partnerCampaignId  Meta campaign ID (e.g. "23854…")
-   * @param accessToken        Facebook user access token for the account that owns the campaign.
+   * Create a new PAUSED Meta campaign for the user's ad account.
+   * The campaign is shared across all ads for this user.
+   */
+  ensureCampaign(params: EnsureCampaignParams): Promise<EnsureCampaignResult>;
+
+  /**
+   * Create an ad set + creative + ad under the user's shared campaign.
+   * Budget is set on the ad set (ASBO mode — each ad has its own budget).
+   */
+  createAd(params: CreateAdParams): Promise<CreateAdResult>;
+
+  /**
+   * Check whether the shared Meta campaign still exists and is accessible.
+   * Returns false if the campaign was deleted, archived, or is otherwise unreachable.
+   * Used as a pre-flight before submitting a new ad under an existing shared campaign.
+   */
+  campaignExists(partnerCampaignId: string, accessToken: string): Promise<boolean>;
+
+  /**
+   * Check whether a specific ad set is currently delivering.
+   * Querying by ad set ID gives per-ad status, which is correct under the
+   * shared-campaign model where all ads share the same Meta campaign.
+   * @param partnerAdSetId  Meta ad set ID (e.g. "23854…")
+   * @param accessToken     Facebook user access token for the account that owns the ad set.
    */
   verifyLeadDelivery(
-    partnerCampaignId: string,
+    partnerAdSetId: string,
     accessToken: string,
   ): Promise<VerifyLeadDeliveryResult>;
 }
@@ -99,7 +139,7 @@ interface MetaMinimumBudget {
 /**
  * Meta's minimum ad-set budget varies by account currency and optimization
  * goal. Fetch it before creating anything so a low budget does not leave an
- * orphaned campaign behind when the ad set is rejected.
+ * orphaned ad set behind when it is rejected.
  */
 async function getMinimumDailyBudget(
   actId: string,
@@ -159,8 +199,38 @@ function formatBudget(amount: number, currency: string): string {
 // ── Meta Marketing API adapter ─────────────────────────────────────────────
 
 export const metaFbPartnerAdapter: FbPartnerAdapter = {
-  async createCampaign(params) {
+  async ensureCampaign({ adAccountId, accessToken }) {
+    // Meta requires the account ID in "act_NNNN" format
+    const actId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
+
+    // Create a shared PAUSED campaign for this user's ad account.
+    // campaign_budget_optimization: false → Ad Set Budget Optimization (ASBO),
+    // meaning each ad set carries its own daily_budget independently.
+    // This is the correct mode for per-ad budgets and avoids Meta error
+    // code 100 / subcode 1885272 that appears when an ad set tries to set
+    // a budget under a CBO campaign.
+    const campaignData = await graphPost(
+      `/${actId}/campaigns`,
+      {
+        name: "Lead Gen — Shared Campaign",
+        objective: "OUTCOME_TRAFFIC",
+        special_ad_categories: [],
+        // Explicitly disable CBO so ad sets can have individual budgets.
+        campaign_budget_optimization: false,
+        // Submit as PAUSED — the user activates from Ads Manager.
+        status: "PAUSED",
+        buying_type: "AUCTION",
+      },
+      accessToken,
+    );
+    const partnerCampaignId: string = campaignData.id;
+    logger.info({ partnerCampaignId, adAccountId }, "Meta: shared campaign created");
+    return { partnerCampaignId };
+  },
+
+  async createAd(params) {
     const {
+      partnerCampaignId,
       headline,
       bodyText,
       imageUrl,
@@ -171,53 +241,35 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       fbPageId,
       adAccountId,
       accessToken,
+      destinationUrl,
     } = params;
 
     // Meta requires the account ID in "act_NNNN" format
     const actId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
 
+    // Check minimum budget for the ad account before creating the ad set.
     const minimumBudget = await getMinimumDailyBudget(actId, accessToken);
     if (minimumBudget && dailyBudgetCents < minimumBudget.amount) {
       throw new Error(
         `Meta requires a minimum daily budget of ${formatBudget(
           minimumBudget.amount,
           minimumBudget.currency,
-        )} for link-click campaigns in this ad account. ` +
+        )} for link-click ads in this ad account. ` +
           `Increase the daily budget and try again.`,
       );
     }
 
-    // ── 1. Campaign ────────────────────────────────────────────────────────
-    // OUTCOME_TRAFFIC uses Campaign Budget Optimization (CBO) — the budget
-    // lives on the campaign, not on the ad set. Setting daily_budget on an
-    // ad set under a CBO campaign triggers Meta error code 100 / subcode
-    // 1885272 ("Invalid parameter").
-    const campaignData = await graphPost(
-      `/${actId}/campaigns`,
-      {
-        name: headline.slice(0, 255) || "Campaign",
-        objective: "OUTCOME_TRAFFIC",
-        special_ad_categories: [],
-        // Meta Marketing API daily_budget is in the account currency's
-        // smallest unit. For USD that is cents, matching our field exactly.
-        daily_budget: dailyBudgetCents,
-        // Submit as PAUSED so the user can review in Ads Manager before any
-        // budget is spent. The user activates the campaign manually.
-        status: "PAUSED",
-        buying_type: "AUCTION",
-      },
-      accessToken,
-    );
-    const campaignId: string = campaignData.id;
-    logger.info({ campaignId, adAccountId }, "Meta: campaign created");
-
-    // ── 2. Ad Set ──────────────────────────────────────────────────────────
-    // With CBO the budget is on the campaign; the ad set has no daily_budget.
+    // ── 1. Ad Set ─────────────────────────────────────────────────────────
+    // Budget lives here (ASBO mode) — each ad has its own daily_budget
+    // independent of other ads under the same shared campaign.
     const adSetData = await graphPost(
       `/${actId}/adsets`,
       {
         name: `${headline.slice(0, 200)} — Ad Set`,
-        campaign_id: campaignId,
+        campaign_id: partnerCampaignId,
+        // Meta Marketing API daily_budget is in the account currency's smallest
+        // unit. For USD that is cents, which matches our dailyBudgetCents exactly.
+        daily_budget: dailyBudgetCents,
         billing_event: "IMPRESSIONS",
         optimization_goal: "LINK_CLICKS",
         bid_strategy: "LOWEST_COST_WITHOUT_CAP",
@@ -234,16 +286,17 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
           },
           age_min: 18,
         },
-        // Must also be PAUSED — an ACTIVE ad set under a PAUSED campaign would
-        // conflict and is rejected by Meta's API.
-        status: "PAUSED",
+        // ACTIVE — the campaign is PAUSED, so no budget is spent yet.
+        // When the user activates the campaign in Ads Manager, this ad set
+        // (and its ad) start delivering immediately without needing a second toggle.
+        status: "ACTIVE",
       },
       accessToken,
     );
     const adSetId: string = adSetData.id;
-    logger.info({ adSetId }, "Meta: ad set created");
+    logger.info({ adSetId, partnerCampaignId }, "Meta: ad set created");
 
-    // ── 3. Image (optional) ────────────────────────────────────────────────
+    // ── 2. Image (optional) ───────────────────────────────────────────────
     // Supports two cases:
     //   a) Regular URL  → pass directly as `picture` in the creative link_data
     //   b) Base64 data URL → upload via /adimages first to obtain a hash
@@ -275,10 +328,10 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       }
     }
 
-    // ── 4. Ad Creative ─────────────────────────────────────────────────────
+    // ── 3. Ad Creative ────────────────────────────────────────────────────
     // Use the caller-provided destination URL (e.g. a HVCG lead magnet page),
     // falling back to the Facebook Page if none was supplied.
-    const adDestinationUrl = params.destinationUrl || `https://www.facebook.com/${fbPageId}`;
+    const adDestinationUrl = destinationUrl || `https://www.facebook.com/${fbPageId}`;
 
     const creativeData = await graphPost(
       `/${actId}/adcreatives`,
@@ -300,47 +353,80 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     const creativeId: string = creativeData.id;
     logger.info({ creativeId }, "Meta: ad creative created");
 
-    // ── 5. Ad ──────────────────────────────────────────────────────────────
+    // ── 4. Ad ─────────────────────────────────────────────────────────────
+    // Also ACTIVE so the entire hierarchy is ready to deliver the moment the
+    // parent campaign is activated by the user in Ads Manager.
     const adData = await graphPost(
       `/${actId}/ads`,
       {
         name: headline.slice(0, 255) || "Ad",
         adset_id: adSetId,
         creative: { creative_id: creativeId },
-        status: "PAUSED",
+        status: "ACTIVE",
       },
       accessToken,
     );
     const adId: string = adData.id;
-    logger.info({ adId, campaignId }, "Meta: ad created");
+    logger.info({ adId, adSetId, partnerCampaignId }, "Meta: ad created");
 
-    return { partnerCampaignId: campaignId, partnerAdSetId: adSetId, partnerAdId: adId };
+    return { partnerAdSetId: adSetId, partnerAdId: adId };
   },
 
-  async verifyLeadDelivery(partnerCampaignId, accessToken) {
+  async campaignExists(partnerCampaignId, accessToken) {
+    try {
+      await graphGet(`/${partnerCampaignId}`, { fields: "id,status" }, accessToken);
+      return true;
+    } catch (err) {
+      // Only return false (campaign deleted) when Meta explicitly reports the object
+      // does not exist. Transient failures (network, rate-limit, 5xx) are re-thrown
+      // so callers fail loudly and do NOT silently replace a valid shared campaign.
+      //
+      // Meta's canonical "not found" signals:
+      //   - error.code 100 with "does not exist" / "Invalid parameter" in the message
+      //   - error.code 803 ("Some aliases you requested do not exist")
+      if (err instanceof Error) {
+        const msg = err.message;
+        const isNotFound =
+          /code 803/i.test(msg) ||
+          /#803/i.test(msg) ||
+          /does not exist/i.test(msg) ||
+          /\(#100\).*not found/i.test(msg);
+        if (isNotFound) return false;
+      }
+      // Surface transient / permission / unknown errors — do not silently orphan campaigns.
+      throw err;
+    }
+  },
+
+  async verifyLeadDelivery(partnerAdSetId, accessToken) {
+    // Query the individual ad set — not the shared campaign — so each ad has
+    // its own accurate status under the shared-campaign model.
+    // Because the ad set and ad are created as ACTIVE (only the campaign is PAUSED),
+    // the ad set effective_status of "CAMPAIGN_PAUSED" means the campaign hasn't been
+    // activated yet; "ACTIVE" means the user activated the campaign and ads are running.
     const data = await graphGet(
-      `/${partnerCampaignId}`,
+      `/${partnerAdSetId}`,
       { fields: "status,effective_status" },
       accessToken,
     );
 
-    // effective_status reflects actual delivery (accounts for account-level pauses etc.)
+    // effective_status reflects actual delivery (accounts for campaign-level pauses etc.)
     const active = data.effective_status === "ACTIVE";
-    // PAUSED means the campaign was submitted but not yet activated by the user in Ads Manager.
-    // CAMPAIGN_PAUSED appears on the ad/ad-set level when the parent campaign is paused.
+    // CAMPAIGN_PAUSED = parent campaign is paused; user hasn't activated it yet.
+    // PAUSED = ad set explicitly paused after initial submission.
     const paused =
       data.effective_status === "PAUSED" ||
       data.effective_status === "CAMPAIGN_PAUSED";
 
     logger.info(
       {
-        partnerCampaignId,
+        partnerAdSetId,
         status: data.status,
         effectiveStatus: data.effective_status,
         active,
         paused,
       },
-      "Meta: campaign status checked",
+      "Meta: ad set status checked",
     );
 
     return { active, paused, checkedAt: new Date().toISOString() };
@@ -350,17 +436,24 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
 // ── Stub (kept for local dev / tests without real Meta credentials) ─────────
 
 export const stubFbPartnerAdapter: FbPartnerAdapter = {
-  async createCampaign(_params) {
-    logger.warn("stubFbPartnerAdapter.createCampaign: returning stub campaign IDs");
+  async ensureCampaign(_params) {
+    logger.warn("stubFbPartnerAdapter.ensureCampaign: returning stub campaign ID");
+    return { partnerCampaignId: `stub_camp_${Date.now()}` };
+  },
+  async createAd(_params) {
+    logger.warn("stubFbPartnerAdapter.createAd: returning stub ad IDs");
     const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     return {
-      partnerCampaignId: `stub_camp_${suffix}`,
       partnerAdSetId: `stub_adset_${suffix}`,
       partnerAdId: `stub_ad_${suffix}`,
     };
   },
-  async verifyLeadDelivery(partnerCampaignId, _accessToken) {
-    logger.warn({ partnerCampaignId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub paused");
+  async campaignExists(_partnerCampaignId, _accessToken) {
+    logger.warn("stubFbPartnerAdapter.campaignExists: returning true (stub)");
+    return true;
+  },
+  async verifyLeadDelivery(partnerAdSetId, _accessToken) {
+    logger.warn({ partnerAdSetId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub paused");
     return { active: false, paused: true, checkedAt: new Date().toISOString() };
   },
 };

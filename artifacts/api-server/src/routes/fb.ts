@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import { getAuth } from "@clerk/express";
 import { db, fbConnectionsTable, fbCampaignsTable, fbLeadsTable } from "@workspace/db";
@@ -63,6 +63,8 @@ function serializeConnection(c: any) {
   const { partnerToken: _omit, ...safe } = c;
   return {
     ...safe,
+    // partnerCampaignId is safe to expose — it is a Meta campaign ID, not a credential.
+    partnerCampaignId: c.partnerCampaignId ?? null,
     // A page/account selection without the server-side token is not launchable.
     // Treat it as disconnected in the client so the user is guided through a
     // fresh OAuth flow instead of reaching the launch guard with a misleading
@@ -104,19 +106,29 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
   // Upsert: update existing row to preserve FK references from campaigns,
   // or insert fresh if none exists yet.
   const [existing] = await db
-    .select({ id: fbConnectionsTable.id })
+    .select({ id: fbConnectionsTable.id, adAccountId: fbConnectionsTable.adAccountId })
     .from(fbConnectionsTable)
     .where(eq(fbConnectionsTable.userId, userId));
 
   let conn: typeof fbConnectionsTable.$inferSelect;
   if (existing) {
+    // Clear the shared campaign whenever the ad account changes — the campaign
+    // belongs to the old ad account and cannot be used with a new one.
+    const accountChanged = existing.adAccountId !== adAccountId;
     const [updated] = await db
       .update(fbConnectionsTable)
-      .set({ fbPageId, fbPageName, adAccountId, adAccountName, status: "connected" })
+      .set({
+        fbPageId,
+        fbPageName,
+        adAccountId,
+        adAccountName,
+        status: "connected",
+        ...(accountChanged ? { partnerCampaignId: null } : {}),
+      })
       .where(eq(fbConnectionsTable.userId, userId))
       .returning();
     conn = updated;
-    req.log.info({ userId, fbPageId }, "FB connection updated");
+    req.log.info({ userId, fbPageId, accountChanged }, "FB connection updated");
   } else {
     const [inserted] = await db
       .insert(fbConnectionsTable)
@@ -310,7 +322,10 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
       ),
     );
 
-  const syncable = candidates.filter((c) => !!c.partnerCampaignId && !!c.connectionId);
+  // Filter to ads that have a Meta ad set ID — status is checked per ad set,
+  // not per campaign, so that each ad gets its own accurate delivery state
+  // under the shared-campaign model.
+  const syncable = candidates.filter((c) => !!c.partnerAdSetId && !!c.connectionId);
   if (syncable.length === 0) {
     res.json({ synced: 0, updated: 0 });
     return;
@@ -339,8 +354,10 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
         return;
       }
       try {
+        // Check the individual ad set — not the shared campaign — so each ad
+        // has its own status rather than inheriting the shared campaign status.
         const result = await activeFbPartnerAdapter.verifyLeadDelivery(
-          campaign.partnerCampaignId!,
+          campaign.partnerAdSetId!,
           conn.partnerToken,
         );
         // Map Meta effective_status → our internal status + leadDeliveryStatus
@@ -428,8 +445,77 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
 
   let updatedCampaign: typeof campaign;
   try {
-    // 1. Create the campaign via Meta Marketing API (submitted as PAUSED)
-    const createResult = await activeFbPartnerAdapter.createCampaign({
+    // ── Shared campaign ────────────────────────────────────────────────────
+    // All ads from this user live under one shared Meta campaign.
+    // If the connection already has a campaign ID, verify it still exists in
+    // Ads Manager before trusting it. If it was deleted, create a fresh one.
+    // This pre-flight approach avoids blanket retries on unrelated failures
+    // (budget, targeting, creative errors) that would orphan valid campaigns.
+    // Track the current stored ID so we can use it in the conditional-replace
+    // predicate if the campaign turns out to be deleted.
+    let partnerCampaignId = conn.partnerCampaignId ?? null;
+    // storedId is the value that is currently in the DB row — used to scope
+    // atomic updates so concurrent launches can't clobber each other.
+    const storedId = partnerCampaignId;
+
+    if (partnerCampaignId) {
+      const stillExists = await activeFbPartnerAdapter.campaignExists(
+        partnerCampaignId,
+        conn.partnerToken!,
+      );
+      if (!stillExists) {
+        req.log.warn(
+          { partnerCampaignId, connectionId: conn.id },
+          "FB shared campaign no longer exists — creating a replacement",
+        );
+        partnerCampaignId = null; // signal that a new campaign must be created
+      }
+    }
+
+    if (!partnerCampaignId) {
+      const campaignResult = await activeFbPartnerAdapter.ensureCampaign({
+        adAccountId: conn.adAccountId,
+        accessToken: conn.partnerToken!,
+      });
+      const newCampaignId = campaignResult.partnerCampaignId;
+
+      // Atomic replace: use the old stored value in the WHERE predicate so the
+      // update succeeds only when the DB still holds exactly that value.
+      // • storedId === null  →  claiming a NULL slot (first launch / after account change)
+      // • storedId !== null  →  replacing a confirmed-deleted campaign by its exact old ID
+      // Either way, a concurrent winner changes the row first and our update is a no-op.
+      const whereClause = storedId
+        ? and(eq(fbConnectionsTable.id, conn.id), eq(fbConnectionsTable.partnerCampaignId, storedId))
+        : and(eq(fbConnectionsTable.id, conn.id), isNull(fbConnectionsTable.partnerCampaignId));
+
+      const [stored] = await db
+        .update(fbConnectionsTable)
+        .set({ partnerCampaignId: newCampaignId })
+        .where(whereClause)
+        .returning();
+
+      if (stored) {
+        partnerCampaignId = newCampaignId;
+        req.log.info({ partnerCampaignId, connectionId: conn.id }, "FB shared campaign stored on connection");
+      } else {
+        // A concurrent launch updated the row before us.
+        // Reload the current campaign ID and use it — the campaign we just
+        // created is orphaned in Meta but harmless (the user can remove it).
+        const [freshConn] = await db
+          .select()
+          .from(fbConnectionsTable)
+          .where(eq(fbConnectionsTable.id, conn.id));
+        partnerCampaignId = freshConn?.partnerCampaignId ?? newCampaignId;
+        req.log.warn(
+          { partnerCampaignId, orphanedCampaignId: newCampaignId, connectionId: conn.id },
+          "FB shared campaign: concurrent update stored a different ID — using it",
+        );
+      }
+    }
+
+    // ── Create the ad under the verified shared campaign ──────────────────
+    const adResult = await activeFbPartnerAdapter.createAd({
+      partnerCampaignId,
       headline: campaign.headline ?? "",
       bodyText: campaign.bodyText ?? "",
       imageUrl: campaign.imageUrl ?? "",
@@ -443,15 +529,16 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       destinationUrl: campaign.destinationUrl ?? undefined,
     });
 
-    // 2. Campaign was submitted as PAUSED — mark it accordingly so the user
-    //    knows they need to activate it in Ads Manager before it spends any budget.
+    // ── Mark the ad as submitted (PAUSED) ─────────────────────────────────
+    // Store the shared campaign ID alongside the ad-specific IDs so sync/
+    // lead-status routes can still check Meta campaign status.
     const [updated] = await db
       .update(fbCampaignsTable)
       .set({
         status: "paused",
-        partnerCampaignId: createResult.partnerCampaignId,
-        partnerAdSetId: createResult.partnerAdSetId,
-        partnerAdId: createResult.partnerAdId,
+        partnerCampaignId,
+        partnerAdSetId: adResult.partnerAdSetId,
+        partnerAdId: adResult.partnerAdId,
         leadDeliveryStatus: "unverified",
       })
       .where(eq(fbCampaignsTable.id, campaign.id))
@@ -461,11 +548,11 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
     req.log.info(
       {
         campaignId: campaign.id,
-        partnerCampaignId: createResult.partnerCampaignId,
-        partnerAdSetId: createResult.partnerAdSetId,
-        partnerAdId: createResult.partnerAdId,
+        partnerCampaignId,
+        partnerAdSetId: adResult.partnerAdSetId,
+        partnerAdId: adResult.partnerAdId,
       },
-      "FB campaign submitted as paused — awaiting user review in Ads Manager",
+      "FB ad submitted as paused under shared campaign — awaiting user review in Ads Manager",
     );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -476,7 +563,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       .returning();
 
     updatedCampaign = updated;
-    req.log.error({ campaignId: campaign.id, err }, "FB campaign launch failed");
+    req.log.error({ campaignId: campaign.id, err }, "FB ad launch failed");
   }
 
   res.json(serializeCampaign(updatedCampaign!));
@@ -504,8 +591,8 @@ router.get(
       return;
     }
 
-    // If no partner campaign ID yet, return unverified immediately
-    if (!campaign.partnerCampaignId) {
+    // If no ad set ID yet (ad was never launched), return unverified immediately
+    if (!campaign.partnerAdSetId) {
       res.json({ status: "unverified", checkedAt: new Date().toISOString() });
       return;
     }
@@ -523,15 +610,17 @@ router.get(
       return;
     }
 
-    // Verify campaign status via Meta Marketing API
+    // Check the individual ad set — not the shared campaign — so this ad's
+    // status is independent of other ads under the same shared campaign.
     const result = await activeFbPartnerAdapter.verifyLeadDelivery(
-      campaign.partnerCampaignId,
+      campaign.partnerAdSetId,
       conn.partnerToken,
     );
     // Map Meta effective_status to our delivery status:
-    // ACTIVE  → "active"  (campaign is delivering)
-    // PAUSED / CAMPAIGN_PAUSED → "unverified" (submitted but not yet activated by user)
-    // anything else → "failed"
+    // ACTIVE            → "active"     (ad set is delivering)
+    // PAUSED            → "unverified" (ad set manually paused)
+    // CAMPAIGN_PAUSED   → "unverified" (parent campaign paused; user hasn't activated yet)
+    // anything else     → "failed"
     const deliveryStatus: "active" | "failed" | "unverified" = result.active
       ? "active"
       : result.paused

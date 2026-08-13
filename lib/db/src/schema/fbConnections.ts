@@ -12,6 +12,8 @@ export const fbConnectionsTable = pgTable(
     fbPageName: text("fb_page_name"),
     adAccountId: text("ad_account_id"),
     adAccountName: text("ad_account_name"),
+    // Shared Meta campaign ID — created once per user, all ads submitted under it.
+    partnerCampaignId: text("partner_campaign_id"),
     status: text("status").notNull().default("disconnected"), // 'connected' | 'disconnected'
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

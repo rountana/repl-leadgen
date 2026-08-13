@@ -101,7 +101,7 @@ function LeadDeliveryPill({ status }: { status: FbCampaignLeadDeliveryStatus }) 
   }
 }
 
-function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccountId?: string | null }) {
+function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: FbCampaign; adAccountId?: string | null; sharedCampaignId?: string | null }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const launch = useLaunchFbCampaign({
@@ -127,7 +127,7 @@ function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccou
 
             <div>
               <h3 className="font-bold text-base leading-tight">
-                {campaign.headline ?? "Untitled Campaign"}
+                {campaign.headline ?? "Untitled Ad"}
               </h3>
               {campaign.bodyText && (
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -158,7 +158,7 @@ function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccou
               <>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
                   <a
-                    href={adsManagerUrl(adAccountId, campaign.partnerCampaignId)}
+                    href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -183,7 +183,7 @@ function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccou
                 </p>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
                   <a
-                    href={adsManagerUrl(adAccountId, campaign.partnerCampaignId)}
+                    href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -270,9 +270,9 @@ export function Campaigns() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Campaigns</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Ads</h1>
           <p className="text-muted-foreground mt-1">
-            Track your Facebook ad campaigns and lead delivery status.
+            Track your Facebook ads and lead delivery status.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export function Campaigns() {
           )}
           <Button onClick={() => setLocation("/campaign/new")} className="gap-2">
             <Plus className="w-4 h-4" />
-            New Campaign
+            New Ad
           </Button>
         </div>
       </div>
@@ -331,8 +331,8 @@ export function Campaigns() {
         <Card className="border-destructive/20 bg-destructive/5">
           <CardContent className="p-6 text-center space-y-3">
             <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
-            <p className="font-semibold">Failed to load campaigns</p>
-            <p className="text-sm text-muted-foreground">There was a problem fetching your campaigns.</p>
+            <p className="font-semibold">Failed to load ads</p>
+            <p className="text-sm text-muted-foreground">There was a problem fetching your ads.</p>
             <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
           </CardContent>
         </Card>
@@ -343,12 +343,12 @@ export function Campaigns() {
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
               <TrendingUp className="w-10 h-10 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">No campaigns yet</h3>
+            <h3 className="text-2xl font-bold mb-2">No ads yet</h3>
             <p className="text-muted-foreground max-w-sm mb-8">
-              Create your first Facebook ad campaign to start reaching local customers and capturing leads.
+              Create your first Facebook ad to start reaching local customers and capturing leads.
             </p>
             <Button onClick={() => setLocation("/campaign/new")} size="lg" className="gap-2">
-              Create Your First Campaign
+              Create Your First Ad
               <ArrowRight className="w-4 h-4" />
             </Button>
           </CardContent>
@@ -356,7 +356,12 @@ export function Campaigns() {
       ) : (
         <div className="space-y-4">
           {campaigns.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} adAccountId={connection?.adAccountId} />
+            <CampaignCard
+              key={campaign.id}
+              campaign={campaign}
+              adAccountId={connection?.adAccountId}
+              sharedCampaignId={connection?.partnerCampaignId}
+            />
           ))}
         </div>
       )}

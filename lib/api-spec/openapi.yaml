@@ -789,6 +789,9 @@ components:
           type: ["string", "null"]
         adAccountName:
           type: ["string", "null"]
+        partnerCampaignId:
+          type: ["string", "null"]
+          description: Shared Meta campaign ID — created once, reused for all ads.
         status:
           type: string
           enum: [connected, disconnected]

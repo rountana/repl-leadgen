@@ -221,6 +221,11 @@ export interface FbConnection {
   adAccountId?: string | null;
   /** @nullable */
   adAccountName?: string | null;
+  /**
+   * Shared Meta campaign ID — created once, reused for all ads.
+   * @nullable
+   */
+  partnerCampaignId?: string | null;
   status: FbConnectionStatus;
   createdAt: string;
   updatedAt: string;

@@ -34,7 +34,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-3 py-1.5 rounded-full">
           <Sparkles className="w-3.5 h-3.5" />
-          Campaign Templates
+          Ad Templates
         </div>
         <h2 className="text-2xl font-bold tracking-tight">
           Start with a ready-made template

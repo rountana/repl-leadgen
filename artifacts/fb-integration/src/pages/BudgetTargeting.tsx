@@ -111,7 +111,7 @@ export function BudgetTargeting({
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          Minimum $1/day. Some Facebook ad accounts require a higher minimum for link-click campaigns.
+          Minimum $1/day. Some Facebook ad accounts require a higher minimum for link-click ads.
           You can pause or stop anytime.
         </p>
       </div>
@@ -157,7 +157,7 @@ export function BudgetTargeting({
           </p>
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <TrendingUp className="w-3 h-3" />
-            <span>Estimates based on historical campaign data. Actual results may vary.</span>
+            <span>Estimates based on historical ad data. Actual results may vary.</span>
           </div>
         </CardContent>
       </Card>

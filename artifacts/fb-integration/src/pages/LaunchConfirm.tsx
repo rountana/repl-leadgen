@@ -81,7 +81,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
       if (launched.status === "error") {
         setErrorMessage(
           launched.errorMessage ??
-            "Facebook rejected the campaign. Please review the campaign details and try again.",
+            "Facebook rejected the ad. Please review the ad details and try again.",
         );
         setPhase("error");
         return;
@@ -97,7 +97,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         apiError?.response?.data?.error ??
         apiError?.data?.error ??
         apiError?.message ??
-        "Failed to launch campaign. Please try again.";
+        "Failed to submit ad. Please try again.";
       setErrorMessage(message);
       setPhase("error");
     }
@@ -121,7 +121,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Launching Campaign…</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Submitting Ad…</h2>
           <p className="text-muted-foreground mt-1">This usually takes just a moment.</p>
         </div>
         <Card>
@@ -133,11 +133,11 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
             </div>
             <div className="text-center">
               <p className="font-semibold">
-                {phase === "creating" ? "Creating campaign…" : "Submitting to Facebook…"}
+                {phase === "creating" ? "Saving ad…" : "Submitting to Facebook…"}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {phase === "creating"
-                  ? "Setting up your campaign"
+                  ? "Saving your ad details"
                   : "Handing off to the Facebook Ads system"}
               </p>
             </div>
@@ -170,7 +170,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-destructive">Campaign could not be launched</p>
+                <p className="font-semibold text-destructive">Ad could not be submitted</p>
                 <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
               </div>
             </div>
@@ -208,7 +208,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
           <CheckCircle2 className="w-8 h-8 text-blue-600" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">Campaign submitted for review!</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Ad submitted for review!</h2>
         <p className="text-muted-foreground mt-1 max-w-sm mx-auto">
           Your ad is ready in Facebook Ads Manager — review it there and turn it on when you're ready.
           No budget will be spent until you activate it.
@@ -244,7 +244,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
       {/* Campaign summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Campaign Summary</CardTitle>
+          <CardTitle className="text-base">Ad Summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="p-3 rounded-lg bg-secondary/30">
@@ -286,8 +286,8 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
           <ol className="space-y-2">
             {[
               "Open Facebook Ads Manager using the button above",
-              "Find your campaign and review the ad creative and settings",
-              "Toggle the campaign to Active when you're ready to start running",
+              "Find your ad and review the creative and settings",
+              "Toggle the shared campaign to Active — all your ads start running immediately",
               "Come back here and hit Refresh Status to see it go live",
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-amber-800">
@@ -317,7 +317,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
           className="flex-1"
           onClick={() => setLocation("/campaigns")}
         >
-          See All Campaigns
+          See All Ads
         </Button>
       </div>
     </div>
