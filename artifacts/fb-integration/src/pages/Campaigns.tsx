@@ -191,6 +191,15 @@ function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccou
                     Review in Ads Manager
                   </a>
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full gap-1.5 text-xs text-muted-foreground"
+                  onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}
+                >
+                  <Pencil className="w-3 h-3" />
+                  Edit Creative
+                </Button>
               </>
             ) : campaign.status === "error" ? (
               <div className="space-y-2">

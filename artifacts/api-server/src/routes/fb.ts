@@ -257,8 +257,8 @@ router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<vo
 
   if (!existing) { res.status(404).json({ error: "Campaign not found" }); return; }
 
-  if (!["draft", "error"].includes(existing.status)) {
-    res.status(409).json({ error: "Only draft or failed campaigns can be edited." });
+  if (!["draft", "error", "paused"].includes(existing.status)) {
+    res.status(409).json({ error: "Only draft, failed, or paused campaigns can be edited." });
     return;
   }
 
@@ -274,9 +274,16 @@ router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<vo
     ...(targetingLongitude !== undefined ? { targetingLongitude: String(targetingLongitude) } : {}),
   };
 
+  // If the campaign was previously paused (submitted to Meta), clear the old
+  // Meta partner IDs so the next launch creates a fresh campaign there.
+  // The orphaned paused campaign in Ads Manager is harmless — users can delete it.
+  const clearPartnerIds = existing.status === "paused"
+    ? { partnerCampaignId: null, partnerAdSetId: null, partnerAdId: null }
+    : {};
+
   const [updated] = await db
     .update(fbCampaignsTable)
-    .set({ ...dbPatch, status: "draft", leadDeliveryStatus: "unverified", errorMessage: null })
+    .set({ ...dbPatch, ...clearPartnerIds, status: "draft", leadDeliveryStatus: "unverified", errorMessage: null })
     .where(eq(fbCampaignsTable.id, existing.id))
     .returning();
 

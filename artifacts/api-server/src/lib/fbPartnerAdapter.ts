@@ -188,15 +188,19 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     }
 
     // ── 1. Campaign ────────────────────────────────────────────────────────
+    // OUTCOME_TRAFFIC uses Campaign Budget Optimization (CBO) — the budget
+    // lives on the campaign, not on the ad set. Setting daily_budget on an
+    // ad set under a CBO campaign triggers Meta error code 100 / subcode
+    // 1885272 ("Invalid parameter").
     const campaignData = await graphPost(
       `/${actId}/campaigns`,
       {
         name: headline.slice(0, 255) || "Campaign",
         objective: "OUTCOME_TRAFFIC",
         special_ad_categories: [],
-        // This app uses Ad Set Budget Optimization: each ad set owns its
-        // daily budget, so campaign-level budget sharing must be disabled.
-        is_adset_budget_sharing_enabled: false,
+        // Meta Marketing API daily_budget is in the account currency's
+        // smallest unit. For USD that is cents, matching our field exactly.
+        daily_budget: dailyBudgetCents,
         // Submit as PAUSED so the user can review in Ads Manager before any
         // budget is spent. The user activates the campaign manually.
         status: "PAUSED",
@@ -208,14 +212,12 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     logger.info({ campaignId, adAccountId }, "Meta: campaign created");
 
     // ── 2. Ad Set ──────────────────────────────────────────────────────────
+    // With CBO the budget is on the campaign; the ad set has no daily_budget.
     const adSetData = await graphPost(
       `/${actId}/adsets`,
       {
         name: `${headline.slice(0, 200)} — Ad Set`,
         campaign_id: campaignId,
-        // Meta Marketing API daily_budget is in the account currency's smallest unit.
-        // For USD that is cents, which matches our dailyBudgetCents field exactly.
-        daily_budget: dailyBudgetCents,
         billing_event: "IMPRESSIONS",
         optimization_goal: "LINK_CLICKS",
         bid_strategy: "LOWEST_COST_WITHOUT_CAP",
