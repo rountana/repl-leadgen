@@ -874,9 +874,13 @@ components:
           type: ["string", "null"]
         partnerCampaignId:
           type: ["string", "null"]
+        partnerAdSetId:
+          type: ["string", "null"]
+        partnerAdId:
+          type: ["string", "null"]
         status:
           type: string
-          enum: [draft, launching, live, error]
+          enum: [draft, launching, live, paused, error]
         leadDeliveryStatus:
           type: string
           enum: [unverified, active, failed]

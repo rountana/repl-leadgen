@@ -17,7 +17,9 @@ export const fbCampaignsTable = pgTable(
     targetingLatitude: numeric("targeting_latitude"),
     targetingLongitude: numeric("targeting_longitude"),
     partnerCampaignId: text("partner_campaign_id"),
-    status: text("status").notNull().default("draft"), // 'draft' | 'launching' | 'live' | 'error'
+    partnerAdSetId: text("partner_ad_set_id"),
+    partnerAdId: text("partner_ad_id"),
+    status: text("status").notNull().default("draft"), // 'draft' | 'launching' | 'live' | 'paused' | 'error'
     leadDeliveryStatus: text("lead_delivery_status").notNull().default("unverified"), // 'unverified' | 'active' | 'failed'
     destinationUrl: text("destination_url"),
     errorMessage: text("error_message"),

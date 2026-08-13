@@ -265,9 +265,18 @@ router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<vo
   const patch = UpdateFbCampaignBody.safeParse(req.body);
   if (!patch.success) { res.status(400).json({ error: patch.error.message }); return; }
 
+  // The DB numeric columns (targetingLatitude / targetingLongitude) require strings,
+  // but the Zod body schema parses them as numbers. Convert before writing.
+  const { targetingLatitude, targetingLongitude, ...rest } = patch.data;
+  const dbPatch = {
+    ...rest,
+    ...(targetingLatitude !== undefined ? { targetingLatitude: String(targetingLatitude) } : {}),
+    ...(targetingLongitude !== undefined ? { targetingLongitude: String(targetingLongitude) } : {}),
+  };
+
   const [updated] = await db
     .update(fbCampaignsTable)
-    .set({ ...patch.data, status: "draft", leadDeliveryStatus: "unverified", errorMessage: null })
+    .set({ ...dbPatch, status: "draft", leadDeliveryStatus: "unverified", errorMessage: null })
     .where(eq(fbCampaignsTable.id, existing.id))
     .returning();
 
@@ -327,9 +336,14 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
           campaign.partnerCampaignId!,
           conn.partnerToken,
         );
-        const isActive = result.active;
-        const newStatus = isActive ? "live" : "paused";
-        const newLeadDelivery = isActive ? "active" : "failed";
+        // Map Meta effective_status → our internal status + leadDeliveryStatus
+        const newStatus: "live" | "paused" = result.active ? "live" : "paused";
+        // "unverified" while paused (user hasn't activated yet); "active" once live
+        const newLeadDelivery: "active" | "unverified" | "failed" = result.active
+          ? "active"
+          : result.paused
+            ? "unverified"
+            : "failed";
 
         if (newStatus !== campaign.status || newLeadDelivery !== campaign.leadDeliveryStatus) {
           await db
@@ -338,7 +352,7 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
             .where(eq(fbCampaignsTable.id, campaign.id));
           updated++;
           req.log.info(
-            { campaignId: campaign.id, oldStatus: campaign.status, newStatus },
+            { campaignId: campaign.id, oldStatus: campaign.status, newStatus, newLeadDelivery },
             "FB campaign sync: status updated",
           );
         }
@@ -407,7 +421,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
 
   let updatedCampaign: typeof campaign;
   try {
-    // 1. Create the campaign via Meta Marketing API
+    // 1. Create the campaign via Meta Marketing API (submitted as PAUSED)
     const createResult = await activeFbPartnerAdapter.createCampaign({
       headline: campaign.headline ?? "",
       bodyText: campaign.bodyText ?? "",
@@ -422,19 +436,16 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       destinationUrl: campaign.destinationUrl ?? undefined,
     });
 
-    // 2. Atomically verify campaign delivery status right after launch
-    const verifyResult = await activeFbPartnerAdapter.verifyLeadDelivery(
-      createResult.partnerCampaignId,
-      conn.partnerToken!,
-    );
-    const leadDeliveryStatus: "active" | "failed" = verifyResult.active ? "active" : "failed";
-
+    // 2. Campaign was submitted as PAUSED — mark it accordingly so the user
+    //    knows they need to activate it in Ads Manager before it spends any budget.
     const [updated] = await db
       .update(fbCampaignsTable)
       .set({
-        status: leadDeliveryStatus === "active" ? "live" : "error",
+        status: "paused",
         partnerCampaignId: createResult.partnerCampaignId,
-        leadDeliveryStatus,
+        partnerAdSetId: createResult.partnerAdSetId,
+        partnerAdId: createResult.partnerAdId,
+        leadDeliveryStatus: "unverified",
       })
       .where(eq(fbCampaignsTable.id, campaign.id))
       .returning();
@@ -444,9 +455,10 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       {
         campaignId: campaign.id,
         partnerCampaignId: createResult.partnerCampaignId,
-        leadDeliveryStatus,
+        partnerAdSetId: createResult.partnerAdSetId,
+        partnerAdId: createResult.partnerAdId,
       },
-      "FB campaign launched",
+      "FB campaign submitted as paused — awaiting user review in Ads Manager",
     );
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -509,16 +521,27 @@ router.get(
       campaign.partnerCampaignId,
       conn.partnerToken,
     );
-    const deliveryStatus: "active" | "failed" | "unverified" = result.active ? "active" : "failed";
+    // Map Meta effective_status to our delivery status:
+    // ACTIVE  → "active"  (campaign is delivering)
+    // PAUSED / CAMPAIGN_PAUSED → "unverified" (submitted but not yet activated by user)
+    // anything else → "failed"
+    const deliveryStatus: "active" | "failed" | "unverified" = result.active
+      ? "active"
+      : result.paused
+        ? "unverified"
+        : "failed";
+
+    // Also keep the campaign status column consistent with what Meta reports
+    const campaignStatus = result.active ? "live" : "paused";
 
     // Persist the verified status
     await db
       .update(fbCampaignsTable)
-      .set({ leadDeliveryStatus: deliveryStatus })
+      .set({ leadDeliveryStatus: deliveryStatus, status: campaignStatus })
       .where(eq(fbCampaignsTable.id, campaign.id));
 
     req.log.info(
-      { campaignId: campaign.id, deliveryStatus },
+      { campaignId: campaign.id, deliveryStatus, campaignStatus },
       "FB campaign lead delivery checked",
     );
     res.json({ status: deliveryStatus, checkedAt: result.checkedAt });

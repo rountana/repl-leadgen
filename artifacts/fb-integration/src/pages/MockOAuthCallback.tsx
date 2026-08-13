@@ -30,7 +30,6 @@ export function MockOAuthCallback() {
     // Mock data simulating a real OAuth callback result
     createConnection.mutate({
       data: {
-        partnerToken: "mock_partner_token_phase1",
         fbPageId: "mock_page_123456",
         fbPageName: "Demo Business Page",
         adAccountId: "act_mock_789",

@@ -166,7 +166,7 @@ export function BudgetTargeting({
         className="w-full h-12 text-base font-semibold gap-2"
         onClick={() => onNext(budget, radius)}
       >
-        Launch Campaign
+        Submit for Review
         <ChevronRight className="w-5 h-5" />
       </Button>
     </div>

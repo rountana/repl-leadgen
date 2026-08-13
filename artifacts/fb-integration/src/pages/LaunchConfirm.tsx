@@ -7,20 +7,16 @@ import {
   Loader2,
   RefreshCw,
   RotateCcw,
-  Zap,
   DollarSign,
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   useCreateFbCampaign,
   useLaunchFbCampaign,
   useUpdateFbCampaign,
-  useGetFbCampaignLeadStatus,
-  getGetFbCampaignLeadStatusQueryKey,
   type FbAdDraft,
   type FbCampaign,
 } from "@workspace/api-client-react";
@@ -48,11 +44,6 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
   const createCampaign = useCreateFbCampaign();
   const updateCampaign = useUpdateFbCampaign();
   const launchCampaign = useLaunchFbCampaign();
-
-  const { data: leadStatus, isLoading: isLeadLoading } = useGetFbCampaignLeadStatus(
-    campaign?.id ?? 0,
-    { query: { queryKey: getGetFbCampaignLeadStatusQueryKey(campaign?.id ?? 0), enabled: !!campaign && phase === "done" } },
-  );
 
   const campaignFields = {
     headline: adDraft.headline,
@@ -199,24 +190,56 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
     );
   }
 
+  /* ── Build Ads Manager deep-link ──────────────────────────── */
+  const adsManagerHref = (() => {
+    const adAccountId = undefined; // not available here; link to campaign directly via partnerCampaignId
+    if (campaign?.partnerCampaignId) {
+      // Deep-link directly to the submitted campaign
+      return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?selected_campaign_ids=${campaign.partnerCampaignId}`;
+    }
+    return "https://adsmanager.facebook.com/adsmanager/manage/campaigns";
+  })();
+
   /* ── Success state ─────────────────────────────────────────── */
   return (
     <div className="space-y-6">
       {/* Hero */}
       <div className="text-center py-2">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-          <CheckCircle2 className="w-8 h-8 text-green-600" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+          <CheckCircle2 className="w-8 h-8 text-blue-600" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">Your campaign is live!</h2>
-        <p className="text-muted-foreground mt-1">
-          Facebook is reviewing your ad — it typically goes live within minutes.
+        <h2 className="text-2xl font-bold tracking-tight">Campaign submitted for review!</h2>
+        <p className="text-muted-foreground mt-1 max-w-sm mx-auto">
+          Your ad is ready in Facebook Ads Manager — review it there and turn it on when you're ready.
+          No budget will be spent until you activate it.
         </p>
         {campaign && (
-          <Badge className="mt-3 bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
-            {campaign.status === "live" ? "Live" : campaign.status === "launching" ? "In Review" : campaign.status}
+          <Badge className="mt-3 bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
+            Awaiting Activation
           </Badge>
         )}
       </div>
+
+      {/* Primary CTA — Ads Manager */}
+      <a
+        href={adsManagerHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block"
+      >
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5 flex items-center gap-4 hover:border-primary/60 hover:bg-primary/10 transition-colors cursor-pointer">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <ExternalLink className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-primary">Review in Facebook Ads Manager</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Check your ad creative, targeting, and budget — then click the toggle to go live.
+            </p>
+          </div>
+          <ExternalLink className="w-4 h-4 text-primary/60 shrink-0" />
+        </div>
+      </a>
 
       {/* Campaign summary */}
       <Card>
@@ -256,76 +279,38 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         </CardContent>
       </Card>
 
-      {/* Lead delivery status */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-primary" />
-            <CardTitle className="text-base">Lead Delivery Verification</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLeadLoading ? (
-            <div className="flex items-center gap-3">
-              <Skeleton className="w-8 h-8 rounded-full" />
-              <div className="space-y-1 flex-1">
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-3 w-56" />
-              </div>
-            </div>
-          ) : leadStatus?.status === "active" ? (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200">
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-sm text-green-800">Leads flowing in real time</p>
-                <p className="text-xs text-green-700/80 mt-0.5">
-                  Lead delivery is confirmed and working correctly.
-                </p>
-              </div>
-            </div>
-          ) : (
-            /* failed or unverified — never silently pass */
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm text-amber-800">
-                    {leadStatus?.status === "failed"
-                      ? "Lead delivery failed"
-                      : "Lead delivery not yet verified"}
-                  </p>
-                  <p className="text-xs text-amber-700/80 mt-0.5">
-                    {leadStatus?.status === "failed"
-                      ? "Your campaign is live but leads aren't reaching your account. Contact support to resolve this."
-                      : "Verification is pending. This usually resolves within a few minutes after the campaign goes live."}
-                  </p>
-                </div>
-              </div>
-              {leadStatus?.status === "failed" && (
-                <Button variant="outline" size="sm" className="w-full" asChild>
-                  <a href="mailto:support@example.com">Contact Support</a>
-                </Button>
-              )}
-            </div>
-          )}
+      {/* What happens next */}
+      <Card className="border-amber-200 bg-amber-50/50">
+        <CardContent className="p-4 space-y-3">
+          <p className="font-semibold text-sm text-amber-900">What happens next</p>
+          <ol className="space-y-2">
+            {[
+              "Open Facebook Ads Manager using the button above",
+              "Find your campaign and review the ad creative and settings",
+              "Toggle the campaign to Active when you're ready to start running",
+              "Come back here and hit Refresh Status to see it go live",
+            ].map((step, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-amber-800">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-200 text-amber-900 text-xs flex items-center justify-center font-bold mt-0.5">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
         </CardContent>
       </Card>
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Button variant="outline" className="gap-2 flex-1" asChild>
-          {/* Phase 1 stub — real URL comes from campaign.partnerCampaignId in Phase 2 */}
           <a
-            href="https://www.facebook.com/adsmanager"
+            href={adsManagerHref}
             target="_blank"
             rel="noopener noreferrer"
           >
             <ExternalLink className="w-4 h-4" />
-            View in Facebook Ads Manager
+            Open Ads Manager
           </a>
         </Button>
         <Button

@@ -11,6 +11,7 @@ import {
   useGetFbConnection,
   useGetFbCampaign,
   getGetFbConnectionQueryKey,
+  getGetFbCampaignQueryKey,
   type FbAdDraft,
 } from "@workspace/api-client-react";
 
@@ -68,7 +69,7 @@ export function CampaignWizard() {
   // In edit mode, load existing campaign data and pre-fill the wizard
   const { data: editCampaign, isLoading: isEditLoading } = useGetFbCampaign(
     editId ?? 0,
-    { query: { enabled: !!editId } },
+    { query: { queryKey: getGetFbCampaignQueryKey(editId ?? 0), enabled: !!editId } },
   );
 
   useEffect(() => {

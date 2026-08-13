@@ -23,10 +23,15 @@ export interface CreateCampaignParams {
 
 export interface CreateCampaignResult {
   partnerCampaignId: string;
+  partnerAdSetId: string;
+  partnerAdId: string;
 }
 
 export interface VerifyLeadDeliveryResult {
+  /** true only when Meta reports effective_status === "ACTIVE" */
   active: boolean;
+  /** true when Meta reports the campaign is paused (submitted but not yet activated) */
+  paused: boolean;
   checkedAt: string;
 }
 
@@ -192,7 +197,9 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         // This app uses Ad Set Budget Optimization: each ad set owns its
         // daily budget, so campaign-level budget sharing must be disabled.
         is_adset_budget_sharing_enabled: false,
-        status: "ACTIVE",
+        // Submit as PAUSED so the user can review in Ads Manager before any
+        // budget is spent. The user activates the campaign manually.
+        status: "PAUSED",
         buying_type: "AUCTION",
       },
       accessToken,
@@ -225,7 +232,9 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
           },
           age_min: 18,
         },
-        status: "ACTIVE",
+        // Must also be PAUSED — an ACTIVE ad set under a PAUSED campaign would
+        // conflict and is rejected by Meta's API.
+        status: "PAUSED",
       },
       accessToken,
     );
@@ -296,14 +305,14 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         name: headline.slice(0, 255) || "Ad",
         adset_id: adSetId,
         creative: { creative_id: creativeId },
-        status: "ACTIVE",
+        status: "PAUSED",
       },
       accessToken,
     );
-    logger.info({ adId: adData.id, campaignId }, "Meta: ad created");
+    const adId: string = adData.id;
+    logger.info({ adId, campaignId }, "Meta: ad created");
 
-    // We track at the campaign level (contains the adset and ad)
-    return { partnerCampaignId: campaignId };
+    return { partnerCampaignId: campaignId, partnerAdSetId: adSetId, partnerAdId: adId };
   },
 
   async verifyLeadDelivery(partnerCampaignId, accessToken) {
@@ -315,6 +324,11 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
 
     // effective_status reflects actual delivery (accounts for account-level pauses etc.)
     const active = data.effective_status === "ACTIVE";
+    // PAUSED means the campaign was submitted but not yet activated by the user in Ads Manager.
+    // CAMPAIGN_PAUSED appears on the ad/ad-set level when the parent campaign is paused.
+    const paused =
+      data.effective_status === "PAUSED" ||
+      data.effective_status === "CAMPAIGN_PAUSED";
 
     logger.info(
       {
@@ -322,11 +336,12 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         status: data.status,
         effectiveStatus: data.effective_status,
         active,
+        paused,
       },
       "Meta: campaign status checked",
     );
 
-    return { active, checkedAt: new Date().toISOString() };
+    return { active, paused, checkedAt: new Date().toISOString() };
   },
 };
 
@@ -334,14 +349,17 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
 
 export const stubFbPartnerAdapter: FbPartnerAdapter = {
   async createCampaign(_params) {
-    logger.warn("stubFbPartnerAdapter.createCampaign: returning stub campaign ID");
+    logger.warn("stubFbPartnerAdapter.createCampaign: returning stub campaign IDs");
+    const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
     return {
-      partnerCampaignId: `stub_camp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      partnerCampaignId: `stub_camp_${suffix}`,
+      partnerAdSetId: `stub_adset_${suffix}`,
+      partnerAdId: `stub_ad_${suffix}`,
     };
   },
   async verifyLeadDelivery(partnerCampaignId, _accessToken) {
-    logger.warn({ partnerCampaignId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub active");
-    return { active: true, checkedAt: new Date().toISOString() };
+    logger.warn({ partnerCampaignId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub paused");
+    return { active: false, paused: true, checkedAt: new Date().toISOString() };
   },
 };
 

@@ -60,7 +60,7 @@ function StatusBadge({ status }: { status: FbCampaignStatus }) {
     case "paused":
       return (
         <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
-          <Clock className="w-3 h-3" /> Paused
+          <Clock className="w-3 h-3" /> Awaiting Review
         </Badge>
       );
     case "error":
@@ -178,7 +178,9 @@ function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccou
               </div>
             ) : campaign.status === "paused" ? (
               <>
-                <p className="text-xs text-amber-700 font-medium text-center">Paused in Ads Manager</p>
+                <p className="text-xs text-amber-700 font-medium text-center leading-snug">
+                  Ready to review — activate it in Ads Manager to go live
+                </p>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
                   <a
                     href={adsManagerUrl(adAccountId, campaign.partnerCampaignId)}
@@ -186,7 +188,7 @@ function CampaignCard({ campaign, adAccountId }: { campaign: FbCampaign; adAccou
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Reactivate in Ads Manager
+                    Review in Ads Manager
                   </a>
                 </Button>
               </>

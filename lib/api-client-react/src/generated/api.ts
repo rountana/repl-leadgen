@@ -44,7 +44,9 @@ import type {
   LeadMagnetUpdate,
   LeadMagnetsSummary,
   ListExamplesParams,
-  Template
+  Template,
+  UserProfile,
+  UserProfileUpdate,
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -2002,7 +2004,7 @@ export const useAiExtractBranding = <TError = ErrorType<unknown>,
 // ── User Business Profile ─────────────────────────────────────────────────────
 
 export const getProfile = async (options?: Parameters<typeof customFetch>[1]): Promise<UserProfile> => {
-  return customFetch<UserProfile>({ url: `/api/profile`, method: 'GET' }, options);
+  return customFetch<UserProfile>(`/api/profile`, { ...options, method: 'GET' });
 };
 
 export const getGetProfileQueryKey = () => ['getProfile'] as const;
@@ -2029,10 +2031,12 @@ export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TE
 }
 
 export const updateProfile = async (userProfileUpdate: UserProfileUpdate, options?: Parameters<typeof customFetch>[1]): Promise<UserProfile> => {
-  return customFetch<UserProfile>(
-    { url: `/api/profile`, method: 'PUT', headers: { 'Content-Type': 'application/json' }, data: userProfileUpdate },
-    options,
-  );
+  return customFetch<UserProfile>(`/api/profile`, {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(options?.headers as Record<string, string> | undefined) },
+    body: JSON.stringify(userProfileUpdate),
+  });
 };
 
 export const getUpdateProfileMutationOptions = <TError = ErrorType<unknown>, TContext = unknown>(

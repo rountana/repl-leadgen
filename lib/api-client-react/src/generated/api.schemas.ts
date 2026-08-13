@@ -289,6 +289,10 @@ export interface FbCampaign {
   destinationUrl?: string | null;
   /** @nullable */
   partnerCampaignId?: string | null;
+  /** @nullable */
+  partnerAdSetId?: string | null;
+  /** @nullable */
+  partnerAdId?: string | null;
   status: FbCampaignStatus;
   leadDeliveryStatus: FbCampaignLeadDeliveryStatus;
   /** @nullable */

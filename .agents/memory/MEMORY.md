@@ -1,1 +1,2 @@
 - [HVCG ↔ Facebook Ads integration](hvcg-fb-integration.md) — deep-link params, destinationUrl flow, LeadMagnetPicker, cross-artifact nav pattern.
+- [Paused campaign submission](paused-campaign-submission.md) — campaigns submit as PAUSED to Meta; user activates in Ads Manager; verifyLeadDelivery returns paused flag; "paused" ≠ failure.

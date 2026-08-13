@@ -18,6 +18,7 @@ import {
   useCreateLeadMagnet,
   useUpdateLeadMagnet,
   useGetLeadMagnet,
+  getGetLeadMagnetQueryKey,
   useUploadLeadMagnetFile, 
   useListTemplates,
   useListExamples,
@@ -75,7 +76,7 @@ export function Create() {
   const { data: templates } = useListTemplates();
   const { data: industries } = useListIndustries();
   const { data: existingMagnet } = useGetLeadMagnet(editId ?? 0, {
-    query: { enabled: isEditMode && editId !== null },
+    query: { queryKey: getGetLeadMagnetQueryKey(editId ?? 0), enabled: isEditMode && editId !== null },
   });
 
   const { data: profile } = useGetProfile({
