@@ -205,21 +205,20 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
 
     // Create a shared PAUSED campaign for this user's ad account.
     //
-    // Objective: LINK_CLICKS (legacy) rather than OUTCOME_TRAFFIC (Performance 5).
-    // OUTCOME_TRAFFIC was introduced in Meta API v14+ and is only available on
-    // accounts that have been migrated to Performance 5 objectives. Many accounts —
-    // particularly older or limited-access ones — return error 100/4834011 when it
-    // is passed. LINK_CLICKS is universally supported across all account types and
-    // produces an equivalent traffic campaign for our use case.
+    // Objective: OUTCOME_TRAFFIC — correct for Performance 5 accounts (Meta API v14+).
+    // Meta now rejects the legacy LINK_CLICKS objective on accounts migrated to
+    // Performance 5; valid values are OUTCOME_TRAFFIC, OUTCOME_LEADS, etc.
+    // The original error 100/4834011 was caused by campaign_budget_optimization: false
+    // and buying_type: "AUCTION" being passed explicitly — those are now omitted.
     //
     // Budget: not set here — ASBO mode (each ad set carries its own daily_budget).
     // Do NOT pass campaign_budget_optimization or buying_type; both are defaults
-    // and passing them explicitly also triggers error 100/4834011 on many accounts.
+    // and passing them explicitly triggers error 100/4834011 on many accounts.
     const campaignData = await graphPost(
       `/${actId}/campaigns`,
       {
         name: "Lead Gen — Shared Campaign",
-        objective: "LINK_CLICKS",
+        objective: "OUTCOME_TRAFFIC",
         special_ad_categories: [],
         // Submit as PAUSED — the user activates from Ads Manager.
         status: "PAUSED",
