@@ -54,6 +54,7 @@ export function Connect() {
   const [pickerAccounts, setPickerAccounts] = useState<FbAdAccount[] | null>(null);
   const [selectedPage, setSelectedPage] = useState<FbPage | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<FbAdAccount | null>(null);
+  const [oauthState, setOauthState] = useState<string | null>(null);
   const [pickerSaving, setPickerSaving] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
 
@@ -65,6 +66,7 @@ export function Connect() {
     const fbConnected = params.get("fb_connected");
     const fbError = params.get("fb_error");
     const fbData = params.get("fb_data");
+    const fbState = params.get("fb_state");
 
     if (fbConnected === "1") {
       // Auto-connected — invalidate query then skip straight to the campaign wizard
@@ -82,6 +84,7 @@ export function Connect() {
         setPickerAccounts(adAccounts);
         setSelectedPage(pages[0] ?? null);
         setSelectedAccount(adAccounts[0] ?? null);
+        setOauthState(fbState);
         window.history.replaceState({}, "", `${basePath}/connect`);
       } catch {
         setOauthError("Failed to read Facebook account data. Please try again.");
@@ -122,19 +125,37 @@ export function Connect() {
     if (!selectedPage || !selectedAccount) return;
     setPickerSaving(true);
     try {
-      await createConnection.mutateAsync({
-        data: {
-          fbPageId: selectedPage.id,
-          fbPageName: selectedPage.name,
-          adAccountId: selectedAccount.id,
-          adAccountName: selectedAccount.name,
-        },
-      });
+      if (oauthState) {
+        const response = await fetch("/api/auth/facebook/complete", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            state: oauthState,
+            page: selectedPage,
+            adAccount: selectedAccount,
+          }),
+        });
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        if (!response.ok) {
+          throw new Error(body.error ?? "Failed to complete Facebook connection.");
+        }
+      } else {
+        await createConnection.mutateAsync({
+          data: {
+            fbPageId: selectedPage.id,
+            fbPageName: selectedPage.name,
+            adAccountId: selectedAccount.id,
+            adAccountName: selectedAccount.name,
+          },
+        });
+      }
       queryClient.invalidateQueries({ queryKey: getGetFbConnectionQueryKey() });
       setPickerPages(null);
       setPickerAccounts(null);
-    } catch {
-      setOauthError("Failed to save your selection. Please try again.");
+      setOauthState(null);
+    } catch (err: any) {
+      setOauthError(err?.message ?? "Failed to save your selection. Please try again.");
     } finally {
       setPickerSaving(false);
     }

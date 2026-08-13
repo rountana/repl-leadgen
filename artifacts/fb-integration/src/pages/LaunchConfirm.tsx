@@ -87,10 +87,25 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
       setPhase("launching");
       const launched = await launchCampaign.mutateAsync({ id: targetId });
       setCampaign(launched);
+      if (launched.status === "error") {
+        setErrorMessage(
+          launched.errorMessage ??
+            "Facebook rejected the campaign. Please review the campaign details and try again.",
+        );
+        setPhase("error");
+        return;
+      }
       setPhase("done");
     } catch (err: unknown) {
+      const apiError = err as {
+        message?: string;
+        response?: { data?: { error?: string } };
+        data?: { error?: string };
+      };
       const message =
-        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+        apiError?.response?.data?.error ??
+        apiError?.data?.error ??
+        apiError?.message ??
         "Failed to launch campaign. Please try again.";
       setErrorMessage(message);
       setPhase("error");

@@ -122,6 +122,29 @@ interface CachedCallbackResult {
 
 const callbackCache = new Map<string, CachedCallbackResult>();
 
+interface FbPageData {
+  id: string;
+  name: string;
+}
+
+interface FbAdAccountData {
+  id: string;
+  name: string;
+}
+
+interface PendingOAuthResult {
+  userId: string;
+  accessToken: string;
+  pages: FbPageData[];
+  adAccounts: FbAdAccountData[];
+  expiresAt: number;
+}
+
+// When the registered Meta callback runs on the published service but the
+// OAuth flow started in a dev preview, relay the credential server-to-server.
+// The browser only receives the signed state and account metadata.
+const pendingOAuthResults = new Map<string, PendingOAuthResult>();
+
 function getCachedResult(state: string): string | null {
   const entry = callbackCache.get(state);
   if (!entry) return null;
@@ -134,6 +157,40 @@ function getCachedResult(state: string): string | null {
 
 function cacheResult(state: string, redirectUrl: string): void {
   callbackCache.set(state, { redirectUrl, expiresAt: Date.now() + 5 * 60 * 1000 });
+}
+
+function getOrigin(value: string): string | null {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+
+function needsOAuthRelay(frontend: string): boolean {
+  return getOrigin(frontend) !== getOrigin(getFrontendBase());
+}
+
+async function relayOAuthResult(
+  frontend: string,
+  state: string,
+  userId: string,
+  accessToken: string,
+  pages: FbPageData[],
+  adAccounts: FbAdAccountData[],
+): Promise<void> {
+  const origin = getOrigin(frontend);
+  if (!origin) throw new Error("Invalid OAuth return origin");
+
+  const relayResponse = await fetch(`${origin}/api/auth/facebook/relay`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state, userId, accessToken, pages, adAccounts }),
+  });
+
+  if (!relayResponse.ok) {
+    throw new Error(`OAuth credential handoff failed with status ${relayResponse.status}`);
+  }
 }
 
 async function graphGet(path: string, accessToken: string): Promise<any> {
@@ -271,8 +328,8 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
       graphGet("/me/adaccounts?fields=id,name", accessToken),
     ]);
 
-    const pages: Array<{ id: string; name: string }> = pagesData.data ?? [];
-    const adAccounts: Array<{ id: string; name: string }> = accountsData.data ?? [];
+    const pages: FbPageData[] = pagesData.data ?? [];
+    const adAccounts: FbAdAccountData[] = accountsData.data ?? [];
 
     logger.info({ userId, pageCount: pages.length, adAccountCount: adAccounts.length }, "FB OAuth: fetched accounts");
 
@@ -289,19 +346,27 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
       return;
     }
 
+    const relayToOrigin = needsOAuthRelay(frontend);
+    if (relayToOrigin) {
+      await relayOAuthResult(frontend, state ?? "", userId, accessToken, pages, adAccounts);
+    }
+
     let redirectUrl: string;
 
     // 3a. Exactly one of each → auto-save and redirect to success
     if (pages.length === 1 && adAccounts.length === 1) {
       const page = pages[0];
       const account = adAccounts[0];
-      await upsertConnection(userId, page.id, page.name, account.id, account.name, accessToken);
+      if (!relayToOrigin) {
+        await upsertConnection(userId, page.id, page.name, account.id, account.name, accessToken);
+      }
       logger.info({ userId, fbPageId: page.id, adAccountId: account.id }, "FB OAuth: auto-connected");
       redirectUrl = `${frontend}/connect?fb_connected=1`;
     } else {
       // 3b. Multiple options → let the frontend show a picker.
       const fbData = Buffer.from(JSON.stringify({ pages, adAccounts })).toString("base64");
-      redirectUrl = `${frontend}/connect?fb_data=${encodeURIComponent(fbData)}`;
+      const stateParam = relayToOrigin ? `&fb_state=${encodeURIComponent(state ?? "")}` : "";
+      redirectUrl = `${frontend}/connect?fb_data=${encodeURIComponent(fbData)}${stateParam}`;
     }
 
     cacheResult(state, redirectUrl);
@@ -322,6 +387,37 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
  */
 export const callbackRouter = Router();
 callbackRouter.get("/auth/facebook/callback", handleFacebookCallback);
+
+/**
+ * Receives a Facebook OAuth result from the published callback service when
+ * the original flow started in a dev preview. The signed state prevents an
+ * unrelated caller from planting credentials in another user's session.
+ */
+callbackRouter.post("/auth/facebook/relay", (req: any, res: any): void => {
+  const { state, userId, accessToken, pages, adAccounts } = req.body ?? {};
+  const stateData = verifyState(typeof state === "string" ? state : "");
+
+  if (
+    !stateData ||
+    stateData.userId !== userId ||
+    typeof accessToken !== "string" ||
+    !accessToken ||
+    !Array.isArray(pages) ||
+    !Array.isArray(adAccounts)
+  ) {
+    res.status(400).json({ error: "Invalid OAuth handoff." });
+    return;
+  }
+
+  pendingOAuthResults.set(state, {
+    userId,
+    accessToken,
+    pages,
+    adAccounts,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  });
+  res.sendStatus(204);
+});
 
 /**
  * Default router — mounted after clerkMiddleware() via routes/index.ts.
@@ -346,6 +442,46 @@ router.get("/auth/facebook/init", requireAuth, async (req: any, res): Promise<vo
     logger.error({ err }, "FB OAuth init failed");
     res.status(500).json({ error: "Failed to start Facebook login. Check FB_APP_ID is configured." });
   }
+});
+
+/**
+ * Completes a dev-preview OAuth handoff after the user selects a Page and
+ * Ad Account. The access token never reaches the browser.
+ */
+router.post("/auth/facebook/complete", requireAuth, async (req: any, res): Promise<void> => {
+  const { state, page, adAccount } = req.body ?? {};
+  const stateData = verifyState(typeof state === "string" ? state : "");
+  const userId = req.userId as string;
+
+  if (!stateData || stateData.userId !== userId) {
+    res.status(400).json({ error: "Facebook connection handoff expired. Please reconnect Facebook." });
+    return;
+  }
+
+  const pending = pendingOAuthResults.get(state);
+  if (!pending || Date.now() > pending.expiresAt) {
+    pendingOAuthResults.delete(state);
+    res.status(400).json({ error: "Facebook connection handoff expired. Please reconnect Facebook." });
+    return;
+  }
+
+  const selectedPage = pending.pages.find((item) => item.id === page?.id);
+  const selectedAccount = pending.adAccounts.find((item) => item.id === adAccount?.id);
+  if (!selectedPage || !selectedAccount) {
+    res.status(400).json({ error: "The selected Facebook account is not valid. Please reconnect Facebook." });
+    return;
+  }
+
+  await upsertConnection(
+    userId,
+    selectedPage.id,
+    selectedPage.name,
+    selectedAccount.id,
+    selectedAccount.name,
+    pending.accessToken,
+  );
+  pendingOAuthResults.delete(state);
+  res.json({ connected: true });
 });
 
 // Fallback registration (pre-Clerk router wins first, but kept for completeness)

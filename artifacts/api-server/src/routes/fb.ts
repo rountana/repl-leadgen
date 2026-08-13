@@ -63,6 +63,11 @@ function serializeConnection(c: any) {
   const { partnerToken: _omit, ...safe } = c;
   return {
     ...safe,
+    // A page/account selection without the server-side token is not launchable.
+    // Treat it as disconnected in the client so the user is guided through a
+    // fresh OAuth flow instead of reaching the launch guard with a misleading
+    // "connected" state.
+    status: safe.status === "connected" && Boolean(c.partnerToken) ? "connected" : "disconnected",
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
     updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : c.updatedAt,
   };
