@@ -6,6 +6,8 @@
 
 export interface CampaignTemplate {
   id: string;
+  /** Matches the slug used by the Profile industry list. */
+  industrySlug: string;
   category: string;
   emoji: string;
   name: string;
@@ -27,7 +29,8 @@ const unsplash = (id: string) =>
 export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   {
     id: "restaurant",
-    category: "Restaurant & Café",
+    industrySlug: "food-restaurant",
+    category: "Food & Restaurant",
     emoji: "🍽️",
     name: "Dine With Us",
     headline: "Taste the Difference Today",
@@ -40,7 +43,8 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   },
   {
     id: "fitness",
-    category: "Fitness & Gym",
+    industrySlug: "fitness-wellness",
+    category: "Fitness & Wellness",
     emoji: "💪",
     name: "Transform Your Body",
     headline: "Start Your Fitness Journey Today",
@@ -53,6 +57,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   },
   {
     id: "salon",
+    industrySlug: "beauty-salon",
     category: "Beauty & Salon",
     emoji: "✂️",
     name: "Look Your Best",
@@ -66,6 +71,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   },
   {
     id: "real-estate",
+    industrySlug: "real-estate",
     category: "Real Estate",
     emoji: "🏡",
     name: "Find Your Dream Home",
@@ -79,6 +85,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   },
   {
     id: "home-services",
+    industrySlug: "home-services",
     category: "Home Services",
     emoji: "🔧",
     name: "Fast & Reliable Repairs",
@@ -92,6 +99,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   },
   {
     id: "retail",
+    industrySlug: "retail-boutique",
     category: "Retail & Boutique",
     emoji: "🛍️",
     name: "Shop the Collection",
@@ -104,7 +112,78 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     suggestedRadius: 8,
   },
   {
+    id: "financial-advisors",
+    industrySlug: "financial-advisors",
+    category: "Financial Advisors",
+    emoji: "📈",
+    name: "Plan With Confidence",
+    headline: "A Clearer Path to Financial Confidence",
+    bodyText:
+      "Personalized guidance for retirement, investing, and protecting what you've built. Schedule a complimentary consultation to talk through your goals.",
+    imageUrl: unsplash("photo-1554224155-6726b3ff858f"),
+    photoCredit: "Unsplash",
+    suggestedBudget: 20,
+    suggestedRadius: 12,
+  },
+  {
+    id: "insurance-agents",
+    industrySlug: "insurance-agents",
+    category: "Insurance Agents",
+    emoji: "🛡️",
+    name: "Coverage Made Clear",
+    headline: "Coverage That Fits Your Life",
+    bodyText:
+      "Compare practical coverage options with a local insurance professional who listens. Get a personalized review and feel confident about your next step.",
+    imageUrl: unsplash("photo-1450101499163-c8848c66ca85"),
+    photoCredit: "Unsplash",
+    suggestedBudget: 15,
+    suggestedRadius: 12,
+  },
+  {
+    id: "professional-services",
+    industrySlug: "professional-services",
+    category: "Professional Services",
+    emoji: "💼",
+    name: "Expert Support",
+    headline: "Expert Support for Your Next Step",
+    bodyText:
+      "Get thoughtful, practical help from a local team that understands your goals. Book a consultation and turn your next challenge into a clear plan.",
+    imageUrl: unsplash("photo-1556761175-b413da4baf72"),
+    photoCredit: "Unsplash",
+    suggestedBudget: 15,
+    suggestedRadius: 10,
+  },
+  {
+    id: "travel-agents",
+    industrySlug: "travel-agents",
+    category: "Travel Agents",
+    emoji: "✈️",
+    name: "Plan Your Escape",
+    headline: "Make Your Next Trip Unforgettable",
+    bodyText:
+      "Thoughtful itineraries, trusted recommendations, and personal support from booking to return. Tell us where you want to go and we'll help plan the rest.",
+    imageUrl: unsplash("photo-1500530855697-b586d89ba3ee"),
+    photoCredit: "Unsplash",
+    suggestedBudget: 15,
+    suggestedRadius: 15,
+  },
+  {
+    id: "other-business",
+    industrySlug: "other",
+    category: "Other / Custom Business",
+    emoji: "✨",
+    name: "Local Expertise",
+    headline: "Local Expertise. Made for You.",
+    bodyText:
+      "Discover a better way to get the help, service, or experience you need. Connect with a local business that cares about doing things right.",
+    imageUrl: unsplash("photo-1497366811353-6870744d04b2"),
+    photoCredit: "Unsplash",
+    suggestedBudget: 12,
+    suggestedRadius: 10,
+  },
+  {
     id: "pet-services",
+    industrySlug: "pet-services",
     category: "Pet Services",
     emoji: "🐾",
     name: "Pamper Your Pet",
@@ -118,6 +197,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   },
   {
     id: "healthcare",
+    industrySlug: "healthcare-dental",
     category: "Healthcare & Dental",
     emoji: "🏥",
     name: "Your Health First",

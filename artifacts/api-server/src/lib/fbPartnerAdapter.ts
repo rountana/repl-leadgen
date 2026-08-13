@@ -112,6 +112,9 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         name: headline.slice(0, 255) || "Campaign",
         objective: "OUTCOME_TRAFFIC",
         special_ad_categories: [],
+        // This app uses Ad Set Budget Optimization: each ad set owns its
+        // daily budget, so campaign-level budget sharing must be disabled.
+        is_adset_budget_sharing_enabled: false,
         status: "ACTIVE",
         buying_type: "AUCTION",
       },
