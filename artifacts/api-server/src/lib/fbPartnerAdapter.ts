@@ -295,6 +295,11 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
             ],
           },
           age_min: 18,
+          // Restrict to Facebook placements only. Without this Meta defaults to
+          // Facebook + Instagram, which requires the ad account to have explicit
+          // access to the Page's linked Instagram account (Meta error 200/1815199).
+          // Business owners who haven't connected Instagram can still run ads.
+          publisher_platforms: ["facebook"],
         },
         // ACTIVE — the campaign is PAUSED, so no budget is spent yet.
         // When the user activates the campaign in Ads Manager, this ad set
