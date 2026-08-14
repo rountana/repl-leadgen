@@ -106,6 +106,8 @@ async function graphPost(
   });
   const data = (await res.json()) as any;
   if (data?.error) {
+    // Log the full error object so we can see error_data, fbtrace_id, etc.
+    logger.error({ metaError: data.error, path, requestBody: body }, "Meta API error detail");
     throw new Error(
       `Meta API POST ${path} → ${res.status}: ${data.error.message} (code ${data.error.code}, subcode ${data.error.error_subcode ?? "none"})`,
     );
