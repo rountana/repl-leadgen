@@ -60,7 +60,7 @@ function StatusBadge({ status }: { status: FbCampaignStatus }) {
     case "paused":
       return (
         <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
-          <Clock className="w-3 h-3" /> Awaiting Review
+          <FileText className="w-3 h-3" /> Draft
         </Badge>
       );
     case "error":

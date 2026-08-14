@@ -128,7 +128,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Submitting Ad…</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Saving Draft…</h2>
           <p className="text-muted-foreground mt-1">This usually takes just a moment.</p>
         </div>
         <Card>
@@ -140,12 +140,12 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
             </div>
             <div className="text-center">
               <p className="font-semibold">
-                {phase === "creating" ? "Saving ad…" : "Submitting to Facebook…"}
+                {phase === "creating" ? "Saving ad details…" : "Sending draft to Facebook…"}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 {phase === "creating"
                   ? "Saving your ad details"
-                  : "Handing off to the Facebook Ads system"}
+                  : "Creating your draft in Ads Manager"}
               </p>
             </div>
             <div className="flex gap-2 mt-2">
@@ -169,7 +169,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Launch Failed</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Draft Not Saved</h2>
           <p className="text-muted-foreground mt-1">Something went wrong. You can try again below.</p>
         </div>
         <Card className="border-destructive/30 bg-destructive/5">
@@ -225,14 +225,14 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
           <CheckCircle2 className="w-8 h-8 text-blue-600" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">Ad submitted for review!</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Draft saved to Ads Manager!</h2>
         <p className="text-muted-foreground mt-1 max-w-sm mx-auto">
-          Your ad is ready in Facebook Ads Manager — review it there and turn it on when you're ready.
-          No budget will be spent until you activate it.
+          Your ad is waiting in Facebook Ads Manager as a draft. Review it there and publish it when you're ready —
+          no budget is spent until you turn it on.
         </p>
         {campaign && (
           <Badge className="mt-3 bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
-            Awaiting Activation
+            Draft — Awaiting Your Review
           </Badge>
         )}
       </div>
@@ -249,9 +249,9 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
             <ExternalLink className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="font-bold text-primary">Review in Facebook Ads Manager</p>
+            <p className="font-bold text-primary">Review &amp; Publish in Ads Manager</p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Check your ad creative, targeting, and budget — then click the toggle to go live.
+              Your draft is ready — open Ads Manager to review it, then activate the campaign to go live.
             </p>
           </div>
           <ExternalLink className="w-4 h-4 text-primary/60 shrink-0" />
@@ -303,9 +303,9 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
           <ol className="space-y-2">
             {[
               "Open Facebook Ads Manager using the button above",
-              "Find your ad and review the creative and settings",
-              "Toggle the shared campaign to Active — all your ads start running immediately",
-              "Come back here and hit Refresh Status to see it go live",
+              "Find your draft campaign and review the creative, targeting, and budget",
+              "Toggle the campaign switch to Active — your ad will start running immediately",
+              "Come back here and hit Refresh Status to confirm it's live",
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-amber-800">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-200 text-amber-900 text-xs flex items-center justify-center font-bold mt-0.5">
