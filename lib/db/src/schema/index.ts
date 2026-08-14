@@ -4,6 +4,7 @@ export * from "./industries";
 export * from "./examples";
 export * from "./leads";
 export * from "./fbConnections";
+export * from "./fbConnectionCampaigns";
 export * from "./fbCampaigns";
 export * from "./fbLeads";
 export * from "./userProfiles";

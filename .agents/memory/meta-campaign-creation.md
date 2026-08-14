@@ -1,17 +1,20 @@
 ---
 name: Meta campaign creation pitfalls
-description: Required parameters and pitfalls for ensureCampaign() — what causes error 100/4834011.
+description: Required parameters, pitfalls for ensureCampaign(), and per-account campaign storage.
 ---
 
-## Rule
+## Campaign storage: per (connection, ad_account)
 
-Use `objective: "OUTCOME_TRAFFIC"` and include `is_adset_budget_sharing_enabled: false`. Omit `campaign_budget_optimization` and `buying_type` entirely.
+Campaigns are stored in `fb_connection_campaigns(connection_id, ad_account_id, partner_campaign_id)` with a UNIQUE index on `(connection_id, ad_account_id)`. Never use `fb_connections.partnerCampaignId` for new campaigns — it is a legacy deprecated column. The `getStoredCampaignId(connectionId, adAccountId)` helper in `fb.ts` handles the lookup.
 
-**Why:** Meta error 100/4834011 with the user message "Must specify True or False in is_adset_budget_sharing_enabled" — this field is **required** when not using campaign-level budget (ASBO mode). Meta does not infer a default; omitting it causes the campaign creation call to fail. Additionally, passing `campaign_budget_optimization: false` or `buying_type: "AUCTION"` explicitly also triggers 4834011 on many accounts — both are defaults that should not be sent.
+**Why:** One `fb_connections` row per user, but a user can have multiple ad accounts. Storing a single `partnerCampaignId` on the connection caused "This campaign belongs to a different account" errors when switching accounts.
 
-`OUTCOME_TRAFFIC` is correct for Performance 5 accounts (Meta API v14+, the current standard). `LINK_CLICKS` (legacy) is rejected on these accounts.
+**Atomicity:** New account → INSERT ON CONFLICT DO NOTHING, then read winner. Deleted campaign → UPDATE WHERE partner_campaign_id = $oldId, then read winner if 0 rows updated.
 
-**How to apply:** The minimal working campaign creation payload for ASBO mode:
+---
+
+## ensureCampaign() required payload
+
 ```json
 {
   "name": "Lead Gen — Shared Campaign",
@@ -21,8 +24,9 @@ Use `objective: "OUTCOME_TRAFFIC"` and include `is_adset_budget_sharing_enabled:
   "status": "PAUSED"
 }
 ```
-- `is_adset_budget_sharing_enabled: false` = each ad set controls its own `daily_budget` independently
-- `is_adset_budget_sharing_enabled: true` = ad sets share 20% of their budgets (not what we want)
-- Do NOT add `campaign_budget_optimization`, `buying_type`, or a campaign-level `daily_budget`
 
-**Debugging tip:** The `graphPost` function logs the full `metaError` object including `error_user_msg` which contains the plain-English explanation of what's missing. Always check that field first when diagnosing new Meta errors.
+- `OUTCOME_TRAFFIC` — Performance 5 objective (Meta API v14+). `LINK_CLICKS` is rejected on migrated accounts.
+- `is_adset_budget_sharing_enabled: false` — **required** when not using campaign-level budget (ASBO mode). Omitting it causes error 100/4834011 with message "Must specify True or False in is_adset_budget_sharing_enabled".
+- Do NOT pass `campaign_budget_optimization` or `buying_type` — both trigger 4834011 on many accounts.
+
+**Debugging tip:** `graphPost` logs the full `metaError` object including `error_user_msg` (plain English). Check that field first when diagnosing new Meta errors.

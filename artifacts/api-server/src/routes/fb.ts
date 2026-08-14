@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
-import { eq, and, or, isNull } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import { getAuth } from "@clerk/express";
-import { db, fbConnectionsTable, fbCampaignsTable, fbLeadsTable } from "@workspace/db";
+import { db, fbConnectionsTable, fbConnectionCampaignsTable, fbCampaignsTable, fbLeadsTable } from "@workspace/db";
 import {
   CreateFbConnectionBody,
   GenerateFbAdBody,
@@ -58,13 +58,14 @@ function serializeCampaign(c: any) {
   };
 }
 
-function serializeConnection(c: any) {
+function serializeConnection(c: any, partnerCampaignId?: string | null) {
   // Never return partnerToken — it is a server-side credential only
   const { partnerToken: _omit, ...safe } = c;
   return {
     ...safe,
-    // partnerCampaignId is safe to expose — it is a Meta campaign ID, not a credential.
-    partnerCampaignId: c.partnerCampaignId ?? null,
+    // partnerCampaignId is looked up from fb_connection_campaigns (per-account),
+    // not from fb_connections.partnerCampaignId (which is now unused).
+    partnerCampaignId: partnerCampaignId ?? null,
     // A page/account selection without the server-side token is not launchable.
     // Treat it as disconnected in the client so the user is guided through a
     // fresh OAuth flow instead of reaching the launch guard with a misleading
@@ -73,6 +74,21 @@ function serializeConnection(c: any) {
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
     updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : c.updatedAt,
   };
+}
+
+/** Look up the stored Meta campaign ID for this connection's current ad account. */
+async function getStoredCampaignId(connectionId: number, adAccountId: string | null): Promise<string | null> {
+  if (!adAccountId) return null;
+  const [row] = await db
+    .select({ partnerCampaignId: fbConnectionCampaignsTable.partnerCampaignId })
+    .from(fbConnectionCampaignsTable)
+    .where(
+      and(
+        eq(fbConnectionCampaignsTable.connectionId, connectionId),
+        eq(fbConnectionCampaignsTable.adAccountId, adAccountId),
+      ),
+    );
+  return row?.partnerCampaignId ?? null;
 }
 
 // ── FB CONNECTION ────────────────────────────────────────────────────────────
@@ -89,7 +105,8 @@ router.get("/fb/connection", requireAuth, async (req: any, res): Promise<void> =
     res.status(404).json({ error: "No Facebook connection found" });
     return;
   }
-  res.json(serializeConnection(conn));
+  const partnerCampaignId = await getStoredCampaignId(conn.id, conn.adAccountId);
+  res.json(serializeConnection(conn, partnerCampaignId));
 });
 
 // POST /fb/connection
@@ -123,7 +140,6 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
         adAccountId,
         adAccountName,
         status: "connected",
-        ...(accountChanged ? { partnerCampaignId: null } : {}),
       })
       .where(eq(fbConnectionsTable.userId, userId))
       .returning();
@@ -138,7 +154,8 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
     req.log.info({ userId, fbPageId }, "FB connection created");
   }
 
-  res.json(serializeConnection(conn));
+  const partnerCampaignId = await getStoredCampaignId(conn.id, conn.adAccountId);
+  res.json(serializeConnection(conn, partnerCampaignId));
 });
 
 // DELETE /fb/connection
@@ -445,17 +462,13 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
 
   let updatedCampaign: typeof campaign;
   try {
-    // ── Shared campaign ────────────────────────────────────────────────────
-    // All ads from this user live under one shared Meta campaign.
-    // If the connection already has a campaign ID, verify it still exists in
-    // Ads Manager before trusting it. If it was deleted, create a fresh one.
-    // This pre-flight approach avoids blanket retries on unrelated failures
-    // (budget, targeting, creative errors) that would orphan valid campaigns.
-    // Track the current stored ID so we can use it in the conditional-replace
-    // predicate if the campaign turns out to be deleted.
-    let partnerCampaignId = conn.partnerCampaignId ?? null;
-    // storedId is the value that is currently in the DB row — used to scope
-    // atomic updates so concurrent launches can't clobber each other.
+    // ── Shared campaign (per ad account) ──────────────────────────────────
+    // Each user×adAccount pair gets its own Meta campaign stored in
+    // fb_connection_campaigns. Switching ad accounts never reuses a campaign
+    // that belongs to a different account.
+    const adAccountId = conn.adAccountId!;
+    let partnerCampaignId = await getStoredCampaignId(conn.id, adAccountId);
+    // storedId: the DB value before we touch it — used in atomic replace predicate.
     const storedId = partnerCampaignId;
 
     if (partnerCampaignId) {
@@ -465,51 +478,59 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       );
       if (!stillExists) {
         req.log.warn(
-          { partnerCampaignId, connectionId: conn.id },
+          { partnerCampaignId, connectionId: conn.id, adAccountId },
           "FB shared campaign no longer exists — creating a replacement",
         );
-        partnerCampaignId = null; // signal that a new campaign must be created
+        partnerCampaignId = null;
       }
     }
 
     if (!partnerCampaignId) {
       const campaignResult = await activeFbPartnerAdapter.ensureCampaign({
-        adAccountId: conn.adAccountId,
+        adAccountId,
         accessToken: conn.partnerToken!,
       });
       const newCampaignId = campaignResult.partnerCampaignId;
 
-      // Atomic replace: use the old stored value in the WHERE predicate so the
-      // update succeeds only when the DB still holds exactly that value.
-      // • storedId === null  →  claiming a NULL slot (first launch / after account change)
-      // • storedId !== null  →  replacing a confirmed-deleted campaign by its exact old ID
-      // Either way, a concurrent winner changes the row first and our update is a no-op.
-      const whereClause = storedId
-        ? and(eq(fbConnectionsTable.id, conn.id), eq(fbConnectionsTable.partnerCampaignId, storedId))
-        : and(eq(fbConnectionsTable.id, conn.id), isNull(fbConnectionsTable.partnerCampaignId));
+      if (storedId) {
+        // Replacing a confirmed-deleted campaign: UPDATE with old-ID predicate
+        // so a concurrent winner that already replaced it beats us safely.
+        const [replaced] = await db
+          .update(fbConnectionCampaignsTable)
+          .set({ partnerCampaignId: newCampaignId })
+          .where(
+            and(
+              eq(fbConnectionCampaignsTable.connectionId, conn.id),
+              eq(fbConnectionCampaignsTable.adAccountId, adAccountId),
+              eq(fbConnectionCampaignsTable.partnerCampaignId, storedId),
+            ),
+          )
+          .returning();
 
-      const [stored] = await db
-        .update(fbConnectionsTable)
-        .set({ partnerCampaignId: newCampaignId })
-        .where(whereClause)
-        .returning();
-
-      if (stored) {
-        partnerCampaignId = newCampaignId;
-        req.log.info({ partnerCampaignId, connectionId: conn.id }, "FB shared campaign stored on connection");
+        if (replaced) {
+          partnerCampaignId = newCampaignId;
+          req.log.info({ partnerCampaignId, connectionId: conn.id, adAccountId }, "FB shared campaign replaced");
+        } else {
+          // Concurrent winner updated the row first — use their value.
+          partnerCampaignId = (await getStoredCampaignId(conn.id, adAccountId)) ?? newCampaignId;
+          req.log.warn({ partnerCampaignId, orphanedCampaignId: newCampaignId }, "FB campaign: concurrent replace — using winner");
+        }
       } else {
-        // A concurrent launch updated the row before us.
-        // Reload the current campaign ID and use it — the campaign we just
-        // created is orphaned in Meta but harmless (the user can remove it).
-        const [freshConn] = await db
-          .select()
-          .from(fbConnectionsTable)
-          .where(eq(fbConnectionsTable.id, conn.id));
-        partnerCampaignId = freshConn?.partnerCampaignId ?? newCampaignId;
-        req.log.warn(
-          { partnerCampaignId, orphanedCampaignId: newCampaignId, connectionId: conn.id },
-          "FB shared campaign: concurrent update stored a different ID — using it",
-        );
+        // First launch for this account: INSERT, ignore if concurrent launch won.
+        const inserted = await db
+          .insert(fbConnectionCampaignsTable)
+          .values({ connectionId: conn.id, adAccountId, partnerCampaignId: newCampaignId })
+          .onConflictDoNothing()
+          .returning();
+
+        if (inserted.length > 0) {
+          partnerCampaignId = newCampaignId;
+          req.log.info({ partnerCampaignId, connectionId: conn.id, adAccountId }, "FB shared campaign stored");
+        } else {
+          // Concurrent winner inserted first — use their value.
+          partnerCampaignId = (await getStoredCampaignId(conn.id, adAccountId)) ?? newCampaignId;
+          req.log.warn({ partnerCampaignId, orphanedCampaignId: newCampaignId }, "FB campaign: concurrent insert — using winner");
+        }
       }
     }
 
