@@ -345,106 +345,123 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     const adSetId: string = adSetData.id;
     logger.info({ adSetId, partnerCampaignId }, "Meta: ad set created");
 
-    // ── 2. Image (optional) ───────────────────────────────────────────────
-    // Supports two cases:
-    //   a) Regular URL  → pass directly as `picture` in the creative link_data
-    //   b) Base64 data URL → upload via /adimages first to obtain a hash
-    let imageSpec: Record<string, string> = {};
-    if (imageUrl) {
-      if (imageUrl.startsWith("data:image/")) {
-        // Extract base64 payload (everything after the comma)
-        const base64 = imageUrl.split(",")[1];
-        if (base64) {
-          try {
-            const imgData = await graphPost(
-              `/${actId}/adimages`,
-              { bytes: base64 },
-              accessToken,
-            );
-            // Response shape: { images: { <filename>: { hash, url, ... } } }
-            const firstEntry = Object.values(imgData.images ?? {})[0] as any;
-            if (firstEntry?.hash) {
-              imageSpec = { image_hash: firstEntry.hash };
-              logger.info("Meta: ad image uploaded from base64");
-            }
-          } catch (err) {
-            logger.warn({ err }, "Meta: image upload failed, continuing without image");
-          }
-        }
-      } else {
-        // Plain URL — use directly
-        imageSpec = { picture: imageUrl };
+    // Helper: if anything after this point fails, delete the ad set so it
+    // doesn't appear as an empty shell in Ads Manager.
+    const cleanupAdSet = async () => {
+      try {
+        await graphPost(`/${adSetId}`, { status: "DELETED" }, accessToken);
+        logger.info({ adSetId }, "Meta: cleaned up orphaned ad set after failure");
+      } catch (cleanupErr) {
+        logger.warn({ adSetId, cleanupErr }, "Meta: could not delete orphaned ad set — user may see it in Ads Manager");
       }
-    }
+    };
 
-    // ── 3. Ad Creative ────────────────────────────────────────────────────
-    // Use the caller-provided destination URL (e.g. a HVCG lead magnet page),
-    // falling back to the Facebook Page if none was supplied.
-    const adDestinationUrl = destinationUrl || `https://www.facebook.com/${fbPageId}`;
-
-    // Look up an Instagram actor the ad account can access before creating the
-    // creative.  Meta auto-detects the Page's linked Instagram Business Account
-    // during creative creation and validates ad-account access — even when
-    // publisher_platforms is restricted to ["facebook"] in the ad set.
-    // Explicitly passing an instagram_actor_id that the ad account owns bypasses
-    // that auto-detection and avoids error 200/1815199.
-    // We use the ad account's own instagram_accounts edge (ads_management scope)
-    // rather than the Page edge (would need instagram_basic which we don't request).
-    const instagramActorId = await getAdAccountInstagramActorId(actId, accessToken);
-
-    let creativeData: any;
+    // Steps 2-4 are wrapped so that any failure deletes the ad set before
+    // rethrowing — prevents empty "shell" ad sets piling up in Ads Manager.
     try {
-      creativeData = await graphPost(
-        `/${actId}/adcreatives`,
-        {
-          name: `${headline.slice(0, 200)} — Creative`,
-          object_story_spec: {
-            page_id: fbPageId,
-            ...(instagramActorId ? { instagram_actor_id: instagramActorId } : {}),
-            link_data: {
-              message: bodyText,
-              link: adDestinationUrl,
-              name: headline,
-              call_to_action: { type: "LEARN_MORE" },
-              ...imageSpec,
+      // ── 2. Image (optional) ─────────────────────────────────────────────
+      // Supports two cases:
+      //   a) Regular URL  → pass directly as `picture` in the creative link_data
+      //   b) Base64 data URL → upload via /adimages first to obtain a hash
+      let imageSpec: Record<string, string> = {};
+      if (imageUrl) {
+        if (imageUrl.startsWith("data:image/")) {
+          const base64 = imageUrl.split(",")[1];
+          if (base64) {
+            try {
+              const imgData = await graphPost(
+                `/${actId}/adimages`,
+                { bytes: base64 },
+                accessToken,
+              );
+              const firstEntry = Object.values(imgData.images ?? {})[0] as any;
+              if (firstEntry?.hash) {
+                imageSpec = { image_hash: firstEntry.hash };
+                logger.info("Meta: ad image uploaded from base64");
+              }
+            } catch (err) {
+              logger.warn({ err }, "Meta: image upload failed, continuing without image");
+            }
+          }
+        } else {
+          imageSpec = { picture: imageUrl };
+        }
+      }
+
+      // ── 3. Ad Creative ──────────────────────────────────────────────────
+      // Use the caller-provided destination URL (e.g. a HVCG lead magnet page),
+      // falling back to the Facebook Page if none was supplied.
+      const adDestinationUrl = destinationUrl || `https://www.facebook.com/${fbPageId}`;
+
+      // Look up an Instagram actor the ad account can access before creating the
+      // creative.  Meta auto-detects the Page's linked Instagram Business Account
+      // during creative creation and validates ad-account access — even when
+      // publisher_platforms is restricted to ["facebook"] in the ad set.
+      // Explicitly passing an instagram_actor_id that the ad account owns bypasses
+      // that auto-detection and avoids error 200/1815199.
+      // We use the ad account's own instagram_accounts edge (ads_management scope)
+      // rather than the Page edge (would need instagram_basic which we don't request).
+      const instagramActorId = await getAdAccountInstagramActorId(actId, accessToken);
+
+      let creativeData: any;
+      try {
+        creativeData = await graphPost(
+          `/${actId}/adcreatives`,
+          {
+            name: `${headline.slice(0, 200)} — Creative`,
+            object_story_spec: {
+              page_id: fbPageId,
+              ...(instagramActorId ? { instagram_actor_id: instagramActorId } : {}),
+              link_data: {
+                message: bodyText,
+                link: adDestinationUrl,
+                name: headline,
+                call_to_action: { type: "LEARN_MORE" },
+                ...imageSpec,
+              },
             },
           },
+          accessToken,
+        );
+      } catch (err) {
+        // If Meta still rejects due to Instagram access (ad account has no connected
+        // Instagram accounts and the Page has one it can't access), surface a clear
+        // actionable message instead of the raw API error.
+        if (err instanceof Error && err.message.includes("1815199")) {
+          throw new Error(
+            "Your Facebook Page has an Instagram account linked, but your ad account isn't authorized to use it. " +
+            "To fix this: open Meta Business Suite → Settings → Accounts → Instagram Accounts, " +
+            "then add your ad account to the Instagram account. Alternatively, disconnect Instagram from your Facebook Page and try again.",
+          );
+        }
+        throw err;
+      }
+      const creativeId: string = creativeData.id;
+      logger.info({ creativeId }, "Meta: ad creative created");
+
+      // ── 4. Ad ───────────────────────────────────────────────────────────
+      // Also ACTIVE so the entire hierarchy is ready to deliver the moment the
+      // parent campaign is activated by the user in Ads Manager.
+      const adData = await graphPost(
+        `/${actId}/ads`,
+        {
+          name: headline.slice(0, 255) || "Ad",
+          adset_id: adSetId,
+          creative: { creative_id: creativeId },
+          status: "ACTIVE",
         },
         accessToken,
       );
+      const adId: string = adData.id;
+      logger.info({ adId, adSetId, partnerCampaignId }, "Meta: ad created");
+
+      return { partnerAdSetId: adSetId, partnerAdId: adId };
     } catch (err) {
-      // If Meta still rejects due to Instagram access (ad account has no connected
-      // Instagram accounts and the Page has one it can't access), surface a clear
-      // actionable message instead of the raw API error.
-      if (err instanceof Error && err.message.includes("1815199")) {
-        throw new Error(
-          "Your Facebook Page has an Instagram account linked, but your ad account isn't authorized to use it. " +
-          "To fix this: open Meta Business Suite → Settings → Accounts → Instagram Accounts, " +
-          "then add your ad account to the Instagram account. Alternatively, disconnect Instagram from your Facebook Page and try again.",
-        );
-      }
+      // Clean up the orphaned ad set so it doesn't appear as an empty shell in
+      // the user's Ads Manager. Best-effort: log and continue if deletion fails.
+      await cleanupAdSet();
       throw err;
     }
-    const creativeId: string = creativeData.id;
-    logger.info({ creativeId }, "Meta: ad creative created");
-
-    // ── 4. Ad ─────────────────────────────────────────────────────────────
-    // Also ACTIVE so the entire hierarchy is ready to deliver the moment the
-    // parent campaign is activated by the user in Ads Manager.
-    const adData = await graphPost(
-      `/${actId}/ads`,
-      {
-        name: headline.slice(0, 255) || "Ad",
-        adset_id: adSetId,
-        creative: { creative_id: creativeId },
-        status: "ACTIVE",
-      },
-      accessToken,
-    );
-    const adId: string = adData.id;
-    logger.info({ adId, adSetId, partnerCampaignId }, "Meta: ad created");
-
-    return { partnerAdSetId: adSetId, partnerAdId: adId };
   },
 
   async campaignExists(partnerCampaignId, accessToken) {
