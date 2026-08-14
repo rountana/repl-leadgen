@@ -348,23 +348,50 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     // falling back to the Facebook Page if none was supplied.
     const adDestinationUrl = destinationUrl || `https://www.facebook.com/${fbPageId}`;
 
-    const creativeData = await graphPost(
-      `/${actId}/adcreatives`,
-      {
-        name: `${headline.slice(0, 200)} — Creative`,
-        object_story_spec: {
-          page_id: fbPageId,
-          link_data: {
-            message: bodyText,
-            link: adDestinationUrl,
-            name: headline,
-            call_to_action: { type: "LEARN_MORE" },
-            ...imageSpec,
-          },
+    const buildCreativeSpec = (instagramActorId?: string) => ({
+      name: `${headline.slice(0, 200)} — Creative`,
+      object_story_spec: {
+        page_id: fbPageId,
+        // page-backed Instagram actor: set only on retry to avoid the access
+        // check on the Page's linked Instagram Business Account (error 1815199).
+        ...(instagramActorId ? { instagram_actor_id: instagramActorId } : {}),
+        link_data: {
+          message: bodyText,
+          link: adDestinationUrl,
+          name: headline,
+          call_to_action: { type: "LEARN_MORE" },
+          ...imageSpec,
         },
       },
-      accessToken,
-    );
+    });
+
+    let creativeData: any;
+    try {
+      creativeData = await graphPost(`/${actId}/adcreatives`, buildCreativeSpec(), accessToken);
+    } catch (err) {
+      // Meta error 200/1815199: "Ad account has no access to this Instagram account."
+      // Occurs when the Facebook Page has an Instagram Business Account linked but
+      // the ad account hasn't been granted access to it in Business Manager.
+      // Retry using the Page itself as the Instagram actor (page-backed Instagram
+      // profile) — the ad account always has access to its own Page, and since we
+      // restrict publisher_platforms to ["facebook"] in the ad set the instagram_actor_id
+      // is effectively unused for delivery.
+      const isInstagramAccessError =
+        err instanceof Error &&
+        (err.message.includes("1815199") || /instagram/i.test(err.message));
+
+      if (!isInstagramAccessError) throw err;
+
+      logger.warn(
+        { fbPageId, adAccountId },
+        "Meta: ad account lacks Instagram access (1815199) — retrying with page-backed Instagram actor",
+      );
+      creativeData = await graphPost(
+        `/${actId}/adcreatives`,
+        buildCreativeSpec(fbPageId),
+        accessToken,
+      );
+    }
     const creativeId: string = creativeData.id;
     logger.info({ creativeId }, "Meta: ad creative created");
 
