@@ -222,6 +222,10 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         name: "Lead Gen — Shared Campaign",
         objective: "OUTCOME_TRAFFIC",
         special_ad_categories: [],
+        // Required when not using campaign-level budget (ASBO mode).
+        // false = each ad set controls its own daily_budget independently.
+        // true  = ad sets share 20% of their budgets across each other.
+        is_adset_budget_sharing_enabled: false,
         // Submit as PAUSED — the user activates from Ads Manager.
         status: "PAUSED",
       },
