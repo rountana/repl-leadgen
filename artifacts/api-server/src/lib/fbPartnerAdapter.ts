@@ -108,8 +108,10 @@ async function graphPost(
   if (data?.error) {
     // Log the full error object so we can see error_data, fbtrace_id, etc.
     logger.error({ metaError: data.error, path, requestBody: body }, "Meta API error detail");
+    // Prefer error_user_msg (plain English, shown to the user) over the raw message.
+    const userFacingMessage = data.error.error_user_msg ?? data.error.message;
     throw new Error(
-      `Meta API POST ${path} → ${res.status}: ${data.error.message} (code ${data.error.code}, subcode ${data.error.error_subcode ?? "none"})`,
+      `${userFacingMessage} (Meta code ${data.error.code}${data.error.error_subcode ? `/${data.error.error_subcode}` : ""})`,
     );
   }
   return data;
