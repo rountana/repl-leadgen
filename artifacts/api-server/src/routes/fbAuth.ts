@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
 
 const FB_VERSION = "v20.0";
-const SCOPES = ["pages_show_list", "ads_read", "ads_management"].join(",");
+const SCOPES = ["pages_show_list", "pages_read_engagement", "ads_read", "ads_management"].join(",");
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

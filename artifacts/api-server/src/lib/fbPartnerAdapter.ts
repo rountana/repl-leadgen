@@ -91,36 +91,52 @@ export interface FbPartnerAdapter {
 // ── Graph API helpers ──────────────────────────────────────────────────────
 
 /**
- * Returns an Instagram account ID the ad account is authorised to use as an
- * actor, or null if none is found.
+ * Returns an Instagram account ID that can be used as instagram_actor_id in
+ * an ad creative, or null if none is found.
  *
  * Meta auto-detects the Page's linked Instagram Business Account during ad
- * creative creation and validates the ad account has access to it — even when
- * publisher_platforms is restricted to ["facebook"].  By explicitly passing an
- * instagram_actor_id that the ad account CAN access we bypass the auto-detection
- * and avoid error 200/1815199.
+ * creative creation and validates ad-account access — even when publisher_platforms
+ * is restricted to ["facebook"].  By explicitly passing an instagram_actor_id we
+ * bypass auto-detection and avoid error 200/1815199.
  *
- * We query the ad account's own instagram_accounts (requires ads_management,
- * which is already in scope) rather than the Page's accounts (requires
- * instagram_basic, which we don't request).  If the ad account has no Instagram
- * accounts, we return null and let the caller decide how to proceed.
+ * Strategy (first non-empty result wins):
+ *   1. Ad account's instagram_accounts edge (ads_management scope — always available).
+ *      Returns Instagram accounts Business Manager has explicitly linked to the ad account.
+ *   2. Page's instagram_accounts edge (pages_read_engagement scope — available after
+ *      the user reconnects with the updated OAuth scope).  Returns the Page's connected
+ *      Instagram account(s) including its auto-created page-backed Instagram profile,
+ *      which the ad account always has access to.
  */
-async function getAdAccountInstagramActorId(actId: string, accessToken: string): Promise<string | null> {
+async function getInstagramActorId(
+  actId: string,
+  fbPageId: string,
+  accessToken: string,
+): Promise<string | null> {
+  // 1. Ad account's linked Instagram accounts (Business Manager)
   try {
-    const data = await graphGet(
-      `/${actId}/instagram_accounts`,
-      { fields: "id" },
-      accessToken,
-    );
+    const data = await graphGet(`/${actId}/instagram_accounts`, { fields: "id" }, accessToken);
     const accounts: Array<{ id: string }> = data?.data ?? [];
     if (accounts.length > 0) {
       logger.info({ actId, instagramActorId: accounts[0].id }, "Meta: using ad-account Instagram actor for creative");
       return accounts[0].id;
     }
-    logger.info({ actId }, "Meta: ad account has no connected Instagram accounts — creating creative without instagram_actor_id");
   } catch (err) {
-    logger.warn({ actId, err }, "Meta: could not fetch ad-account Instagram accounts — creating creative without instagram_actor_id");
+    logger.warn({ actId, err }, "Meta: could not fetch ad-account Instagram accounts");
   }
+
+  // 2. Page's Instagram accounts (includes page-backed profile; requires pages_read_engagement)
+  try {
+    const data = await graphGet(`/${fbPageId}/instagram_accounts`, { fields: "id" }, accessToken);
+    const accounts: Array<{ id: string }> = data?.data ?? [];
+    if (accounts.length > 0) {
+      logger.info({ fbPageId, instagramActorId: accounts[0].id }, "Meta: using page Instagram actor for creative");
+      return accounts[0].id;
+    }
+    logger.info({ actId, fbPageId }, "Meta: no Instagram accounts found — creating creative without instagram_actor_id");
+  } catch (err) {
+    logger.warn({ fbPageId, err }, "Meta: could not fetch page Instagram accounts — creating creative without instagram_actor_id");
+  }
+
   return null;
 }
 
@@ -401,7 +417,7 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       // that auto-detection and avoids error 200/1815199.
       // We use the ad account's own instagram_accounts edge (ads_management scope)
       // rather than the Page edge (would need instagram_basic which we don't request).
-      const instagramActorId = await getAdAccountInstagramActorId(actId, accessToken);
+      const instagramActorId = await getInstagramActorId(actId, fbPageId, accessToken);
 
       let creativeData: any;
       try {
@@ -429,9 +445,9 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         // actionable message instead of the raw API error.
         if (err instanceof Error && err.message.includes("1815199")) {
           throw new Error(
-            "Your Facebook Page has an Instagram account linked, but your ad account isn't authorized to use it. " +
-            "To fix this: open Meta Business Suite → Settings → Accounts → Instagram Accounts, " +
-            "then add your ad account to the Instagram account. Alternatively, disconnect Instagram from your Facebook Page and try again.",
+            "Your Facebook Page has an Instagram account connected to it, but your ad account isn't authorized to use it. " +
+            "To fix this, go to your Facebook Page → Settings → Professional tools → Instagram and disconnect the Instagram account. " +
+            "Alternatively, reconnect your Facebook account in this app (which will re-request permissions) and try again.",
           );
         }
         throw err;
