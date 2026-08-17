@@ -19,6 +19,7 @@ export * from './fbCampaignInput';
 export * from './fbCampaignInputTargetingGender';
 export * from './fbCampaignLeadDeliveryStatus';
 export * from './fbCampaignStatus';
+export * from './fbCampaignTargetingGender';
 export * from './fbCampaignUpdate';
 export * from './fbCampaignUpdateTargetingGender';
 export * from './fbConnection';

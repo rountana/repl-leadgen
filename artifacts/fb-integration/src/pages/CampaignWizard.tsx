@@ -16,6 +16,11 @@ import {
 } from "@workspace/api-client-react";
 
 type WizardStep = 2 | 3 | 4;
+type TargetGender = "all" | "male" | "female";
+
+function normalizeGender(value: string | null | undefined): TargetGender {
+  return value === "male" || value === "female" ? value : "all";
+}
 
 interface WizardState {
   step: WizardStep;
@@ -25,7 +30,7 @@ interface WizardState {
   ageMin: number;
   ageMax: number;
   interests: string[];
-  gender: "all";
+  gender: TargetGender;
   /** Where ad clicks land — HVCG lead magnet URL or any landing page */
   destinationUrl: string;
   /** Business address from the user's Profile, collected on the Budget & Targeting step */
@@ -101,7 +106,7 @@ export function CampaignWizard() {
         ageMin: editCampaign.targetingAgeMin ?? 18,
         ageMax: editCampaign.targetingAgeMax ?? 65,
         interests: editCampaign.targetingInterests ?? [],
-        gender: "all",
+        gender: normalizeGender(editCampaign.targetingGender),
         destinationUrl: editCampaign.destinationUrl ?? "",
         businessLocation: "",
       });
@@ -215,8 +220,9 @@ export function CampaignWizard() {
               initialRadius={wizard.radiusMiles}
               initialAgeMin={wizard.ageMin}
               initialAgeMax={wizard.ageMax}
+              initialGender={wizard.gender}
               initialInterests={wizard.interests}
-              onNext={(dailyBudget, radiusMiles, businessLocation, ageMin, ageMax, interests) =>
+              onNext={(dailyBudget, radiusMiles, businessLocation, ageMin, ageMax, gender, interests) =>
                 setWizard((prev) => ({
                   ...prev,
                   step: 4,
@@ -225,6 +231,7 @@ export function CampaignWizard() {
                   businessLocation,
                   ageMin,
                   ageMax,
+                  gender,
                   interests,
                 }))
               }

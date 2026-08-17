@@ -11,4 +11,6 @@ export type FbCampaignInputTargetingGender = typeof FbCampaignInputTargetingGend
 
 export const FbCampaignInputTargetingGender = {
   all: 'all',
+  male: 'male',
+  female: 'female',
 } as const;

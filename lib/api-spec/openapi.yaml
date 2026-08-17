@@ -1052,6 +1052,7 @@ components:
           type: ["number", "null"]
         targetingGender:
           type: ["string", "null"]
+          enum: [all, male, female, null]
         targetingInterests:
           type: ["array", "null"]
           items:
@@ -1121,7 +1122,7 @@ components:
           maximum: 65
         targetingGender:
           type: string
-          enum: [all]
+          enum: [all, male, female]
           default: all
         targetingInterests:
           type: array
@@ -1158,7 +1159,7 @@ components:
           maximum: 65
         targetingGender:
           type: string
-          enum: [all]
+          enum: [all, male, female]
         targetingInterests:
           type: array
           maxItems: 5

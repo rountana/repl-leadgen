@@ -269,6 +269,18 @@ export interface FbAdDraft {
   imageUrl: string;
 }
 
+/**
+ * @nullable
+ */
+export type FbCampaignTargetingGender = typeof FbCampaignTargetingGender[keyof typeof FbCampaignTargetingGender] | null;
+
+
+export const FbCampaignTargetingGender = {
+  all: 'all',
+  male: 'male',
+  female: 'female',
+} as const;
+
 export type FbCampaignStatus = typeof FbCampaignStatus[keyof typeof FbCampaignStatus];
 
 
@@ -309,7 +321,7 @@ export interface FbCampaign {
   /** @nullable */
   targetingAgeMax?: number | null;
   /** @nullable */
-  targetingGender?: string | null;
+  targetingGender?: FbCampaignTargetingGender;
   /** @nullable */
   targetingInterests?: string[] | null;
   /** @nullable */
@@ -337,6 +349,8 @@ export type FbCampaignInputTargetingGender = typeof FbCampaignInputTargetingGend
 
 export const FbCampaignInputTargetingGender = {
   all: 'all',
+  male: 'male',
+  female: 'female',
 } as const;
 
 export interface FbCampaignInput {
@@ -368,6 +382,8 @@ export type FbCampaignUpdateTargetingGender = typeof FbCampaignUpdateTargetingGe
 
 export const FbCampaignUpdateTargetingGender = {
   all: 'all',
+  male: 'male',
+  female: 'female',
 } as const;
 
 export interface FbCampaignUpdate {

@@ -7,6 +7,7 @@
  */
 import type { FbCampaignLeadDeliveryStatus } from './fbCampaignLeadDeliveryStatus';
 import type { FbCampaignStatus } from './fbCampaignStatus';
+import type { FbCampaignTargetingGender } from './fbCampaignTargetingGender';
 
 export interface FbCampaign {
   id: number;
@@ -28,7 +29,7 @@ export interface FbCampaign {
   /** @nullable */
   targetingAgeMax?: number | null;
   /** @nullable */
-  targetingGender?: string | null;
+  targetingGender?: FbCampaignTargetingGender;
   /** @nullable */
   targetingInterests?: string[] | null;
   /** @nullable */

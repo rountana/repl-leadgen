@@ -403,7 +403,12 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
           age_min: targetingAgeMin,
           age_max: targetingAgeMax,
           // "all" is Meta's default; omitting genders keeps the audience open.
-          ...(targetingGender !== "all" ? { genders: [] } : {}),
+          // Meta uses 1 for men and 2 for women in ad-set targeting.
+          ...(targetingGender === "male"
+            ? { genders: [1] }
+            : targetingGender === "female"
+              ? { genders: [2] }
+              : {}),
           ...(resolvedInterests.length > 0
             ? { flexible_spec: [{ interests: resolvedInterests }] }
             : {}),

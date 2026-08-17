@@ -6,10 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type FbCampaignUpdateTargetingGender = typeof FbCampaignUpdateTargetingGender[keyof typeof FbCampaignUpdateTargetingGender];
+/**
+ * @nullable
+ */
+export type FbCampaignTargetingGender = typeof FbCampaignTargetingGender[keyof typeof FbCampaignTargetingGender] | null;
 
 
-export const FbCampaignUpdateTargetingGender = {
+export const FbCampaignTargetingGender = {
   all: 'all',
   male: 'male',
   female: 'female',

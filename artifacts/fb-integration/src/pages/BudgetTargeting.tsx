@@ -24,6 +24,7 @@ interface BudgetTargetingProps {
   initialRadius?: number;
   initialAgeMin?: number;
   initialAgeMax?: number;
+  initialGender?: TargetGender;
   initialInterests?: string[];
   onNext: (
     dailyBudget: number,
@@ -31,9 +32,12 @@ interface BudgetTargetingProps {
     businessLocation: string,
     ageMin: number,
     ageMax: number,
+    gender: TargetGender,
     interests: string[],
   ) => void;
 }
+
+type TargetGender = "all" | "male" | "female";
 
 const BUDGET_TIPS: Record<number, string> = {
   5:  "Good for testing — low spend, small local audience. Ideal if you're just getting started.",
@@ -77,6 +81,7 @@ export function BudgetTargeting({
   initialRadius = 10,
   initialAgeMin = 18,
   initialAgeMax = 65,
+  initialGender = "all",
   initialInterests = [],
   onNext,
 }: BudgetTargetingProps) {
@@ -84,6 +89,7 @@ export function BudgetTargeting({
   const [radius, setRadius] = useState(initialRadius);
   const [ageMin, setAgeMin] = useState(initialAgeMin);
   const [ageMax, setAgeMax] = useState(initialAgeMax);
+  const [gender, setGender] = useState<TargetGender>(initialGender);
   const [interests, setInterests] = useState<string[]>(initialInterests);
   const [budgetInput, setBudgetInput] = useState(String(initialBudget));
 
@@ -362,7 +368,7 @@ export function BudgetTargeting({
         <div className="space-y-3">
           <div className="flex items-center gap-1.5">
             <Label className="text-base font-semibold">Age</Label>
-            <InfoTip content="Choose the age range most likely to need your product or service. A narrower range can make your budget more focused; use a wider range when your offer suits most adults." />
+            <InfoTip content="Facebook accepts a specific minimum and maximum age, so you can choose ranges like 22–46 rather than being limited to preset bands. A narrower range can make your budget more focused." />
           </div>
           <div className="flex items-center gap-3">
             <select
@@ -386,10 +392,20 @@ export function BudgetTargeting({
             </select>
             <span className="text-sm text-muted-foreground">years</span>
           </div>
-          <div className="flex items-center gap-2 rounded-md bg-secondary/40 px-3 py-2 text-sm">
-            <span className="font-medium">Gender</span>
-            <span className="text-muted-foreground">Everyone</span>
-            <InfoTip content="Your ad is shown to all genders by default, giving Meta the broadest audience to find likely customers." />
+          <div className="flex items-center gap-3 rounded-md bg-secondary/40 px-3 py-2 text-sm">
+            <Label htmlFor="gender" className="font-medium">Gender</Label>
+            <select
+              id="gender"
+              aria-label="Gender"
+              value={gender}
+              onChange={(event) => setGender(event.target.value as TargetGender)}
+              className="rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+            >
+              <option value="all">Everyone</option>
+              <option value="female">Women</option>
+              <option value="male">Men</option>
+            </select>
+            <InfoTip content="Everyone is selected by default. You can narrow the audience to Men or Women if that better fits your offer." />
           </div>
         </div>
 
@@ -452,7 +468,7 @@ export function BudgetTargeting({
 
         <Button
           className="w-full h-12 text-base font-semibold gap-2"
-          onClick={() => onNext(budget, radius, effectiveLocation ?? "", ageMin, ageMax, interests)}
+          onClick={() => onNext(budget, radius, effectiveLocation ?? "", ageMin, ageMax, gender, interests)}
           disabled={isProfileLoading || isBelowMinimum}
         >
           Submit for Review

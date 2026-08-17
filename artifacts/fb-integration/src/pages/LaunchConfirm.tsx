@@ -28,7 +28,7 @@ interface LaunchConfirmProps {
   radiusMiles: number;
   ageMin: number;
   ageMax: number;
-  gender: "all";
+  gender: "all" | "male" | "female";
   interests: string[];
   onReset: () => void;
   /** When set, patch-then-launch this existing campaign instead of creating a new one */
@@ -69,6 +69,7 @@ export function LaunchConfirm({
   businessLocation,
 }: LaunchConfirmProps) {
   const [, setLocation] = useLocation();
+  const genderLabel = gender === "male" ? "Men" : gender === "female" ? "Women" : "Everyone";
   const [phase, setPhase] = useState<LaunchPhase>("geocoding");
   const [campaign, setCampaign] = useState<FbCampaign | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -402,7 +403,7 @@ export function LaunchConfirm({
             </div>
             <div className="p-3 rounded-lg bg-secondary/30">
               <p className="text-xs text-muted-foreground">Gender</p>
-              <p className="font-semibold text-sm">Everyone</p>
+              <p className="font-semibold text-sm">{genderLabel}</p>
             </div>
           </div>
           <div className="p-3 rounded-lg bg-secondary/30">
