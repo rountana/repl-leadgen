@@ -55,10 +55,10 @@ function adsManagerUrl(adAccountId?: string | null, partnerCampaignId?: string |
 // ─── Shared state palettes ───────────────────────────────────────────────────
 // Three semantic states each get one consistent colour across every surface.
 const STATE_THEME = {
-  live:     { cardAccent: "border-l-4 border-l-green-400",  panel: "bg-green-50  border-green-100",  badge: "bg-green-100  text-green-800  border-green-200  hover:bg-green-100",  label: "text-green-700"  },
-  pending:  { cardAccent: "border-l-4 border-l-amber-400",  panel: "bg-amber-50  border-amber-100",  badge: "bg-amber-100  text-amber-800  border-amber-200  hover:bg-amber-100",  label: "text-amber-700"  },
-  failed:   { cardAccent: "border-l-4 border-l-red-400",    panel: "bg-red-50    border-red-100",    badge: "bg-red-100    text-red-800    border-red-200    hover:bg-red-100",    label: "text-red-700"    },
-  neutral:  { cardAccent: "",                                panel: "bg-secondary/20 border-border/50", badge: "bg-muted text-muted-foreground border-border hover:bg-muted",       label: "text-muted-foreground" },
+  live:    { cardAccent: "border-l-4 border-l-green-400", panel: "bg-green-50 border-green-100", divider: "border-green-100", badge: "bg-green-100 text-green-800 border-green-200 hover:bg-green-100", label: "text-green-700" },
+  pending: { cardAccent: "border-l-4 border-l-amber-400", panel: "bg-amber-50 border-amber-100", divider: "border-amber-100", badge: "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100", label: "text-amber-700" },
+  failed:  { cardAccent: "border-l-4 border-l-red-400",   panel: "bg-red-50 border-red-100",     divider: "border-red-100",   badge: "bg-red-100 text-red-800 border-red-200 hover:bg-red-100",       label: "text-red-700"   },
+  neutral: { cardAccent: "",                               panel: "bg-muted/30 border-border/50", divider: "border-border/50", badge: "bg-muted text-muted-foreground border-border hover:bg-muted",    label: "text-muted-foreground" },
 } as const;
 
 function statusTheme(status: FbCampaignStatus) {
@@ -124,197 +124,120 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
 
   const theme = statusTheme(campaign.status);
 
+  // Items that go in the ⋯ corner menu
+  const canEdit = campaign.status === "paused" || campaign.status === "error" || campaign.status === "draft";
+  const canDelete = campaign.status !== "live" && campaign.status !== "launching";
+
+  // Primary action shown in the bottom-right of the card
+  const primaryAction = campaign.status === "live" ? (
+    <Button variant="outline" size="sm" className="gap-1.5 bg-background shrink-0" asChild>
+      <a href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)} target="_blank" rel="noopener noreferrer">
+        <ExternalLink className="w-3.5 h-3.5" /> View in Ads Manager
+      </a>
+    </Button>
+  ) : campaign.status === "paused" ? (
+    <Button variant="outline" size="sm" className="gap-1.5 bg-background shrink-0" asChild>
+      <a href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)} target="_blank" rel="noopener noreferrer">
+        <ExternalLink className="w-3.5 h-3.5" /> Activate in Ads Manager
+      </a>
+    </Button>
+  ) : campaign.status === "error" ? (
+    <Button size="sm" variant="outline" className="gap-1.5 bg-background shrink-0" disabled={launch.isPending} onClick={() => launch.mutate({ id: campaign.id })}>
+      {launch.isPending ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Retrying…</> : <><RefreshCw className="w-3.5 h-3.5" />Retry</>}
+    </Button>
+  ) : null;
+
+  // Text/pill shown beside the chip in the bottom strip
+  const statusNote = campaign.status === "error" && campaign.errorMessage ? (
+    <span className="text-xs text-muted-foreground leading-snug">
+      {campaign.errorMessage.length > 100 ? campaign.errorMessage.slice(0, 100) + "…" : campaign.errorMessage}
+    </span>
+  ) : campaign.status === "paused" ? (
+    <span className={`text-xs font-medium ${theme.label}`}>Ready to go live</span>
+  ) : campaign.status === "launching" ? (
+    <span className="text-xs text-muted-foreground">Under review · usually live within minutes</span>
+  ) : campaign.status === "live" ? (
+    <LeadDeliveryPill status={campaign.leadDeliveryStatus} />
+  ) : null;
+
   return (
-    <Card className={`overflow-hidden transition-colors ${theme.cardAccent}`}>
-      <CardContent className="p-0">
-        <div className="flex flex-col sm:flex-row">
-          {/* Main content */}
-          <div className="p-5 flex-1 space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <StatusBadge status={campaign.status} />
-              {campaign.status === "live" && (
-                <LeadDeliveryPill status={campaign.leadDeliveryStatus} />
-              )}
-            </div>
+    <Card className={`overflow-hidden transition-colors ${theme.cardAccent} relative`}>
+      <CardContent className="p-5 space-y-3">
 
-            <div>
-              <h3 className="font-bold text-base leading-tight">
-                {campaign.headline ?? "Untitled Ad"}
-              </h3>
-              {campaign.bodyText && (
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                  {campaign.bodyText}
-                </p>
+        {/* ⋯ corner menu */}
+        {(canEdit || canDelete) && !confirmDelete && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="absolute top-3 right-3 w-7 h-7 text-muted-foreground hover:text-foreground">
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {canEdit && (
+                <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
+                  <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                </DropdownMenuItem>
               )}
-            </div>
+              {canDelete && (
+                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
-            <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-              {dailyBudgetDollars !== null && (
-                <span className="flex items-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5" />
-                  ${dailyBudgetDollars}/day
-                </span>
-              )}
-              {campaign.targetingRadiusMiles !== null && campaign.targetingRadiusMiles !== undefined && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {campaign.targetingRadiusMiles} mi radius
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className={`${theme.panel} p-5 sm:w-52 flex flex-col justify-center gap-2 border-t sm:border-t-0 sm:border-l`}>
-            {campaign.status === "live" ? (
-              <>
-                <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
-                  <a
-                    href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    View in Ads Manager
-                  </a>
-                </Button>
-                <Button size="sm" variant="ghost" className="w-full gap-2 text-muted-foreground">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  View Details
-                </Button>
-              </>
-            ) : campaign.status === "launching" ? (
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">Under review by Facebook</p>
-                <p className="text-xs text-muted-foreground mt-1">Usually live within minutes</p>
-              </div>
-            ) : campaign.status === "paused" ? (
-              <>
-                <p className={`text-xs font-medium text-center leading-snug ${theme.label}`}>
-                  Ready to go live
-                </p>
-                <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
-                  <a
-                    href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Activate in Ads Manager
-                  </a>
-                </Button>
-                {confirmDelete ? (
-                  <div className="space-y-1.5">
-                    <p className="text-xs text-center text-muted-foreground leading-snug">
-                      Remove from this app? The paused campaign in Ads Manager won't be affected.
-                    </p>
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-                      <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
-                        {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="ghost" className="w-full gap-1.5 text-xs text-muted-foreground">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
-                        <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
-                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </>
-            ) : campaign.status === "error" ? (
-              <div className="space-y-2">
-                {campaign.errorMessage && (
-                  <p className="text-xs text-muted-foreground break-words leading-relaxed text-center">
-                    {campaign.errorMessage.length > 120
-                      ? campaign.errorMessage.slice(0, 120) + "…"
-                      : campaign.errorMessage}
-                  </p>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full gap-1.5 bg-background text-xs"
-                  disabled={launch.isPending}
-                  onClick={() => launch.mutate({ id: campaign.id })}
-                >
-                  {launch.isPending ? (
-                    <><Loader2 className="w-3 h-3 animate-spin" />Retrying…</>
-                  ) : (
-                    <><RefreshCw className="w-3 h-3" />Retry</>
-                  )}
-                </Button>
-                {confirmDelete ? (
-                  <div className="space-y-1.5">
-                    <p className="text-xs text-center text-muted-foreground leading-snug">
-                      Remove this failed ad from the app?
-                    </p>
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-                      <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
-                        {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="ghost" className="w-full gap-1.5 text-xs text-muted-foreground">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
-                        <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
-                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground text-center">Draft</p>
-                {confirmDelete ? (
-                  <div className="space-y-1.5">
-                    <p className="text-xs text-center text-muted-foreground leading-snug">
-                      Remove this draft from the app?
-                    </p>
-                    <div className="flex gap-1.5">
-                      <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-                      <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
-                        {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Delete Draft
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+        {/* Title + body — pad right so text doesn't run under the ⋯ button */}
+        <div className="pr-8">
+          <h3 className="font-bold text-base leading-tight">
+            {campaign.headline ?? "Untitled Ad"}
+          </h3>
+          {campaign.bodyText && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              {campaign.bodyText}
+            </p>
+          )}
         </div>
+
+        {/* Budget / radius */}
+        <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+          {dailyBudgetDollars !== null && (
+            <span className="flex items-center gap-1">
+              <DollarSign className="w-3.5 h-3.5" />${dailyBudgetDollars}/day
+            </span>
+          )}
+          {campaign.targetingRadiusMiles != null && (
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5" />{campaign.targetingRadiusMiles} mi radius
+            </span>
+          )}
+        </div>
+
+        {/* Bottom strip — chip + status note on the left, primary action on the right */}
+        {confirmDelete ? (
+          <div className={`rounded-lg border p-3 space-y-2 ${theme.panel}`}>
+            <p className="text-xs text-center text-muted-foreground leading-snug">
+              {campaign.status === "paused"
+                ? "Remove from this app? The paused campaign in Ads Manager won't be affected."
+                : "Remove this ad from the app?"}
+            </p>
+            <div className="flex gap-1.5">
+              <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+              <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
+                {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className={`flex items-center justify-between gap-3 pt-3 border-t ${theme.divider}`}>
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+              <StatusBadge status={campaign.status} />
+              {statusNote}
+            </div>
+            {primaryAction}
+          </div>
+        )}
+
       </CardContent>
     </Card>
   );
