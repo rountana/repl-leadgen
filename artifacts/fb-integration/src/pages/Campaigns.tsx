@@ -190,7 +190,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
             ) : campaign.status === "paused" ? (
               <>
                 <p className="text-xs text-amber-700 font-medium text-center leading-snug">
-                  Ready to review — activate it in Ads Manager to go live
+                  Ready to go live
                 </p>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
                   <a
@@ -199,7 +199,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                     rel="noopener noreferrer"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    Review in Ads Manager
+                    Activate in Ads Manager
                   </a>
                 </Button>
                 <Button
@@ -209,7 +209,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                   onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}
                 >
                   <Pencil className="w-3 h-3" />
-                  Edit Creative
+                  Edit
                 </Button>
                 {confirmDelete ? (
                   <div className="space-y-1.5">
@@ -231,7 +231,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                     onClick={() => setConfirmDelete(true)}
                   >
                     <Trash2 className="w-3 h-3" />
-                    Delete Draft
+                    Delete
                   </Button>
                 )}
               </>
