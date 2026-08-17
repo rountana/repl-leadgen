@@ -222,9 +222,9 @@ export interface FbConnection {
   /** @nullable */
   adAccountName?: string | null;
   /**
-   * Shared Meta campaign ID — created once, reused for all ads.
-   * @nullable
-   */
+     * Shared Meta campaign ID — created once, reused for all ads.
+     * @nullable
+     */
   partnerCampaignId?: string | null;
   status: FbConnectionStatus;
   createdAt: string;
@@ -291,8 +291,6 @@ export interface FbCampaign {
   /** @nullable */
   targetingLongitude?: string | null;
   /** @nullable */
-  destinationUrl?: string | null;
-  /** @nullable */
   partnerCampaignId?: string | null;
   /** @nullable */
   partnerAdSetId?: string | null;
@@ -306,17 +304,6 @@ export interface FbCampaign {
   updatedAt: string;
 }
 
-export interface FbCampaignUpdate {
-  headline?: string;
-  bodyText?: string;
-  imageUrl?: string;
-  dailyBudgetCents?: number;
-  targetingRadiusMiles?: number;
-  targetingLatitude?: number;
-  targetingLongitude?: number;
-  destinationUrl?: string;
-}
-
 export interface FbCampaignInput {
   headline: string;
   bodyText: string;
@@ -325,6 +312,16 @@ export interface FbCampaignInput {
   targetingRadiusMiles: number;
   targetingLatitude: number;
   targetingLongitude: number;
+}
+
+export interface UpdateFbCampaignBody {
+  headline?: string;
+  bodyText?: string;
+  imageUrl?: string;
+  dailyBudgetCents?: number;
+  targetingRadiusMiles?: number;
+  targetingLatitude?: number;
+  targetingLongitude?: number;
   destinationUrl?: string;
 }
 
@@ -340,28 +337,6 @@ export const FbLeadStatusStatus = {
 export interface FbLeadStatus {
   status: FbLeadStatusStatus;
   checkedAt: string;
-}
-
-export interface UserProfile {
-  id: number;
-  userId: string;
-  /** @nullable */
-  businessName?: string | null;
-  /** @nullable */
-  businessLocation?: string | null;
-  /** @nullable */
-  industry?: string | null;
-  /** @nullable */
-  logoUrl?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UserProfileUpdate {
-  businessName?: string;
-  businessLocation?: string;
-  industry?: string;
-  logoUrl?: string;
 }
 
 export interface FbLeadWebhookPayload {

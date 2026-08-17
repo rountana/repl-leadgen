@@ -327,7 +327,7 @@ export const GetFbConnectionResponse = zod.object({
   "fbPageName": zod.string().nullish(),
   "adAccountId": zod.string().nullish(),
   "adAccountName": zod.string().nullish(),
-  "partnerCampaignId": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish().describe('Shared Meta campaign ID — created once, reused for all ads.'),
   "status": zod.enum(['connected', 'disconnected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -351,7 +351,7 @@ export const CreateFbConnectionResponse = zod.object({
   "fbPageName": zod.string().nullish(),
   "adAccountId": zod.string().nullish(),
   "adAccountName": zod.string().nullish(),
-  "partnerCampaignId": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish().describe('Shared Meta campaign ID — created once, reused for all ads.'),
   "status": zod.enum(['connected', 'disconnected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
@@ -400,6 +400,7 @@ export const ListFbCampaignsResponseItem = zod.object({
   "partnerAdId": zod.string().nullish(),
   "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -416,19 +417,7 @@ export const CreateFbCampaignBody = zod.object({
   "dailyBudgetCents": zod.number(),
   "targetingRadiusMiles": zod.number(),
   "targetingLatitude": zod.number(),
-  "targetingLongitude": zod.number(),
-  "destinationUrl": zod.string().optional(),
-})
-
-export const UpdateFbCampaignBody = zod.object({
-  "headline": zod.string().optional(),
-  "bodyText": zod.string().optional(),
-  "imageUrl": zod.string().optional(),
-  "dailyBudgetCents": zod.number().optional(),
-  "targetingRadiusMiles": zod.number().optional(),
-  "targetingLatitude": zod.number().optional(),
-  "targetingLongitude": zod.number().optional(),
-  "destinationUrl": zod.string().optional(),
+  "targetingLongitude": zod.number()
 })
 
 export const CreateFbCampaignResponse = zod.object({
@@ -442,12 +431,12 @@ export const CreateFbCampaignResponse = zod.object({
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
-  "destinationUrl": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
   "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -471,15 +460,65 @@ export const GetFbCampaignResponse = zod.object({
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
-  "destinationUrl": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
   "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
+
+
+/**
+ * @summary Update fields on a draft or failed campaign
+ */
+export const UpdateFbCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateFbCampaignBody = zod.object({
+  "headline": zod.string().optional(),
+  "bodyText": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "dailyBudgetCents": zod.number().optional(),
+  "targetingRadiusMiles": zod.number().optional(),
+  "targetingLatitude": zod.number().optional(),
+  "targetingLongitude": zod.number().optional(),
+  "destinationUrl": zod.string().optional()
+})
+
+export const UpdateFbCampaignResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "connectionId": zod.number().nullish(),
+  "headline": zod.string().nullish(),
+  "bodyText": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "dailyBudgetCents": zod.number().nullish(),
+  "targetingRadiusMiles": zod.number().nullish(),
+  "targetingLatitude": zod.string().nullish(),
+  "targetingLongitude": zod.string().nullish(),
+  "partnerCampaignId": zod.string().nullish(),
+  "partnerAdSetId": zod.string().nullish(),
+  "partnerAdId": zod.string().nullish(),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
+  "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "errorMessage": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a draft or failed Facebook campaign
+ */
+export const DeleteFbCampaignParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteFbCampaignResponse = zod.void()
 
 
 /**
@@ -505,6 +544,7 @@ export const LaunchFbCampaignResponse = zod.object({
   "partnerAdId": zod.string().nullish(),
   "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
+  "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -551,26 +591,6 @@ export const AiExtractBrandingResponse = zod.object({
   "logoUrl": zod.string().nullish(),
   "tagline": zod.string().nullish(),
   "primaryColor": zod.string().nullish()
-})
-
-// ── User Business Profile ─────────────────────────────────────────────────────
-
-export const GetProfileResponse = zod.object({
-  "id": zod.number(),
-  "userId": zod.string(),
-  "businessName": zod.string().nullish(),
-  "businessLocation": zod.string().nullish(),
-  "industry": zod.string().nullish(),
-  "logoUrl": zod.string().nullish(),
-  "createdAt": zod.string(),
-  "updatedAt": zod.string(),
-})
-
-export const UpdateProfileBody = zod.object({
-  "businessName": zod.string().optional(),
-  "businessLocation": zod.string().optional(),
-  "industry": zod.string().optional(),
-  "logoUrl": zod.string().optional(),
 })
 
 

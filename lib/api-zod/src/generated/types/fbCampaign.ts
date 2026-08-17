@@ -29,8 +29,14 @@ export interface FbCampaign {
   targetingLongitude?: string | null;
   /** @nullable */
   partnerCampaignId?: string | null;
+  /** @nullable */
+  partnerAdSetId?: string | null;
+  /** @nullable */
+  partnerAdId?: string | null;
   status: FbCampaignStatus;
   leadDeliveryStatus: FbCampaignLeadDeliveryStatus;
+  /** @nullable */
+  errorMessage?: string | null;
   createdAt: string;
   updatedAt: string;
 }

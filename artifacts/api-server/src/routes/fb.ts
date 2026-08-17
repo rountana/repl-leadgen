@@ -319,6 +319,29 @@ router.patch("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<vo
   res.json(serializeCampaign(updated));
 });
 
+// DELETE /fb/campaigns/:id — remove a draft or failed campaign from the DB
+router.delete("/fb/campaigns/:id", requireAuth, async (req: any, res): Promise<void> => {
+  const params = GetFbCampaignParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const userId = req.userId as string;
+
+  const [existing] = await db
+    .select()
+    .from(fbCampaignsTable)
+    .where(and(eq(fbCampaignsTable.id, params.data.id), eq(fbCampaignsTable.userId, userId)));
+
+  if (!existing) { res.status(404).json({ error: "Campaign not found" }); return; }
+
+  if (existing.status === "live" || existing.status === "launching") {
+    res.status(409).json({ error: "Live or launching campaigns cannot be deleted here. Pause them in Ads Manager first." });
+    return;
+  }
+
+  await db.delete(fbCampaignsTable).where(eq(fbCampaignsTable.id, existing.id));
+  req.log.info({ userId, campaignId: existing.id }, "FB campaign deleted");
+  res.status(204).end();
+});
+
 // POST /fb/campaigns/sync
 // Re-checks Meta campaign status for all live/launching/paused campaigns and updates DB.
 // Must be registered before /fb/campaigns/:id to avoid the param route catching "sync".

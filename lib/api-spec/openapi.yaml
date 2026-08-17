@@ -410,6 +410,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateFbCampaign
+      tags: [fb]
+      summary: Update fields on a draft or failed campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFbCampaignBody"
+      responses:
+        "200":
+          description: Updated FB campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbCampaign"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Cannot edit a live campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteFbCampaign
+      tags: [fb]
+      summary: Delete a draft or failed Facebook campaign
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Cannot delete a live campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /fb/campaigns/{id}/launch:
     post:
@@ -926,6 +986,26 @@ components:
           type: number
         targetingLongitude:
           type: number
+
+    UpdateFbCampaignBody:
+      type: object
+      properties:
+        headline:
+          type: string
+        bodyText:
+          type: string
+        imageUrl:
+          type: string
+        dailyBudgetCents:
+          type: number
+        targetingRadiusMiles:
+          type: number
+        targetingLatitude:
+          type: number
+        targetingLongitude:
+          type: number
+        destinationUrl:
+          type: string
 
     FbLeadStatus:
       type: object

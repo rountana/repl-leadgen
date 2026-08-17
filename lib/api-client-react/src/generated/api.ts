@@ -30,7 +30,6 @@ import type {
   FbAdGenerationInput,
   FbCampaign,
   FbCampaignInput,
-  FbCampaignUpdate,
   FbConnection,
   FbConnectionInput,
   FbLeadStatus,
@@ -45,8 +44,7 @@ import type {
   LeadMagnetsSummary,
   ListExamplesParams,
   Template,
-  UserProfile,
-  UserProfileUpdate,
+  UpdateFbCampaignBody
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1643,6 +1641,149 @@ export function useGetFbCampaign<TData = Awaited<ReturnType<typeof getFbCampaign
 
 
 
+export const getUpdateFbCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/fb/campaigns/${id}`
+}
+
+/**
+ * @summary Update fields on a draft or failed campaign
+ */
+export const updateFbCampaign = async (id: number,
+    updateFbCampaignBody: UpdateFbCampaignBody, options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign> => {
+
+  return customFetch<FbCampaign>(getUpdateFbCampaignUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateFbCampaignBody)
+  }
+);}
+
+
+
+
+
+export const getUpdateFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError,{id: number;data: BodyType<UpdateFbCampaignBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError,{id: number;data: BodyType<UpdateFbCampaignBody>}, TContext> => {
+
+const mutationKey = ['updateFbCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFbCampaign>>, {id: number;data: BodyType<UpdateFbCampaignBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateFbCampaign(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateFbCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof updateFbCampaign>>>
+    export type UpdateFbCampaignMutationBody = BodyType<UpdateFbCampaignBody>
+    export type UpdateFbCampaignMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Update fields on a draft or failed campaign
+ */
+export const useUpdateFbCampaign = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError,{id: number;data: BodyType<UpdateFbCampaignBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateFbCampaign>>,
+        TError,
+        {id: number;data: BodyType<UpdateFbCampaignBody>},
+        TContext
+      > => {
+      return useMutation(getUpdateFbCampaignMutationOptions(options));
+    }
+
+export const getDeleteFbCampaignUrl = (id: number,) => {
+
+
+
+
+  return `/api/fb/campaigns/${id}`
+}
+
+/**
+ * @summary Delete a draft or failed Facebook campaign
+ */
+export const deleteFbCampaign = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteFbCampaignUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteFbCampaign>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteFbCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFbCampaign>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteFbCampaign(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteFbCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof deleteFbCampaign>>>
+
+    export type DeleteFbCampaignMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Delete a draft or failed Facebook campaign
+ */
+export const useDeleteFbCampaign = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteFbCampaign>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteFbCampaignMutationOptions(options));
+    }
+
 export const getLaunchFbCampaignUrl = (id: number,) => {
 
 
@@ -1668,74 +1809,6 @@ export const launchFbCampaign = async (id: number, options?: Parameters<typeof c
 
 
 
-
-export const getUpdateFbCampaignUrl = (id: number) => `/api/fb/campaigns/${id}`;
-
-export const updateFbCampaign = async (id: number, fbCampaignUpdate: FbCampaignUpdate, options?: Parameters<typeof customFetch>[1]): Promise<FbCampaign> => {
-  return customFetch<FbCampaign>(getUpdateFbCampaignUrl(id), {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
-    body: JSON.stringify(fbCampaignUpdate),
-  });
-};
-
-export const getUpdateFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext>, request?: SecondParameter<typeof customFetch> }
-): UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext> => {
-  const mutationKey = ['updateFbCampaign'];
-  const { mutation: mutationOptions, request: requestOptions } = options ?? { mutation: { mutationKey } };
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateFbCampaign>>, { id: number; data: BodyType<FbCampaignUpdate> }> = (props) => {
-    const { id, data } = props ?? {};
-    return updateFbCampaign(id, data, requestOptions);
-  };
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdateFbCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof updateFbCampaign>>>;
-export type UpdateFbCampaignMutationError = ErrorType<ErrorResponse>;
-
-export const useUpdateFbCampaign = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext>, request?: SecondParameter<typeof customFetch> }
-): UseMutationResult<Awaited<ReturnType<typeof updateFbCampaign>>, TError, { id: number; data: BodyType<FbCampaignUpdate> }, TContext> => {
-  return useMutation(getUpdateFbCampaignMutationOptions(options));
-};
-
-// ── Sync all campaigns ────────────────────────────────────────────────────
-
-export interface FbCampaignsSyncResult {
-  synced: number;
-  updated: number;
-}
-
-export const getSyncFbCampaignsUrl = () => `/api/fb/campaigns/sync`;
-
-export const syncFbCampaigns = async (options?: Parameters<typeof customFetch>[1]): Promise<FbCampaignsSyncResult> => {
-  return customFetch<FbCampaignsSyncResult>(getSyncFbCampaignsUrl(), {
-    ...options,
-    method: 'POST',
-  });
-};
-
-export const getSyncFbCampaignsMutationOptions = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext>, request?: SecondParameter<typeof customFetch> }
-): UseMutationOptions<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext> => {
-  const mutationKey = ['syncFbCampaigns'];
-  const { mutation: mutationOptions, request: requestOptions } = options ?? { mutation: { mutationKey } };
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncFbCampaigns>>, void> = () => {
-    return syncFbCampaigns(requestOptions);
-  };
-  return { mutationFn, ...mutationOptions };
-};
-
-export type SyncFbCampaignsMutationResult = NonNullable<Awaited<ReturnType<typeof syncFbCampaigns>>>;
-export type SyncFbCampaignsMutationError = ErrorType<ErrorResponse>;
-
-export const useSyncFbCampaigns = <TError = ErrorType<ErrorResponse>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext>, request?: SecondParameter<typeof customFetch> }
-): UseMutationResult<Awaited<ReturnType<typeof syncFbCampaigns>>, TError, void, TContext> => {
-  return useMutation(getSyncFbCampaignsMutationOptions(options));
-};
 
 export const getLaunchFbCampaignMutationOptions = <TError = ErrorType<ErrorResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof launchFbCampaign>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -2000,60 +2073,4 @@ export const useAiExtractBranding = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getAiExtractBrandingMutationOptions(options));
     }
-
-// ── User Business Profile ─────────────────────────────────────────────────────
-
-export const getProfile = async (options?: Parameters<typeof customFetch>[1]): Promise<UserProfile> => {
-  return customFetch<UserProfile>(`/api/profile`, { ...options, method: 'GET' });
-};
-
-export const getGetProfileQueryKey = () => ['getProfile'] as const;
-
-export const getGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetProfileQueryKey();
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfile>>> = ({ signal }) => getProfile({ signal, ...requestOptions });
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData> & { queryKey: QueryKey };
-};
-
-export type GetProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getProfile>>>;
-export type GetProfileQueryError = ErrorType<unknown>;
-
-export function useGetProfile<TData = Awaited<ReturnType<typeof getProfile>>, TError = ErrorType<unknown>>(
-  options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getProfile>>, TError, TData>; request?: SecondParameter<typeof customFetch> }
-): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetProfileQueryOptions(options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  query.queryKey = queryOptions.queryKey;
-  return query;
-}
-
-export const updateProfile = async (userProfileUpdate: UserProfileUpdate, options?: Parameters<typeof customFetch>[1]): Promise<UserProfile> => {
-  return customFetch<UserProfile>(`/api/profile`, {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...(options?.headers as Record<string, string> | undefined) },
-    body: JSON.stringify(userProfileUpdate),
-  });
-};
-
-export const getUpdateProfileMutationOptions = <TError = ErrorType<unknown>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext>; request?: SecondParameter<typeof customFetch> }
-): UseMutationOptions<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext> => {
-  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProfile>>, UserProfileUpdate> = (data) =>
-    updateProfile(data, requestOptions);
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdateProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateProfile>>>;
-export type UpdateProfileMutationError = ErrorType<unknown>;
-
-export function useUpdateProfile<TError = ErrorType<unknown>, TContext = unknown>(
-  options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext>; request?: SecondParameter<typeof customFetch> }
-): UseMutationResult<Awaited<ReturnType<typeof updateProfile>>, TError, UserProfileUpdate, TContext> {
-  return useMutation(getUpdateProfileMutationOptions(options));
-}
 

@@ -38,3 +38,4 @@ export * from './leadMagnetUpdate';
 export * from './listExamplesParams';
 export * from './template';
 export * from './templateLayout';
+export * from './updateFbCampaignBody';

@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Pencil,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +27,7 @@ import {
   useLaunchFbCampaign,
   useSyncFbCampaigns,
   useGetFbConnection,
+  useDeleteFbCampaign,
   getListFbCampaignsQueryKey,
   type FbCampaign,
   type FbCampaignStatus,
@@ -105,6 +107,11 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const launch = useLaunchFbCampaign({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListFbCampaignsQueryKey() }),
+    },
+  });
+  const deleteCampaign = useDeleteFbCampaign({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: getListFbCampaignsQueryKey() }),
     },
@@ -200,6 +207,20 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                   <Pencil className="w-3 h-3" />
                   Edit Creative
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
+                  disabled={deleteCampaign.isPending}
+                  onClick={() => {
+                    if (confirm("Delete this draft? This only removes it from this app — the paused campaign in Ads Manager won't be affected.")) {
+                      deleteCampaign.mutate({ id: campaign.id });
+                    }
+                  }}
+                >
+                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Delete Draft
+                </Button>
               </>
             ) : campaign.status === "error" ? (
               <div className="space-y-2">
@@ -233,9 +254,39 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                   <Pencil className="w-3 h-3" />
                   Edit &amp; Retry
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
+                  disabled={deleteCampaign.isPending}
+                  onClick={() => {
+                    if (confirm("Delete this failed ad? It will be removed from this app.")) {
+                      deleteCampaign.mutate({ id: campaign.id });
+                    }
+                  }}
+                >
+                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Delete
+                </Button>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground text-center">Draft</p>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground text-center">Draft</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
+                  disabled={deleteCampaign.isPending}
+                  onClick={() => {
+                    if (confirm("Delete this draft? It will be removed from this app.")) {
+                      deleteCampaign.mutate({ id: campaign.id });
+                    }
+                  }}
+                >
+                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  Delete Draft
+                </Button>
+              </div>
             )}
           </div>
         </div>

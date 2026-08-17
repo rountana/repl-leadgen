@@ -7,9 +7,8 @@
  */
 
 export interface FbConnectionInput {
-  partnerToken: string;
   fbPageId: string;
-  fbPageName: string;
+  fbPageName?: string;
   adAccountId: string;
-  adAccountName: string;
+  adAccountName?: string;
 }
