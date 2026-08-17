@@ -106,6 +106,7 @@ function LeadDeliveryPill({ status }: { status: FbCampaignLeadDeliveryStatus }) 
 function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: FbCampaign; adAccountId?: string | null; sharedCampaignId?: string | null }) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const launch = useLaunchFbCampaign({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: getListFbCampaignsQueryKey() }),
@@ -114,6 +115,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
   const deleteCampaign = useDeleteFbCampaign({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: getListFbCampaignsQueryKey() }),
+      onError: () => setConfirmDelete(false),
     },
   });
 
@@ -207,20 +209,29 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                   <Pencil className="w-3 h-3" />
                   Edit Creative
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
-                  disabled={deleteCampaign.isPending}
-                  onClick={() => {
-                    if (confirm("Delete this draft? This only removes it from this app — the paused campaign in Ads Manager won't be affected.")) {
-                      deleteCampaign.mutate({ id: campaign.id });
-                    }
-                  }}
-                >
-                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  Delete Draft
-                </Button>
+                {confirmDelete ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-center text-muted-foreground leading-snug">
+                      Remove from this app? The paused campaign in Ads Manager won't be affected.
+                    </p>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                      <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
+                        {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete Draft
+                  </Button>
+                )}
               </>
             ) : campaign.status === "error" ? (
               <div className="space-y-2">
@@ -254,38 +265,56 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                   <Pencil className="w-3 h-3" />
                   Edit &amp; Retry
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
-                  disabled={deleteCampaign.isPending}
-                  onClick={() => {
-                    if (confirm("Delete this failed ad? It will be removed from this app.")) {
-                      deleteCampaign.mutate({ id: campaign.id });
-                    }
-                  }}
-                >
-                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  Delete
-                </Button>
+                {confirmDelete ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-center text-muted-foreground leading-snug">
+                      Remove this failed ad from the app?
+                    </p>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                      <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
+                        {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground text-center">Draft</p>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
-                  disabled={deleteCampaign.isPending}
-                  onClick={() => {
-                    if (confirm("Delete this draft? It will be removed from this app.")) {
-                      deleteCampaign.mutate({ id: campaign.id });
-                    }
-                  }}
-                >
-                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                  Delete Draft
-                </Button>
+                {confirmDelete ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-center text-muted-foreground leading-snug">
+                      Remove this draft from the app?
+                    </p>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                      <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
+                        {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
+                    onClick={() => setConfirmDelete(true)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Delete Draft
+                  </Button>
+                )}
               </div>
             )}
           </div>
