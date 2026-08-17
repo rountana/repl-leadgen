@@ -229,7 +229,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
             </div>
           </div>
         ) : (
-          <div className={`flex items-center justify-between gap-3 pt-3 border-t ${theme.divider}`}>
+          <div className="flex items-center justify-between gap-3 pt-3">
             <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <StatusBadge status={campaign.status} />
               {statusNote}
