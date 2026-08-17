@@ -52,38 +52,30 @@ function adsManagerUrl(adAccountId?: string | null, partnerCampaignId?: string |
   return "https://adsmanager.facebook.com/adsmanager/manage/campaigns";
 }
 
+// ─── Shared state palettes ───────────────────────────────────────────────────
+// Three semantic states each get one consistent colour across every surface.
+const STATE_THEME = {
+  live:     { cardAccent: "border-l-4 border-l-green-400",  panel: "bg-green-50  border-green-100",  badge: "bg-green-100  text-green-800  border-green-200  hover:bg-green-100",  label: "text-green-700"  },
+  pending:  { cardAccent: "border-l-4 border-l-amber-400",  panel: "bg-amber-50  border-amber-100",  badge: "bg-amber-100  text-amber-800  border-amber-200  hover:bg-amber-100",  label: "text-amber-700"  },
+  failed:   { cardAccent: "border-l-4 border-l-red-400",    panel: "bg-red-50    border-red-100",    badge: "bg-red-100    text-red-800    border-red-200    hover:bg-red-100",    label: "text-red-700"    },
+  neutral:  { cardAccent: "",                                panel: "bg-secondary/20 border-border/50", badge: "bg-muted text-muted-foreground border-border hover:bg-muted",       label: "text-muted-foreground" },
+} as const;
+
+function statusTheme(status: FbCampaignStatus) {
+  if (status === "live")                    return STATE_THEME.live;
+  if (status === "paused" || status === "launching") return STATE_THEME.pending;
+  if (status === "error")                   return STATE_THEME.failed;
+  return STATE_THEME.neutral;
+}
+
 function StatusBadge({ status }: { status: FbCampaignStatus }) {
+  const t = statusTheme(status);
   switch (status) {
-    case "live":
-      return (
-        <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100 gap-1">
-          <CheckCircle2 className="w-3 h-3" /> Live
-        </Badge>
-      );
-    case "launching":
-      return (
-        <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100 gap-1">
-          <Clock className="w-3 h-3" /> Launching
-        </Badge>
-      );
-    case "paused":
-      return (
-        <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100 gap-1">
-          <FileText className="w-3 h-3" /> Draft
-        </Badge>
-      );
-    case "error":
-      return (
-        <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 gap-1">
-          <AlertTriangle className="w-3 h-3" /> Launch failed
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="outline" className="text-muted-foreground gap-1">
-          <FileText className="w-3 h-3" /> Draft
-        </Badge>
-      );
+    case "live":      return <Badge className={`${t.badge} gap-1`}><CheckCircle2 className="w-3 h-3" /> Live</Badge>;
+    case "launching": return <Badge className={`${t.badge} gap-1`}><Clock className="w-3 h-3" /> Launching</Badge>;
+    case "paused":    return <Badge className={`${t.badge} gap-1`}><FileText className="w-3 h-3" /> Draft</Badge>;
+    case "error":     return <Badge className={`${t.badge} gap-1`}><AlertTriangle className="w-3 h-3" /> Launch failed</Badge>;
+    default:          return <Badge className={`${t.badge} gap-1`}><FileText className="w-3 h-3" /> Draft</Badge>;
   }
 }
 
@@ -130,8 +122,10 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
     ? Math.round(campaign.dailyBudgetCents / 100)
     : null;
 
+  const theme = statusTheme(campaign.status);
+
   return (
-    <Card className="overflow-hidden hover:border-primary/40 transition-colors">
+    <Card className={`overflow-hidden transition-colors ${theme.cardAccent}`}>
       <CardContent className="p-0">
         <div className="flex flex-col sm:flex-row">
           {/* Main content */}
@@ -171,7 +165,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
           </div>
 
           {/* Actions */}
-          <div className="bg-secondary/20 p-5 sm:w-52 flex flex-col justify-center gap-2 border-t sm:border-t-0 sm:border-l border-border/50">
+          <div className={`${theme.panel} p-5 sm:w-52 flex flex-col justify-center gap-2 border-t sm:border-t-0 sm:border-l`}>
             {campaign.status === "live" ? (
               <>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
@@ -196,7 +190,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
               </div>
             ) : campaign.status === "paused" ? (
               <>
-                <p className="text-xs text-amber-700 font-medium text-center leading-snug">
+                <p className={`text-xs font-medium text-center leading-snug ${theme.label}`}>
                   Ready to go live
                 </p>
                 <Button variant="outline" size="sm" className="w-full gap-2 bg-background" asChild>
