@@ -370,16 +370,18 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
               )}
               {!magnetOpen && !destinationUrl && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Send ad clicks to your lead magnet page — or leave blank to use your Facebook Page.
+                  Recommended — ads with a lead magnet collect real contact info instead of just sending people to your Facebook Page.
                 </p>
               )}
             </CardHeader>
 
             {magnetOpen && (
               <CardContent className="pt-0 pb-4 space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Select a published lead magnet below. Ad clicks will go to that page so visitors
-                  can sign up. Leave unlinked to default to your Facebook Page.
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  When someone clicks your ad, they land on your lead magnet — a free guide, checklist,
+                  or offer — and enter their email to receive it. <span className="text-foreground font-medium">You get a real lead</span>, not just
+                  a page visit. Ads linked to lead magnets typically convert far better than ads that
+                  send people to a Facebook Page.
                 </p>
                 <LeadMagnetPicker
                   selected={selectedMagnet}

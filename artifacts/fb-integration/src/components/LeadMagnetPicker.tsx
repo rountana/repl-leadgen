@@ -48,13 +48,15 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
         </div>
         <div>
           <p className="text-sm font-medium">No published lead magnets yet</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Create one in the Lead Magnet Builder, then link it to your ad.
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            A lead magnet (a free guide, checklist, or offer) gives people a reason to share
+            their email. Ad clicks go straight to a signup form — so you collect real leads
+            instead of just page views.
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={handleCreateNew} className="gap-2">
           <PlusCircle className="w-3.5 h-3.5" />
-          Create a Lead Magnet
+          Open Lead Magnet Builder
           <ExternalLink className="w-3 h-3 opacity-60" />
         </Button>
       </div>
@@ -120,7 +122,7 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
         className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
       >
         <PlusCircle className="w-3 h-3" />
-        Create a new lead magnet
+        Create a new lead magnet in the Lead Magnet Builder
         <ExternalLink className="w-3 h-3 opacity-60" />
       </button>
     </div>
