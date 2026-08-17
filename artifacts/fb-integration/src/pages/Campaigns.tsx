@@ -16,7 +16,7 @@ import {
   Pencil,
   Loader2,
   Trash2,
-  MoreHorizontal,
+  MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -169,7 +169,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="absolute top-3 right-3 w-7 h-7 text-muted-foreground hover:text-foreground">
-                <MoreHorizontal className="w-4 h-4" />
+                <MoreVertical className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
