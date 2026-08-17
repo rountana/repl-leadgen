@@ -21,6 +21,36 @@ tags:
   - name: ai
     description: AI helper operations
 paths:
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get or auto-create the current user's business profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Upsert the current user's business profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
   /healthz:
     get:
       operationId: healthCheck
@@ -386,6 +416,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/FbCampaign"
 
+  /fb/campaigns/sync:
+    post:
+      operationId: syncFbCampaigns
+      tags: [fb]
+      summary: Re-check Meta status for all live/launching/paused campaigns
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  synced:
+                    type: number
+                  updated:
+                    type: number
+                required:
+                  - synced
+                  - updated
+
   /fb/campaigns/{id}:
     get:
       operationId: getFbCampaign
@@ -561,6 +612,51 @@ paths:
 
 components:
   schemas:
+    UserProfile:
+      type: object
+      required:
+        - id
+        - userId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: number
+        userId:
+          type: string
+        businessName:
+          type: string
+          nullable: true
+        businessLocation:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    UpdateProfileBody:
+      type: object
+      properties:
+        businessName:
+          type: string
+          nullable: true
+        businessLocation:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+
     HealthStatus:
       type: object
       properties:

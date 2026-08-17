@@ -5,6 +5,24 @@
  * HVCG Lead Magnet Builder API
  * OpenAPI spec version: 0.1.0
  */
+export interface UserProfile {
+  id: number;
+  userId: string;
+  businessName?: string | null;
+  businessLocation?: string | null;
+  industry?: string | null;
+  logoUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProfileBody {
+  businessName?: string | null;
+  businessLocation?: string | null;
+  industry?: string | null;
+  logoUrl?: string | null;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -352,5 +370,10 @@ export type ListExamplesParams = {
  * @nullable
  */
 industry?: string | null;
+};
+
+export type SyncFbCampaigns200 = {
+  synced: number;
+  updated: number;
 };
 

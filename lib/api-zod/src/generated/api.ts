@@ -9,6 +9,43 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get or auto-create the current user's business profile
+ */
+export const GetProfileResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "businessName": zod.string().nullish(),
+  "businessLocation": zod.string().nullish(),
+  "industry": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Upsert the current user's business profile
+ */
+export const UpdateProfileBody = zod.object({
+  "businessName": zod.string().nullish(),
+  "businessLocation": zod.string().nullish(),
+  "industry": zod.string().nullish(),
+  "logoUrl": zod.string().nullish()
+})
+
+export const UpdateProfileResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "businessName": zod.string().nullish(),
+  "businessLocation": zod.string().nullish(),
+  "industry": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */
@@ -439,6 +476,15 @@ export const CreateFbCampaignResponse = zod.object({
   "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Re-check Meta status for all live/launching/paused campaigns
+ */
+export const SyncFbCampaignsResponse = zod.object({
+  "synced": zod.number(),
+  "updated": zod.number()
 })
 
 
