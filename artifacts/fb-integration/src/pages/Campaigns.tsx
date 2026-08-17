@@ -68,7 +68,7 @@ function StatusBadge({ status }: { status: FbCampaignStatus }) {
     case "error":
       return (
         <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100 gap-1">
-          <AlertTriangle className="w-3 h-3" /> Error
+          <AlertTriangle className="w-3 h-3" /> Launch failed
         </Badge>
       );
     default:
@@ -131,7 +131,9 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
           <div className="p-5 flex-1 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={campaign.status} />
-              <LeadDeliveryPill status={campaign.leadDeliveryStatus} />
+              {campaign.status !== "error" && (
+                <LeadDeliveryPill status={campaign.leadDeliveryStatus} />
+              )}
             </div>
 
             <div>
@@ -235,11 +237,10 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
               </>
             ) : campaign.status === "error" ? (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-destructive text-center">Failed to launch</p>
                 {campaign.errorMessage && (
                   <p className="text-xs text-muted-foreground break-words leading-relaxed text-center">
-                    {campaign.errorMessage.length > 100
-                      ? campaign.errorMessage.slice(0, 100) + "…"
+                    {campaign.errorMessage.length > 120
+                      ? campaign.errorMessage.slice(0, 120) + "…"
                       : campaign.errorMessage}
                   </p>
                 )}

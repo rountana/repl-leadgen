@@ -156,13 +156,20 @@ async function graphPost(
   });
   const data = (await res.json()) as any;
   if (data?.error) {
-    // Log the full error object so we can see error_data, fbtrace_id, etc.
-    logger.error({ metaError: data.error, path, requestBody: body }, "Meta API error detail");
-    // Prefer error_user_msg (plain English, shown to the user) over the raw message.
-    const userFacingMessage = data.error.error_user_msg ?? data.error.message;
-    throw new Error(
-      `${userFacingMessage} (Meta code ${data.error.code}${data.error.error_subcode ? `/${data.error.error_subcode}` : ""})`,
+    // Log the full error object (code, subcode, fbtrace_id, etc.) — never shown in the UI.
+    logger.error(
+      {
+        metaError: data.error,
+        metaCode: data.error.code,
+        metaSubcode: data.error.error_subcode ?? null,
+        path,
+        requestBody: body,
+      },
+      "Meta API error detail",
     );
+    // Prefer error_user_msg (plain English) over the raw message; never expose codes in the UI.
+    const userFacingMessage = data.error.error_user_msg ?? data.error.message;
+    throw new Error(userFacingMessage);
   }
   return data;
 }
