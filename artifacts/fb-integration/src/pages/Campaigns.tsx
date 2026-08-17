@@ -16,10 +16,17 @@ import {
   Pencil,
   Loader2,
   Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -202,15 +209,6 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                     Activate in Ads Manager
                   </a>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full gap-1.5 text-xs text-muted-foreground"
-                  onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}
-                >
-                  <Pencil className="w-3 h-3" />
-                  Edit
-                </Button>
                 {confirmDelete ? (
                   <div className="space-y-1.5">
                     <p className="text-xs text-center text-muted-foreground leading-snug">
@@ -224,15 +222,21 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                     </div>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Delete
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="w-full gap-1.5 text-xs text-muted-foreground">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
+                        <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
+                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </>
             ) : campaign.status === "error" ? (
@@ -254,17 +258,8 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                   {launch.isPending ? (
                     <><Loader2 className="w-3 h-3 animate-spin" />Retrying…</>
                   ) : (
-                    <><RefreshCw className="w-3 h-3" />Retry Launch</>
+                    <><RefreshCw className="w-3 h-3" />Retry</>
                   )}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="w-full gap-1.5 text-xs text-muted-foreground"
-                  onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}
-                >
-                  <Pencil className="w-3 h-3" />
-                  Edit &amp; Retry
                 </Button>
                 {confirmDelete ? (
                   <div className="space-y-1.5">
@@ -279,15 +274,21 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
                     </div>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="w-full gap-1.5 text-xs text-destructive hover:text-destructive"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    Delete
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="w-full gap-1.5 text-xs text-muted-foreground">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
+                        <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
+                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
             ) : (
