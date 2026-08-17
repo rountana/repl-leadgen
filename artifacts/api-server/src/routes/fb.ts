@@ -13,7 +13,7 @@ import {
   GetFbCampaignLeadStatusParams,
   ReceiveFbLeadBody,
 } from "@workspace/api-zod";
-import { activeFbPartnerAdapter } from "../lib/fbPartnerAdapter";
+import { activeFbPartnerAdapter, getMinimumDailyBudget, formatBudget } from "../lib/fbPartnerAdapter";
 import { generateFbAd } from "../lib/fbAdGenerator";
 
 /**
@@ -168,6 +168,47 @@ router.delete("/fb/connection", requireAuth, async (req: any, res): Promise<void
 
   req.log.info({ userId }, "FB connection disconnected");
   res.sendStatus(204);
+});
+
+// ── MINIMUM BUDGET ───────────────────────────────────────────────────────────
+
+// GET /fb/minimum-budget
+// Returns the Meta minimum daily budget for this user's ad account.
+// If the minimum cannot be fetched, returns null fields (graceful fallback).
+router.get("/fb/minimum-budget", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+
+  const [conn] = await db
+    .select()
+    .from(fbConnectionsTable)
+    .where(and(eq(fbConnectionsTable.userId, userId), eq(fbConnectionsTable.status, "connected")));
+
+  if (!conn || !conn.adAccountId || !conn.partnerToken) {
+    res.status(400).json({ error: "No connected Facebook account with an ad account selected." });
+    return;
+  }
+
+  const actId = conn.adAccountId.startsWith("act_") ? conn.adAccountId : `act_${conn.adAccountId}`;
+
+  const minimum = await getMinimumDailyBudget(actId, conn.partnerToken);
+
+  if (!minimum) {
+    res.json({ minDailyBudgetDollars: null, currency: null, formatted: null });
+    return;
+  }
+
+  // Convert from smallest currency unit (cents for USD) to display units (dollars).
+  const zeroDecimalCurrencies = new Set([
+    "BIF","CLP","DJF","GNF","JPY","KMF","KRW","MGA","PYG","RWF","UGX","VND","VUV","XAF","XOF","XPF",
+  ]);
+  const divisor = zeroDecimalCurrencies.has(minimum.currency) ? 1 : 100;
+  const minDailyBudgetDollars = minimum.amount / divisor;
+
+  res.json({
+    minDailyBudgetDollars,
+    currency: minimum.currency,
+    formatted: formatBudget(minimum.amount, minimum.currency),
+  });
 });
 
 // ── AD GENERATION ────────────────────────────────────────────────────────────

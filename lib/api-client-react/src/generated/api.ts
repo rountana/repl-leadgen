@@ -34,6 +34,7 @@ import type {
   FbConnectionInput,
   FbLeadStatus,
   FbLeadWebhookPayload,
+  FbMinimumBudget,
   FileUploadInput,
   FileUploadResult,
   HealthStatus,
@@ -1495,6 +1496,83 @@ export const useDeleteFbConnection = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteFbConnectionMutationOptions(options));
     }
+
+export const getGetFbMinimumBudgetUrl = () => {
+
+
+
+
+  return `/api/fb/minimum-budget`
+}
+
+/**
+ * @summary Get the Meta minimum daily budget for the current user's ad account
+ */
+export const getFbMinimumBudget = async ( options?: Parameters<typeof customFetch>[1]): Promise<FbMinimumBudget> => {
+
+  return customFetch<FbMinimumBudget>(getGetFbMinimumBudgetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFbMinimumBudgetQueryKey = () => {
+    return [
+    `/api/fb/minimum-budget`
+    ] as const;
+    }
+
+
+export const getGetFbMinimumBudgetQueryOptions = <TData = Awaited<ReturnType<typeof getFbMinimumBudget>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbMinimumBudget>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFbMinimumBudgetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFbMinimumBudget>>> = ({ signal }) => getFbMinimumBudget({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFbMinimumBudget>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFbMinimumBudgetQueryResult = NonNullable<Awaited<ReturnType<typeof getFbMinimumBudget>>>
+export type GetFbMinimumBudgetQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get the Meta minimum daily budget for the current user's ad account
+ */
+
+export function useGetFbMinimumBudget<TData = Awaited<ReturnType<typeof getFbMinimumBudget>>, TError = ErrorType<ErrorResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFbMinimumBudget>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFbMinimumBudgetQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGenerateFbAdUrl = () => {
 

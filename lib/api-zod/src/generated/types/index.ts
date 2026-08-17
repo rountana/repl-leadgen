@@ -24,6 +24,7 @@ export * from './fbConnectionStatus';
 export * from './fbLeadStatus';
 export * from './fbLeadStatusStatus';
 export * from './fbLeadWebhookPayload';
+export * from './fbMinimumBudget';
 export * from './fileUploadInput';
 export * from './fileUploadResult';
 export * from './healthStatus';

@@ -357,6 +357,27 @@ export interface FbLeadStatus {
   checkedAt: string;
 }
 
+/**
+ * Meta minimum daily budget for the user's ad account. All fields are null when the minimum could not be fetched.
+ */
+export interface FbMinimumBudget {
+  /**
+     * Minimum daily budget in display units (dollars for USD). Compare directly against the user's chosen daily budget amount.
+     * @nullable
+     */
+  minDailyBudgetDollars: number | null;
+  /**
+     * ISO 4217 currency code for the ad account.
+     * @nullable
+     */
+  currency: string | null;
+  /**
+     * Human-readable formatted minimum (e.g. "$5.00"). Use this for display.
+     * @nullable
+     */
+  formatted: string | null;
+}
+
 export interface FbLeadWebhookPayload {
   campaignId: number;
   firstName: string;

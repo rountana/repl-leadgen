@@ -365,6 +365,25 @@ paths:
         "204":
           description: Deleted
 
+  /fb/minimum-budget:
+    get:
+      operationId: getFbMinimumBudget
+      tags: [fb]
+      summary: Get the Meta minimum daily budget for the current user's ad account
+      responses:
+        "200":
+          description: Minimum budget info (null fields when unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbMinimumBudget"
+        "400":
+          description: No connected Facebook account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /fb/campaigns/generate-ad:
     post:
       operationId: generateFbAd
@@ -1114,6 +1133,24 @@ components:
       required:
         - status
         - checkedAt
+
+    FbMinimumBudget:
+      type: object
+      description: Meta minimum daily budget for the user's ad account. All fields are null when the minimum could not be fetched.
+      properties:
+        minDailyBudgetDollars:
+          type: ["number", "null"]
+          description: Minimum daily budget in display units (dollars for USD). Compare directly against the user's chosen daily budget amount.
+        currency:
+          type: ["string", "null"]
+          description: ISO 4217 currency code for the ad account.
+        formatted:
+          type: ["string", "null"]
+          description: Human-readable formatted minimum (e.g. "$5.00"). Use this for display.
+      required:
+        - minDailyBudgetDollars
+        - currency
+        - formatted
 
     FbLeadWebhookPayload:
       type: object

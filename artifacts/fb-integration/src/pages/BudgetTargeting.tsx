@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   MapPin, DollarSign, ChevronRight, Users, TrendingUp,
-  Loader2, Pencil, Check, X, Info,
+  Loader2, Pencil, Check, X, Info, AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,12 @@ import { Label } from "@/components/ui/label";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useGetProfile, type FbConnection } from "@workspace/api-client-react";
+import {
+  useGetProfile,
+  useGetFbMinimumBudget,
+  getGetFbMinimumBudgetQueryKey,
+  type FbConnection,
+} from "@workspace/api-client-react";
 
 interface BudgetTargetingProps {
   connection: FbConnection;
@@ -56,10 +61,28 @@ export function BudgetTargeting({
   const [locationInput, setLocationInput] = useState("");
 
   const { data: profile, isLoading: isProfileLoading } = useGetProfile();
+  const { data: minimumBudgetData, isLoading: isMinBudgetLoading } = useGetFbMinimumBudget({
+    query: {
+      queryKey: getGetFbMinimumBudgetQueryKey(),
+      // Don't retry on 400 (no FB connection selected yet)
+      retry: false,
+      staleTime: 5 * 60 * 1000,
+    },
+  });
+
   const profileLocation = profile?.businessLocation ?? null;
 
   // Effective location: user override takes precedence over profile value
   const effectiveLocation = locationOverride ?? profileLocation;
+
+  // Minimum daily budget in display units (dollars for USD).
+  // null means the minimum couldn't be fetched — fall back to server-side validation.
+  const minDailyBudgetDollars: number | null = minimumBudgetData?.minDailyBudgetDollars ?? null;
+  const minFormatted: string | null = minimumBudgetData?.formatted ?? null;
+
+  // True when the user's chosen budget is below the Meta minimum.
+  const isBelowMinimum =
+    minDailyBudgetDollars !== null && budget < minDailyBudgetDollars;
 
   const startEditLocation = () => {
     setLocationInput(effectiveLocation ?? "");
@@ -94,6 +117,8 @@ export function BudgetTargeting({
 
   const estimatedReachLow  = Math.round(2000 + budget * 120 + radius * 50);
   const estimatedReachHigh = Math.round(estimatedReachLow * 2.5);
+
+  const QUICK_BUDGETS = [5, 10, 20, 50];
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -170,10 +195,24 @@ export function BudgetTargeting({
 
         {/* Daily budget */}
         <div className="space-y-3">
-          <div className="flex items-center gap-1.5">
-            <Label htmlFor="budget" className="text-base font-semibold">Daily Budget</Label>
-            <InfoTip content="The maximum you'll spend per day running this ad. Facebook will try to spend this amount, but may spend slightly less. You can pause or cancel anytime." />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="budget" className="text-base font-semibold">Daily Budget</Label>
+              <InfoTip content="The maximum you'll spend per day running this ad. Facebook will try to spend this amount, but may spend slightly less. You can pause or cancel anytime." />
+            </div>
+            {isMinBudgetLoading && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Checking account minimum…</span>
+              </div>
+            )}
+            {!isMinBudgetLoading && minFormatted && (
+              <span className="text-xs text-muted-foreground">
+                Account minimum: <span className="font-semibold text-foreground">{minFormatted}/day</span>
+              </span>
+            )}
           </div>
+
           <div className="flex items-center gap-2">
             <div className="relative flex-1 max-w-[180px]">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -185,37 +224,56 @@ export function BudgetTargeting({
                 value={budgetInput}
                 onChange={(e) => handleBudgetChange(e.target.value)}
                 onBlur={handleBudgetBlur}
-                className="pl-8 text-lg font-semibold"
+                className={`pl-8 text-lg font-semibold ${isBelowMinimum ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
             </div>
             <span className="text-muted-foreground text-sm">per day</span>
           </div>
 
+          {/* Below-minimum warning */}
+          {isBelowMinimum && minFormatted && (
+            <div className="flex items-start gap-2 rounded-md bg-destructive/10 border border-destructive/20 px-3 py-2">
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive font-medium">
+                Your Facebook ad account requires at least {minFormatted}/day. Increase your budget to continue.
+              </p>
+            </div>
+          )}
+
           {/* Quick-select buttons with tooltips */}
           <div className="flex gap-2 flex-wrap">
-            {[5, 10, 20, 50].map((amount) => (
-              <Tooltip key={amount}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={budget === amount ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setBudget(amount);
-                      setBudgetInput(String(amount));
-                    }}
-                  >
-                    ${amount}/day
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[200px] text-xs leading-relaxed">
-                  {BUDGET_TIPS[amount]}
-                </TooltipContent>
-              </Tooltip>
-            ))}
+            {QUICK_BUDGETS.map((amount) => {
+              const belowMin = minDailyBudgetDollars !== null && amount < minDailyBudgetDollars;
+              return (
+                <Tooltip key={amount}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={budget === amount ? "default" : "outline"}
+                      size="sm"
+                      disabled={belowMin}
+                      onClick={() => {
+                        setBudget(amount);
+                        setBudgetInput(String(amount));
+                      }}
+                      className={belowMin ? "opacity-40 cursor-not-allowed" : ""}
+                    >
+                      ${amount}/day
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] text-xs leading-relaxed">
+                    {belowMin && minFormatted
+                      ? `Below account minimum (${minFormatted}/day)`
+                      : BUDGET_TIPS[amount]}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
           </div>
+
           <p className="text-xs text-muted-foreground">
-            Minimum $1/day. Some Facebook ad accounts require a higher minimum for link-click ads.
-            You can pause or stop anytime.
+            {minFormatted
+              ? `Minimum ${minFormatted}/day for your account. You can pause or stop anytime.`
+              : "Minimum $1/day. Some Facebook ad accounts require a higher minimum for link-click ads. You can pause or stop anytime."}
           </p>
         </div>
 
@@ -274,7 +332,7 @@ export function BudgetTargeting({
         <Button
           className="w-full h-12 text-base font-semibold gap-2"
           onClick={() => onNext(budget, radius, effectiveLocation ?? "")}
-          disabled={isProfileLoading}
+          disabled={isProfileLoading || isBelowMinimum}
         >
           Submit for Review
           <ChevronRight className="w-5 h-5" />

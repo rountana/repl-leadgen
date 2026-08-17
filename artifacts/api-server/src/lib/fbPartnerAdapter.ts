@@ -201,8 +201,10 @@ interface MetaMinimumBudget {
  * Meta's minimum ad-set budget varies by account currency and optimization
  * goal. Fetch it before creating anything so a low budget does not leave an
  * orphaned ad set behind when it is rejected.
+ *
+ * Exported so the /fb/minimum-budget route can call it directly.
  */
-async function getMinimumDailyBudget(
+export async function getMinimumDailyBudget(
   actId: string,
   accessToken: string,
 ): Promise<{ amount: number; currency: string } | null> {
@@ -228,7 +230,7 @@ async function getMinimumDailyBudget(
   }
 }
 
-function formatBudget(amount: number, currency: string): string {
+export function formatBudget(amount: number, currency: string): string {
   const zeroDecimalCurrencies = new Set([
     "BIF",
     "CLP",

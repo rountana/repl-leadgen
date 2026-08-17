@@ -402,6 +402,16 @@ export const DeleteFbConnectionResponse = zod.void()
 
 
 /**
+ * @summary Get the Meta minimum daily budget for the current user's ad account
+ */
+export const GetFbMinimumBudgetResponse = zod.object({
+  "minDailyBudgetDollars": zod.number().nullable().describe('Minimum daily budget in display units (dollars for USD). Compare directly against the user\'s chosen daily budget amount.'),
+  "currency": zod.string().nullable().describe('ISO 4217 currency code for the ad account.'),
+  "formatted": zod.string().nullable().describe('Human-readable formatted minimum (e.g. \"$5.00\"). Use this for display.')
+}).describe('Meta minimum daily budget for the user\'s ad account. All fields are null when the minimum could not be fetched.')
+
+
+/**
  * @summary Generate FB ad copy and image from business info
  */
 export const GenerateFbAdBody = zod.object({
