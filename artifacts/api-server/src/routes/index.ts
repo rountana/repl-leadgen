@@ -8,6 +8,7 @@ import aiRouter from "./ai";
 import fbRouter from "./fb";
 import fbAuthRouter from "./fbAuth";
 import profileRouter from "./profile";
+import geocodeRouter from "./geocode";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(aiRouter);
 router.use(fbRouter);
 router.use(fbAuthRouter);
 router.use(profileRouter);
+router.use(geocodeRouter);
 
 export default router;

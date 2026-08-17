@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { MapPin, DollarSign, ChevronRight, Users, TrendingUp } from "lucide-react";
+import { MapPin, DollarSign, ChevronRight, Users, TrendingUp, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import type { FbConnection } from "@workspace/api-client-react";
+import { useGetProfile, type FbConnection } from "@workspace/api-client-react";
 
 interface BudgetTargetingProps {
   connection: FbConnection;
   initialBudget?: number;
   initialRadius?: number;
-  onNext: (dailyBudget: number, radiusMiles: number) => void;
+  onNext: (dailyBudget: number, radiusMiles: number, businessLocation: string) => void;
 }
 
 export function BudgetTargeting({
@@ -24,7 +24,9 @@ export function BudgetTargeting({
   const [radius, setRadius] = useState(initialRadius);
   const [budgetInput, setBudgetInput] = useState(String(initialBudget));
 
-  const businessLocation = "San Francisco, CA"; // Phase 1 mock — real location from geocoded connection in Phase 2
+  const { data: profile, isLoading: isProfileLoading } = useGetProfile();
+
+  const businessLocation = profile?.businessLocation ?? null;
 
   const handleBudgetChange = (value: string) => {
     setBudgetInput(value);
@@ -65,9 +67,24 @@ export function BudgetTargeting({
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <MapPin className="w-4 h-4 text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground">Business location</p>
-            <p className="font-semibold text-sm">{businessLocation}</p>
+            {isProfileLoading ? (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Loading…</span>
+              </div>
+            ) : businessLocation ? (
+              <p className="font-semibold text-sm truncate">{businessLocation}</p>
+            ) : (
+              <p className="text-sm text-amber-700 font-medium">
+                Not set — update in{" "}
+                <a href="/profile" className="underline underline-offset-2">
+                  Profile
+                </a>{" "}
+                before submitting.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -164,7 +181,8 @@ export function BudgetTargeting({
 
       <Button
         className="w-full h-12 text-base font-semibold gap-2"
-        onClick={() => onNext(budget, radius)}
+        onClick={() => onNext(budget, radius, businessLocation ?? "")}
+        disabled={isProfileLoading}
       >
         Submit for Review
         <ChevronRight className="w-5 h-5" />

@@ -31,15 +31,40 @@ interface LaunchConfirmProps {
   campaignId?: number;
   /** Where ad clicks land — a HVCG lead magnet URL or other landing page */
   destinationUrl?: string;
+  /** Business address string to geocode for targeting (from user's Profile) */
+  businessLocation?: string;
 }
 
-type LaunchPhase = "creating" | "launching" | "done" | "error";
+type LaunchPhase = "geocoding" | "creating" | "launching" | "done" | "error";
 
-export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, campaignId, destinationUrl }: LaunchConfirmProps) {
+/** Geocode an address string via our API server → Nominatim. Returns { lat, lng }. */
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
+  const params = new URLSearchParams({ address });
+  const response = await fetch(`/api/geocode?${params.toString()}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(
+      (body as { error?: string }).error ??
+        "Could not find coordinates for this address.",
+    );
+  }
+  return response.json() as Promise<{ lat: number; lng: number }>;
+}
+
+export function LaunchConfirm({
+  adDraft,
+  dailyBudget,
+  radiusMiles,
+  onReset,
+  campaignId,
+  destinationUrl,
+  businessLocation,
+}: LaunchConfirmProps) {
   const [, setLocation] = useLocation();
-  const [phase, setPhase] = useState<LaunchPhase>("creating");
+  const [phase, setPhase] = useState<LaunchPhase>("geocoding");
   const [campaign, setCampaign] = useState<FbCampaign | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [geocodedLocation, setGeocodedLocation] = useState<string | null>(null);
   // Track whichever campaign ID was used/created so the Edit button can navigate
   // back to the wizard in edit mode even for campaigns created during this session.
   const [launchedCampaignId, setLaunchedCampaignId] = useState<number | null>(campaignId ?? null);
@@ -49,22 +74,53 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
   const updateCampaign = useUpdateFbCampaign();
   const launchCampaign = useLaunchFbCampaign();
 
-  const campaignFields = {
-    headline: adDraft.headline,
-    bodyText: adDraft.bodyText,
-    imageUrl: adDraft.imageUrl,
-    dailyBudgetCents: dailyBudget * 100,
-    targetingRadiusMiles: radiusMiles,
-    targetingLatitude: 37.7749,  // Phase 1 mock — geocoded from connection in Phase 2
-    targetingLongitude: -122.4194,
-    ...(destinationUrl ? { destinationUrl } : {}),
-  };
-
   const runLaunchSequence = async () => {
     if (hasFired.current) return;
     hasFired.current = true;
 
     try {
+      // ── Step 1: Geocode the business location ──────────────────────────
+      setPhase("geocoding");
+
+      if (!businessLocation || businessLocation.trim() === "") {
+        setErrorMessage(
+          "Your business location is not set. Please go to Profile and add your business address, then try again.",
+        );
+        setPhase("error");
+        return;
+      }
+
+      let lat: number;
+      let lng: number;
+      try {
+        const coords = await geocodeAddress(businessLocation);
+        lat = coords.lat;
+        lng = coords.lng;
+        setGeocodedLocation(businessLocation);
+      } catch (geoErr: unknown) {
+        const msg =
+          geoErr instanceof Error
+            ? geoErr.message
+            : "Could not find coordinates for your business address.";
+        setErrorMessage(
+          `${msg} Please update your business location in Profile and try again.`,
+        );
+        setPhase("error");
+        return;
+      }
+
+      const campaignFields = {
+        headline: adDraft.headline,
+        bodyText: adDraft.bodyText,
+        imageUrl: adDraft.imageUrl,
+        dailyBudgetCents: dailyBudget * 100,
+        targetingRadiusMiles: radiusMiles,
+        targetingLatitude: lat,
+        targetingLongitude: lng,
+        ...(destinationUrl ? { destinationUrl } : {}),
+      };
+
+      // ── Step 2: Create or update the campaign ─────────────────────────
       let targetId: number;
 
       if (campaignId) {
@@ -82,6 +138,7 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         setLaunchedCampaignId(targetId);
       }
 
+      // ── Step 3: Launch the campaign ───────────────────────────────────
       setPhase("launching");
       const launched = await launchCampaign.mutateAsync({ id: targetId });
       setCampaign(launched);
@@ -117,18 +174,31 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
 
   const handleTryAgain = () => {
     hasFired.current = false;
-    setPhase("creating");
+    setPhase("geocoding");
     setErrorMessage(null);
     setCampaign(null);
     runLaunchSequence();
   };
 
   /* ── Loading state ─────────────────────────────────────────── */
-  if (phase === "creating" || phase === "launching") {
+  if (phase === "geocoding" || phase === "creating" || phase === "launching") {
+    const stepLabel =
+      phase === "geocoding"
+        ? "Finding your business location…"
+        : phase === "creating"
+          ? "Saving ad…"
+          : "Submitting to Facebook…";
+    const stepSub =
+      phase === "geocoding"
+        ? "Converting your address to map coordinates"
+        : phase === "creating"
+          ? "Saving your ad details"
+          : "Handing off to the Facebook Ads system";
+
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Saving Draft…</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Submitting Ad…</h2>
           <p className="text-muted-foreground mt-1">This usually takes just a moment.</p>
         </div>
         <Card>
@@ -139,24 +209,27 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
               </div>
             </div>
             <div className="text-center">
-              <p className="font-semibold">
-                {phase === "creating" ? "Saving ad details…" : "Sending draft to Facebook…"}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {phase === "creating"
-                  ? "Saving your ad details"
-                  : "Creating your draft in Ads Manager"}
-              </p>
+              <p className="font-semibold">{stepLabel}</p>
+              <p className="text-sm text-muted-foreground mt-1">{stepSub}</p>
             </div>
             <div className="flex gap-2 mt-2">
-              {(["creating", "launching"] as const).map((p) => (
-                <div
-                  key={p}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    phase === p ? "bg-primary" : p === "creating" && phase === "launching" ? "bg-primary/40" : "bg-border"
-                  }`}
-                />
-              ))}
+              {(["geocoding", "creating", "launching"] as const).map((p) => {
+                const steps = ["geocoding", "creating", "launching"] as const;
+                const currentIdx = steps.indexOf(phase);
+                const thisIdx = steps.indexOf(p);
+                return (
+                  <div
+                    key={p}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      thisIdx === currentIdx
+                        ? "bg-primary"
+                        : thisIdx < currentIdx
+                          ? "bg-primary/40"
+                          : "bg-border"
+                    }`}
+                  />
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -166,10 +239,15 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
 
   /* ── Error state ───────────────────────────────────────────── */
   if (phase === "error") {
+    const isLocationError =
+      errorMessage?.toLowerCase().includes("location") ||
+      errorMessage?.toLowerCase().includes("address") ||
+      errorMessage?.toLowerCase().includes("profile");
+
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Draft Not Saved</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Launch Failed</h2>
           <p className="text-muted-foreground mt-1">Something went wrong. You can try again below.</p>
         </div>
         <Card className="border-destructive/30 bg-destructive/5">
@@ -186,20 +264,33 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
                 <RotateCcw className="w-4 h-4" />
                 Start Over
               </Button>
-              {launchedCampaignId && (
+              {isLocationError ? (
                 <Button
                   variant="outline"
-                  onClick={() => setLocation(`/campaign/new?edit=${launchedCampaignId}`)}
+                  onClick={() => setLocation("/profile")}
                   className="gap-2"
                 >
-                  <Pencil className="w-4 h-4" />
-                  Edit Ad
+                  <MapPin className="w-4 h-4" />
+                  Update Profile
+                </Button>
+              ) : (
+                launchedCampaignId && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setLocation(`/campaign/new?edit=${launchedCampaignId}`)}
+                    className="gap-2"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Edit Ad
+                  </Button>
+                )
+              )}
+              {!isLocationError && (
+                <Button onClick={handleTryAgain} className="gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Try Again
                 </Button>
               )}
-              <Button onClick={handleTryAgain} className="gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Try Again
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -209,7 +300,6 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
 
   /* ── Build Ads Manager deep-link ──────────────────────────── */
   const adsManagerHref = (() => {
-    const adAccountId = undefined; // not available here; link to campaign directly via partnerCampaignId
     if (campaign?.partnerCampaignId) {
       // Deep-link directly to the submitted campaign
       return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?selected_campaign_ids=${campaign.partnerCampaignId}`;
@@ -225,14 +315,14 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
           <CheckCircle2 className="w-8 h-8 text-blue-600" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight">Draft saved to Ads Manager!</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Ad submitted for review!</h2>
         <p className="text-muted-foreground mt-1 max-w-sm mx-auto">
-          Your ad is waiting in Facebook Ads Manager as a draft. Review it there and publish it when you're ready —
-          no budget is spent until you turn it on.
+          Your ad is ready in Facebook Ads Manager — review it there and turn it on when you're ready.
+          No budget will be spent until you activate it.
         </p>
         {campaign && (
           <Badge className="mt-3 bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">
-            Draft — Awaiting Your Review
+            Awaiting Activation
           </Badge>
         )}
       </div>
@@ -249,9 +339,9 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
             <ExternalLink className="w-5 h-5 text-primary" />
           </div>
           <div className="flex-1">
-            <p className="font-bold text-primary">Review &amp; Publish in Ads Manager</p>
+            <p className="font-bold text-primary">Review in Facebook Ads Manager</p>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Your draft is ready — open Ads Manager to review it, then activate the campaign to go live.
+              Check your ad creative, targeting, and budget — then click the toggle to go live.
             </p>
           </div>
           <ExternalLink className="w-4 h-4 text-primary/60 shrink-0" />
@@ -284,6 +374,15 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
               </div>
             </div>
           </div>
+          {geocodedLocation && (
+            <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Targeting center</p>
+                <p className="font-medium text-sm truncate">{geocodedLocation}</p>
+              </div>
+            </div>
+          )}
           {destinationUrl && (
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-start gap-2">
               <ExternalLink className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -303,9 +402,9 @@ export function LaunchConfirm({ adDraft, dailyBudget, radiusMiles, onReset, camp
           <ol className="space-y-2">
             {[
               "Open Facebook Ads Manager using the button above",
-              "Find your draft campaign and review the creative, targeting, and budget",
-              "Toggle the campaign switch to Active — your ad will start running immediately",
-              "Come back here and hit Refresh Status to confirm it's live",
+              "Find your ad and review the creative and settings",
+              "Toggle the shared campaign to Active — all your ads start running immediately",
+              "Come back here and hit Refresh Status to see it go live",
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-amber-800">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-200 text-amber-900 text-xs flex items-center justify-center font-bold mt-0.5">

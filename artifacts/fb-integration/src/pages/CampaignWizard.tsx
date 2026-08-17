@@ -24,6 +24,8 @@ interface WizardState {
   radiusMiles: number;
   /** Where ad clicks land — HVCG lead magnet URL or any landing page */
   destinationUrl: string;
+  /** Business address from the user's Profile, collected on the Budget & Targeting step */
+  businessLocation: string;
 }
 
 export function CampaignWizard() {
@@ -56,6 +58,7 @@ export function CampaignWizard() {
     dailyBudget: 10,
     radiusMiles: 10,
     destinationUrl: magnetUrl,
+    businessLocation: "",
   });
   const [preloaded, setPreloaded] = useState(false);
 
@@ -88,6 +91,7 @@ export function CampaignWizard() {
           : 10,
         radiusMiles: editCampaign.targetingRadiusMiles ?? 10,
         destinationUrl: editCampaign.destinationUrl ?? "",
+        businessLocation: "",
       });
       setPreloaded(true);
     }
@@ -136,7 +140,7 @@ export function CampaignWizard() {
   };
 
   const handleReset = () => {
-    setWizard({ step: 2, adDraft: null, dailyBudget: 10, radiusMiles: 10, destinationUrl: "" });
+    setWizard({ step: 2, adDraft: null, dailyBudget: 10, radiusMiles: 10, destinationUrl: "", businessLocation: "" });
     if (!editId) setShowTemplates(true);
   };
 
@@ -186,8 +190,8 @@ export function CampaignWizard() {
               connection={connection}
               initialBudget={wizard.dailyBudget}
               initialRadius={wizard.radiusMiles}
-              onNext={(dailyBudget, radiusMiles) =>
-                setWizard((prev) => ({ ...prev, step: 4, dailyBudget, radiusMiles }))
+              onNext={(dailyBudget, radiusMiles, businessLocation) =>
+                setWizard((prev) => ({ ...prev, step: 4, dailyBudget, radiusMiles, businessLocation }))
               }
             />
           )}
@@ -198,6 +202,7 @@ export function CampaignWizard() {
               dailyBudget={wizard.dailyBudget}
               radiusMiles={wizard.radiusMiles}
               destinationUrl={wizard.destinationUrl || undefined}
+              businessLocation={wizard.businessLocation || undefined}
               onReset={handleReset}
               campaignId={editId ?? undefined}
             />
