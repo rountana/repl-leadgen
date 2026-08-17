@@ -131,7 +131,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
           <div className="p-5 flex-1 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <StatusBadge status={campaign.status} />
-              {campaign.status !== "error" && (
+              {campaign.status === "live" && (
                 <LeadDeliveryPill status={campaign.leadDeliveryStatus} />
               )}
             </div>
