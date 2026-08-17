@@ -264,15 +264,41 @@ export function Campaigns() {
     (c) => c.status === "live" || c.status === "launching" || c.status === "paused",
   );
 
+  const liveCount    = campaigns?.filter((c) => c.status === "live").length ?? 0;
+  const draftCount   = campaigns?.filter((c) => c.status === "paused").length ?? 0;
+  const failedCount  = campaigns?.filter((c) => c.status === "failed").length ?? 0;
+  const totalCount   = campaigns?.length ?? 0;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Ads</h1>
-          <p className="text-muted-foreground mt-1">
-            Track your Facebook ads and lead delivery status.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          {totalCount > 0 ? (
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className="text-sm text-muted-foreground">
+                {totalCount} {totalCount === 1 ? "ad" : "ads"}
+              </span>
+              {liveCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
+                  ● {liveCount} live
+                </span>
+              )}
+              {draftCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                  {draftCount} draft
+                </span>
+              )}
+              {failedCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">
+                  ⚠ {failedCount} failed
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground mt-1">Track your Facebook ads and lead delivery status.</p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {hasSyncable && (

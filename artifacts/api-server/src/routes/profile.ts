@@ -82,15 +82,20 @@ router.put("/profile", requireAuth, async (req: any, res): Promise<void> => {
     .where(eq(userProfilesTable.userId, userId));
 
   const data: Record<string, string | null> = {};
-  if (businessName !== undefined) data.businessName = businessName;
-  if (businessLocation !== undefined) data.businessLocation = businessLocation;
-  if (industry !== undefined) data.industry = industry;
-  if (logoUrl !== undefined) data.logoUrl = logoUrl;
+  if (businessName !== undefined) data.businessName = businessName ?? null;
+  if (businessLocation !== undefined) data.businessLocation = businessLocation ?? null;
+  if (industry !== undefined) data.industry = industry ?? null;
+  if (logoUrl !== undefined) data.logoUrl = logoUrl ?? null;
+
+  // Guard: nothing to update (client sent an empty body)
+  if (Object.keys(data).length === 0) {
+    if (existing) { res.json(serializeProfile(existing)); return; }
+  }
 
   if (existing) {
     const [updated] = await db
       .update(userProfilesTable)
-      .set(data)
+      .set(Object.keys(data).length ? data : { businessName: null })
       .where(eq(userProfilesTable.userId, userId))
       .returning();
     res.json(serializeProfile(updated));

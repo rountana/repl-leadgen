@@ -75,10 +75,10 @@ export function Profile() {
 
   const handleSave = async () => {
     await updateProfile.mutateAsync({
-      businessName: businessName || undefined,
-      businessLocation: businessLocation || undefined,
-      industry: industry || undefined,
-      logoUrl: logoUrl || undefined,
+      businessName: businessName || null,
+      businessLocation: businessLocation || null,
+      industry: industry || null,
+      logoUrl: logoUrl || null,
     });
     queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
     setSaved(true);
