@@ -161,43 +161,43 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
   ) : null;
 
   return (
-    <Card className={`overflow-hidden transition-colors ${theme.cardAccent} relative`}>
+    <Card className={`overflow-hidden transition-colors ${theme.cardAccent}`}>
       <CardContent className="p-5 space-y-3">
 
-        {/* ⋯ corner menu */}
-        {(canEdit || canDelete) && !confirmDelete && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="absolute top-3 right-3 w-7 h-7 text-muted-foreground hover:text-foreground">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canEdit && (
-                <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
-                  <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
-                </DropdownMenuItem>
-              )}
-              {canDelete && (
-                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
-                  <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-
-        {/* Title + body — pad right so text doesn't run under the ⋯ button */}
-        <div className="pr-8">
+        {/* Title row with inline ⋮ menu */}
+        <div className="flex items-start justify-between gap-2">
           <h3 className="font-bold text-base leading-tight">
             {campaign.headline ?? "Untitled Ad"}
           </h3>
-          {campaign.bodyText && (
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {campaign.bodyText}
-            </p>
+          {(canEdit || canDelete) && !confirmDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" className="shrink-0 -mt-1 -mr-1.5 w-7 h-7 text-muted-foreground hover:text-foreground">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
+                    <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                  </DropdownMenuItem>
+                )}
+                {canDelete && (
+                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
+
+        {/* Body text */}
+        {campaign.bodyText && (
+          <p className="text-sm text-muted-foreground -mt-1 line-clamp-2">
+            {campaign.bodyText}
+          </p>
+        )}
 
         {/* Budget / radius */}
         <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
