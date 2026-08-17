@@ -42,7 +42,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateProfileBody"
+              $ref: "#/components/schemas/UserProfileUpdate"
       responses:
         "200":
           description: Updated user profile
@@ -495,7 +495,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateFbCampaignBody"
+              $ref: "#/components/schemas/FbCampaignUpdate"
       responses:
         "200":
           description: Updated FB campaign
@@ -660,7 +660,7 @@ components:
         updatedAt:
           type: string
 
-    UpdateProfileBody:
+    UserProfileUpdate:
       type: object
       properties:
         businessName:
@@ -1046,6 +1046,18 @@ components:
           type: ["number", "null"]
         targetingRadiusMiles:
           type: ["number", "null"]
+        targetingAgeMin:
+          type: ["number", "null"]
+        targetingAgeMax:
+          type: ["number", "null"]
+        targetingGender:
+          type: ["string", "null"]
+        targetingInterests:
+          type: ["array", "null"]
+          items:
+            type: string
+        destinationUrl:
+          type: ["string", "null"]
         targetingLatitude:
           type: ["string", "null"]
         targetingLongitude:
@@ -1084,6 +1096,8 @@ components:
         - imageUrl
         - dailyBudgetCents
         - targetingRadiusMiles
+        - targetingAgeMin
+        - targetingAgeMax
         - targetingLatitude
         - targetingLongitude
       properties:
@@ -1097,12 +1111,31 @@ components:
           type: number
         targetingRadiusMiles:
           type: number
+        targetingAgeMin:
+          type: number
+          minimum: 18
+          maximum: 65
+        targetingAgeMax:
+          type: number
+          minimum: 18
+          maximum: 65
+        targetingGender:
+          type: string
+          enum: [all]
+          default: all
+        targetingInterests:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+        destinationUrl:
+          type: string
         targetingLatitude:
           type: number
         targetingLongitude:
           type: number
 
-    UpdateFbCampaignBody:
+    FbCampaignUpdate:
       type: object
       properties:
         headline:
@@ -1115,6 +1148,22 @@ components:
           type: number
         targetingRadiusMiles:
           type: number
+        targetingAgeMin:
+          type: number
+          minimum: 18
+          maximum: 65
+        targetingAgeMax:
+          type: number
+          minimum: 18
+          maximum: 65
+        targetingGender:
+          type: string
+          enum: [all]
+        targetingInterests:
+          type: array
+          maxItems: 5
+          items:
+            type: string
         targetingLatitude:
           type: number
         targetingLongitude:

@@ -16,7 +16,7 @@ export interface UserProfile {
   updatedAt: string;
 }
 
-export interface UpdateProfileBody {
+export interface UserProfileUpdate {
   businessName?: string | null;
   businessLocation?: string | null;
   industry?: string | null;
@@ -305,6 +305,16 @@ export interface FbCampaign {
   /** @nullable */
   targetingRadiusMiles?: number | null;
   /** @nullable */
+  targetingAgeMin?: number | null;
+  /** @nullable */
+  targetingAgeMax?: number | null;
+  /** @nullable */
+  targetingGender?: string | null;
+  /** @nullable */
+  targetingInterests?: string[] | null;
+  /** @nullable */
+  destinationUrl?: string | null;
+  /** @nullable */
   targetingLatitude?: string | null;
   /** @nullable */
   targetingLongitude?: string | null;
@@ -322,22 +332,63 @@ export interface FbCampaign {
   updatedAt: string;
 }
 
+export type FbCampaignInputTargetingGender = typeof FbCampaignInputTargetingGender[keyof typeof FbCampaignInputTargetingGender];
+
+
+export const FbCampaignInputTargetingGender = {
+  all: 'all',
+} as const;
+
 export interface FbCampaignInput {
   headline: string;
   bodyText: string;
   imageUrl: string;
   dailyBudgetCents: number;
   targetingRadiusMiles: number;
+  /**
+     * @minimum 18
+     * @maximum 65
+     */
+  targetingAgeMin: number;
+  /**
+     * @minimum 18
+     * @maximum 65
+     */
+  targetingAgeMax: number;
+  targetingGender?: FbCampaignInputTargetingGender;
+  /** @maxItems 5 */
+  targetingInterests?: string[];
+  destinationUrl?: string;
   targetingLatitude: number;
   targetingLongitude: number;
 }
 
-export interface UpdateFbCampaignBody {
+export type FbCampaignUpdateTargetingGender = typeof FbCampaignUpdateTargetingGender[keyof typeof FbCampaignUpdateTargetingGender];
+
+
+export const FbCampaignUpdateTargetingGender = {
+  all: 'all',
+} as const;
+
+export interface FbCampaignUpdate {
   headline?: string;
   bodyText?: string;
   imageUrl?: string;
   dailyBudgetCents?: number;
   targetingRadiusMiles?: number;
+  /**
+     * @minimum 18
+     * @maximum 65
+     */
+  targetingAgeMin?: number;
+  /**
+     * @minimum 18
+     * @maximum 65
+     */
+  targetingAgeMax?: number;
+  targetingGender?: FbCampaignUpdateTargetingGender;
+  /** @maxItems 5 */
+  targetingInterests?: string[];
   targetingLatitude?: number;
   targetingLongitude?: number;
   destinationUrl?: string;

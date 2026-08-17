@@ -266,7 +266,7 @@ export function Campaigns() {
 
   const liveCount    = campaigns?.filter((c) => c.status === "live").length ?? 0;
   const draftCount   = campaigns?.filter((c) => c.status === "paused").length ?? 0;
-  const failedCount  = campaigns?.filter((c) => c.status === "failed").length ?? 0;
+  const failedCount  = campaigns?.filter((c) => c.status === "error").length ?? 0;
   const totalCount   = campaigns?.length ?? 0;
 
   return (

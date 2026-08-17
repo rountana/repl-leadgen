@@ -24,6 +24,16 @@ export interface FbCampaign {
   /** @nullable */
   targetingRadiusMiles?: number | null;
   /** @nullable */
+  targetingAgeMin?: number | null;
+  /** @nullable */
+  targetingAgeMax?: number | null;
+  /** @nullable */
+  targetingGender?: string | null;
+  /** @nullable */
+  targetingInterests?: string[] | null;
+  /** @nullable */
+  destinationUrl?: string | null;
+  /** @nullable */
   targetingLatitude?: string | null;
   /** @nullable */
   targetingLongitude?: string | null;

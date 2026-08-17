@@ -32,6 +32,10 @@ export interface CreateAdParams {
   imageUrl: string;
   dailyBudgetCents: number;
   targetingRadiusMiles: number;
+  targetingAgeMin: number;
+  targetingAgeMax: number;
+  targetingGender: string;
+  targetingInterests: string[];
   targetingLatitude: number;
   targetingLongitude: number;
   fbPageId: string;
@@ -259,6 +263,39 @@ export function formatBudget(amount: number, currency: string): string {
   }).format(value);
 }
 
+async function resolveMetaInterests(
+  actId: string,
+  interestNames: string[],
+  accessToken: string,
+): Promise<Array<{ id: string; name: string }>> {
+  const resolved: Array<{ id: string; name: string }> = [];
+
+  for (const interestName of [...new Set(interestNames.map((name) => name.trim()).filter(Boolean))]) {
+    const result = await graphGet(
+      `/${actId}/targetingsearch`,
+      { type: "adinterest", q: interestName, limit: "10" },
+      accessToken,
+    );
+    const candidates = Array.isArray(result?.data) ? result.data : [];
+    const exact = candidates.find(
+      (candidate: any) =>
+        typeof candidate?.name === "string" &&
+        candidate.name.toLowerCase() === interestName.toLowerCase(),
+    );
+    const match = exact ?? candidates[0];
+
+    if (!match?.id) {
+      throw new Error(
+        `Meta couldn't find the interest "${interestName}". Remove it and try again.`,
+      );
+    }
+
+    resolved.push({ id: String(match.id), name: String(match.name ?? interestName) });
+  }
+
+  return resolved;
+}
+
 // ── Meta Marketing API adapter ─────────────────────────────────────────────
 
 export const metaFbPartnerAdapter: FbPartnerAdapter = {
@@ -305,6 +342,10 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       imageUrl,
       dailyBudgetCents,
       targetingRadiusMiles,
+      targetingAgeMin,
+      targetingAgeMax,
+      targetingGender,
+      targetingInterests,
       targetingLatitude,
       targetingLongitude,
       fbPageId,
@@ -329,6 +370,12 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     }
 
     // ── 1. Ad Set ─────────────────────────────────────────────────────────
+    // Meta requires interest IDs rather than display names in the ad-set
+    // targeting payload, so resolve the user's simple choices at launch time.
+    const resolvedInterests = targetingInterests.length > 0
+      ? await resolveMetaInterests(actId, targetingInterests, accessToken)
+      : [];
+
     // Budget lives here (ASBO mode) — each ad has its own daily_budget
     // independent of other ads under the same shared campaign.
     const adSetData = await graphPost(
@@ -353,7 +400,13 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
               },
             ],
           },
-          age_min: 18,
+          age_min: targetingAgeMin,
+          age_max: targetingAgeMax,
+          // "all" is Meta's default; omitting genders keeps the audience open.
+          ...(targetingGender !== "all" ? { genders: [] } : {}),
+          ...(resolvedInterests.length > 0
+            ? { flexible_spec: [{ interests: resolvedInterests }] }
+            : {}),
           // Restrict to Facebook placements only. Without this Meta defaults to
           // Facebook + Instagram, which requires the ad account to have explicit
           // access to the Page's linked Instagram account (Meta error 200/1815199).

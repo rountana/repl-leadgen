@@ -440,6 +440,11 @@ export const ListFbCampaignsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
+  "targetingAgeMin": zod.number().nullish(),
+  "targetingAgeMax": zod.number().nullish(),
+  "targetingGender": zod.string().nullish(),
+  "targetingInterests": zod.array(zod.string()).nullish(),
+  "destinationUrl": zod.string().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
@@ -457,12 +462,28 @@ export const ListFbCampaignsResponse = zod.array(ListFbCampaignsResponseItem)
 /**
  * @summary Create a new Facebook campaign
  */
+export const createFbCampaignBodyTargetingAgeMinMin = 18;
+export const createFbCampaignBodyTargetingAgeMinMax = 65;
+
+export const createFbCampaignBodyTargetingAgeMaxMin = 18;
+export const createFbCampaignBodyTargetingAgeMaxMax = 65;
+
+export const createFbCampaignBodyTargetingGenderDefault = `all`;
+export const createFbCampaignBodyTargetingInterestsMax = 5;
+
+
+
 export const CreateFbCampaignBody = zod.object({
   "headline": zod.string(),
   "bodyText": zod.string(),
   "imageUrl": zod.string(),
   "dailyBudgetCents": zod.number(),
   "targetingRadiusMiles": zod.number(),
+  "targetingAgeMin": zod.number().min(createFbCampaignBodyTargetingAgeMinMin).max(createFbCampaignBodyTargetingAgeMinMax),
+  "targetingAgeMax": zod.number().min(createFbCampaignBodyTargetingAgeMaxMin).max(createFbCampaignBodyTargetingAgeMaxMax),
+  "targetingGender": zod.enum(['all']).default(createFbCampaignBodyTargetingGenderDefault),
+  "targetingInterests": zod.array(zod.string()).max(createFbCampaignBodyTargetingInterestsMax).optional(),
+  "destinationUrl": zod.string().optional(),
   "targetingLatitude": zod.number(),
   "targetingLongitude": zod.number()
 })
@@ -476,6 +497,11 @@ export const CreateFbCampaignResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
+  "targetingAgeMin": zod.number().nullish(),
+  "targetingAgeMax": zod.number().nullish(),
+  "targetingGender": zod.string().nullish(),
+  "targetingInterests": zod.array(zod.string()).nullish(),
+  "destinationUrl": zod.string().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
@@ -514,6 +540,11 @@ export const GetFbCampaignResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
+  "targetingAgeMin": zod.number().nullish(),
+  "targetingAgeMax": zod.number().nullish(),
+  "targetingGender": zod.string().nullish(),
+  "targetingInterests": zod.array(zod.string()).nullish(),
+  "destinationUrl": zod.string().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
@@ -534,12 +565,26 @@ export const UpdateFbCampaignParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateFbCampaignBodyTargetingAgeMinMin = 18;
+export const updateFbCampaignBodyTargetingAgeMinMax = 65;
+
+export const updateFbCampaignBodyTargetingAgeMaxMin = 18;
+export const updateFbCampaignBodyTargetingAgeMaxMax = 65;
+
+export const updateFbCampaignBodyTargetingInterestsMax = 5;
+
+
+
 export const UpdateFbCampaignBody = zod.object({
   "headline": zod.string().optional(),
   "bodyText": zod.string().optional(),
   "imageUrl": zod.string().optional(),
   "dailyBudgetCents": zod.number().optional(),
   "targetingRadiusMiles": zod.number().optional(),
+  "targetingAgeMin": zod.number().min(updateFbCampaignBodyTargetingAgeMinMin).max(updateFbCampaignBodyTargetingAgeMinMax).optional(),
+  "targetingAgeMax": zod.number().min(updateFbCampaignBodyTargetingAgeMaxMin).max(updateFbCampaignBodyTargetingAgeMaxMax).optional(),
+  "targetingGender": zod.enum(['all']).optional(),
+  "targetingInterests": zod.array(zod.string()).max(updateFbCampaignBodyTargetingInterestsMax).optional(),
   "targetingLatitude": zod.number().optional(),
   "targetingLongitude": zod.number().optional(),
   "destinationUrl": zod.string().optional()
@@ -554,6 +599,11 @@ export const UpdateFbCampaignResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
+  "targetingAgeMin": zod.number().nullish(),
+  "targetingAgeMax": zod.number().nullish(),
+  "targetingGender": zod.string().nullish(),
+  "targetingInterests": zod.array(zod.string()).nullish(),
+  "destinationUrl": zod.string().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),
@@ -593,6 +643,11 @@ export const LaunchFbCampaignResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
+  "targetingAgeMin": zod.number().nullish(),
+  "targetingAgeMax": zod.number().nullish(),
+  "targetingGender": zod.string().nullish(),
+  "targetingInterests": zod.array(zod.string()).nullish(),
+  "destinationUrl": zod.string().nullish(),
   "targetingLatitude": zod.string().nullish(),
   "targetingLongitude": zod.string().nullish(),
   "partnerCampaignId": zod.string().nullish(),

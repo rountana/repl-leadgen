@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface UpdateProfileBody {
+export interface UserProfileUpdate {
   businessName?: string | null;
   businessLocation?: string | null;
   industry?: string | null;

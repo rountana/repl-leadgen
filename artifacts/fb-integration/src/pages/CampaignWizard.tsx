@@ -22,6 +22,10 @@ interface WizardState {
   adDraft: FbAdDraft | null;
   dailyBudget: number;
   radiusMiles: number;
+  ageMin: number;
+  ageMax: number;
+  interests: string[];
+  gender: "all";
   /** Where ad clicks land — HVCG lead magnet URL or any landing page */
   destinationUrl: string;
   /** Business address from the user's Profile, collected on the Budget & Targeting step */
@@ -57,6 +61,10 @@ export function CampaignWizard() {
     adDraft: initialDraft,
     dailyBudget: 10,
     radiusMiles: 10,
+    ageMin: 18,
+    ageMax: 65,
+    interests: [],
+    gender: "all",
     destinationUrl: magnetUrl,
     businessLocation: "",
   });
@@ -90,6 +98,10 @@ export function CampaignWizard() {
           ? Math.round(editCampaign.dailyBudgetCents / 100)
           : 10,
         radiusMiles: editCampaign.targetingRadiusMiles ?? 10,
+        ageMin: editCampaign.targetingAgeMin ?? 18,
+        ageMax: editCampaign.targetingAgeMax ?? 65,
+        interests: editCampaign.targetingInterests ?? [],
+        gender: "all",
         destinationUrl: editCampaign.destinationUrl ?? "",
         businessLocation: "",
       });
@@ -140,7 +152,18 @@ export function CampaignWizard() {
   };
 
   const handleReset = () => {
-    setWizard({ step: 2, adDraft: null, dailyBudget: 10, radiusMiles: 10, destinationUrl: "", businessLocation: "" });
+    setWizard({
+      step: 2,
+      adDraft: null,
+      dailyBudget: 10,
+      radiusMiles: 10,
+      ageMin: 18,
+      ageMax: 65,
+      interests: [],
+      gender: "all",
+      destinationUrl: "",
+      businessLocation: "",
+    });
     if (!editId) setShowTemplates(true);
   };
 
@@ -190,8 +213,20 @@ export function CampaignWizard() {
               connection={connection}
               initialBudget={wizard.dailyBudget}
               initialRadius={wizard.radiusMiles}
-              onNext={(dailyBudget, radiusMiles, businessLocation) =>
-                setWizard((prev) => ({ ...prev, step: 4, dailyBudget, radiusMiles, businessLocation }))
+              initialAgeMin={wizard.ageMin}
+              initialAgeMax={wizard.ageMax}
+              initialInterests={wizard.interests}
+              onNext={(dailyBudget, radiusMiles, businessLocation, ageMin, ageMax, interests) =>
+                setWizard((prev) => ({
+                  ...prev,
+                  step: 4,
+                  dailyBudget,
+                  radiusMiles,
+                  businessLocation,
+                  ageMin,
+                  ageMax,
+                  interests,
+                }))
               }
             />
           )}
@@ -201,6 +236,10 @@ export function CampaignWizard() {
               adDraft={wizard.adDraft}
               dailyBudget={wizard.dailyBudget}
               radiusMiles={wizard.radiusMiles}
+              ageMin={wizard.ageMin}
+              ageMax={wizard.ageMax}
+              gender={wizard.gender}
+              interests={wizard.interests}
               destinationUrl={wizard.destinationUrl || undefined}
               businessLocation={wizard.businessLocation || undefined}
               onReset={handleReset}

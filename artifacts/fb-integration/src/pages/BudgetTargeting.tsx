@@ -22,7 +22,17 @@ interface BudgetTargetingProps {
   connection: FbConnection;
   initialBudget?: number;
   initialRadius?: number;
-  onNext: (dailyBudget: number, radiusMiles: number, businessLocation: string) => void;
+  initialAgeMin?: number;
+  initialAgeMax?: number;
+  initialInterests?: string[];
+  onNext: (
+    dailyBudget: number,
+    radiusMiles: number,
+    businessLocation: string,
+    ageMin: number,
+    ageMax: number,
+    interests: string[],
+  ) => void;
 }
 
 const BUDGET_TIPS: Record<number, string> = {
@@ -31,6 +41,22 @@ const BUDGET_TIPS: Record<number, string> = {
   20: "Recommended for active campaigns — delivers a meaningful audience each day.",
   50: "High-visibility spend. Best for promotions, launches, or competitive markets.",
 };
+
+const AGE_OPTIONS = Array.from({ length: 48 }, (_, index) => index + 18);
+const INTEREST_OPTIONS = [
+  "Fitness and wellness",
+  "Beauty",
+  "Restaurants",
+  "Home improvement",
+  "Real estate",
+  "Shopping",
+  "Travel",
+  "Personal finance",
+  "Pets",
+  "Automobiles",
+  "Parenting",
+  "Small business",
+];
 
 function InfoTip({ content }: { content: string }) {
   return (
@@ -49,10 +75,16 @@ export function BudgetTargeting({
   connection,
   initialBudget = 10,
   initialRadius = 10,
+  initialAgeMin = 18,
+  initialAgeMax = 65,
+  initialInterests = [],
   onNext,
 }: BudgetTargetingProps) {
   const [budget, setBudget] = useState(initialBudget);
   const [radius, setRadius] = useState(initialRadius);
+  const [ageMin, setAgeMin] = useState(initialAgeMin);
+  const [ageMax, setAgeMax] = useState(initialAgeMax);
+  const [interests, setInterests] = useState<string[]>(initialInterests);
   const [budgetInput, setBudgetInput] = useState(String(initialBudget));
 
   // Editable target location
@@ -113,6 +145,28 @@ export function BudgetTargeting({
       setBudget(num);
       setBudgetInput(String(num));
     }
+  };
+
+  const handleAgeMinChange = (value: string) => {
+    const next = Number(value);
+    setAgeMin(next);
+    if (next > ageMax) setAgeMax(next);
+  };
+
+  const handleAgeMaxChange = (value: string) => {
+    const next = Number(value);
+    setAgeMax(next);
+    if (next < ageMin) setAgeMin(next);
+  };
+
+  const toggleInterest = (interest: string) => {
+    setInterests((current) =>
+      current.includes(interest)
+        ? current.filter((item) => item !== interest)
+        : current.length < 5
+          ? [...current, interest]
+          : current,
+    );
   };
 
   const estimatedReachLow  = Math.round(2000 + budget * 120 + radius * 50);
@@ -304,6 +358,73 @@ export function BudgetTargeting({
           </p>
         </div>
 
+        {/* Age and gender */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Label className="text-base font-semibold">Age</Label>
+            <InfoTip content="Choose the age range most likely to need your product or service. A narrower range can make your budget more focused; use a wider range when your offer suits most adults." />
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              aria-label="Minimum age"
+              value={ageMin}
+              onChange={(event) => handleAgeMinChange(event.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              {AGE_OPTIONS.map((age) => <option key={age} value={age}>{age}</option>)}
+            </select>
+            <span className="text-sm text-muted-foreground">to</span>
+            <select
+              aria-label="Maximum age"
+              value={ageMax}
+              onChange={(event) => handleAgeMaxChange(event.target.value)}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              {AGE_OPTIONS.filter((age) => age >= ageMin).map((age) => (
+                <option key={age} value={age}>{age}</option>
+              ))}
+            </select>
+            <span className="text-sm text-muted-foreground">years</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-md bg-secondary/40 px-3 py-2 text-sm">
+            <span className="font-medium">Gender</span>
+            <span className="text-muted-foreground">Everyone</span>
+            <InfoTip content="Your ad is shown to all genders by default, giving Meta the broadest audience to find likely customers." />
+          </div>
+        </div>
+
+        {/* Interests */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-base font-semibold">Interests</Label>
+              <InfoTip content="Pick up to five broad interests that describe what your ideal customers care about. Leave this empty to let Meta find likely customers across all interests." />
+            </div>
+            <span className="text-xs text-muted-foreground">{interests.length}/5 selected</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {INTEREST_OPTIONS.map((interest) => {
+              const selected = interests.includes(interest);
+              return (
+                <Button
+                  key={interest}
+                  type="button"
+                  size="sm"
+                  variant={selected ? "default" : "outline"}
+                  onClick={() => toggleInterest(interest)}
+                  disabled={!selected && interests.length >= 5}
+                  className="text-xs"
+                >
+                  {interest}
+                </Button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Optional — broader targeting can help Meta find people likely to respond.
+          </p>
+        </div>
+
         {/* Estimated reach callout */}
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="p-4">
@@ -331,7 +452,7 @@ export function BudgetTargeting({
 
         <Button
           className="w-full h-12 text-base font-semibold gap-2"
-          onClick={() => onNext(budget, radius, effectiveLocation ?? "")}
+          onClick={() => onNext(budget, radius, effectiveLocation ?? "", ageMin, ageMax, interests)}
           disabled={isProfileLoading || isBelowMinimum}
         >
           Submit for Review

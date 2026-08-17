@@ -26,6 +26,10 @@ interface LaunchConfirmProps {
   adDraft: FbAdDraft;
   dailyBudget: number;
   radiusMiles: number;
+  ageMin: number;
+  ageMax: number;
+  gender: "all";
+  interests: string[];
   onReset: () => void;
   /** When set, patch-then-launch this existing campaign instead of creating a new one */
   campaignId?: number;
@@ -55,6 +59,10 @@ export function LaunchConfirm({
   adDraft,
   dailyBudget,
   radiusMiles,
+  ageMin,
+  ageMax,
+  gender,
+  interests,
   onReset,
   campaignId,
   destinationUrl,
@@ -115,6 +123,10 @@ export function LaunchConfirm({
         imageUrl: adDraft.imageUrl,
         dailyBudgetCents: dailyBudget * 100,
         targetingRadiusMiles: radiusMiles,
+        targetingAgeMin: ageMin,
+        targetingAgeMax: ageMax,
+        targetingGender: gender,
+        targetingInterests: interests,
         targetingLatitude: lat,
         targetingLongitude: lng,
         ...(destinationUrl ? { destinationUrl } : {}),
@@ -383,6 +395,22 @@ export function LaunchConfirm({
               </div>
             </div>
           )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-secondary/30">
+              <p className="text-xs text-muted-foreground">Age range</p>
+              <p className="font-semibold text-sm">{ageMin}–{ageMax}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary/30">
+              <p className="text-xs text-muted-foreground">Gender</p>
+              <p className="font-semibold text-sm">Everyone</p>
+            </div>
+          </div>
+          <div className="p-3 rounded-lg bg-secondary/30">
+            <p className="text-xs text-muted-foreground">Interests</p>
+            <p className="font-medium text-sm">
+              {interests.length > 0 ? interests.join(", ") : "All interests"}
+            </p>
+          </div>
           {destinationUrl && (
             <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-start gap-2">
               <ExternalLink className="w-4 h-4 text-primary shrink-0 mt-0.5" />

@@ -5,6 +5,7 @@
  * HVCG Lead Magnet Builder API
  * OpenAPI spec version: 0.1.0
  */
+import type { FbCampaignInputTargetingGender } from './fbCampaignInputTargetingGender';
 
 export interface FbCampaignInput {
   headline: string;
@@ -12,6 +13,20 @@ export interface FbCampaignInput {
   imageUrl: string;
   dailyBudgetCents: number;
   targetingRadiusMiles: number;
+  /**
+     * @minimum 18
+     * @maximum 65
+     */
+  targetingAgeMin: number;
+  /**
+     * @minimum 18
+     * @maximum 65
+     */
+  targetingAgeMax: number;
+  targetingGender?: FbCampaignInputTargetingGender;
+  /** @maxItems 5 */
+  targetingInterests?: string[];
+  destinationUrl?: string;
   targetingLatitude: number;
   targetingLongitude: number;
 }
