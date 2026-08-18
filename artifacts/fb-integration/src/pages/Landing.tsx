@@ -1,5 +1,6 @@
-import { Link } from "wouter";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SignIn } from "@clerk/react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
   Phone,
   User,
   Star,
+  X,
 } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 
@@ -46,8 +48,10 @@ const INDUSTRIES = [
 ];
 
 export function Landing() {
+  const [showSignIn, setShowSignIn] = useState(false);
+
   return (
-    <PublicShell>
+    <PublicShell onSignIn={() => setShowSignIn(true)}>
       <div className="flex flex-col min-h-screen">
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
@@ -69,12 +73,10 @@ export function Landing() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
-                asChild
+                onClick={() => setShowSignIn(true)}
                 className="text-lg px-8 py-6 h-auto shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
               >
-                <Link href="/sign-in">
-                  Get Started <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
+                Get Started <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <p className="text-sm text-muted-foreground mt-4 sm:mt-0 sm:ml-4 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" /> No credit card required
@@ -240,10 +242,10 @@ export function Landing() {
             <Button
               size="lg"
               variant="secondary"
-              asChild
+              onClick={() => setShowSignIn(true)}
               className="text-lg px-10 py-7 h-auto text-primary font-bold shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all bg-white hover:bg-gray-50"
             >
-              <Link href="/sign-in">Launch your first ad</Link>
+              Launch your first ad
             </Button>
           </div>
         </section>
@@ -258,6 +260,28 @@ export function Landing() {
           </div>
         </footer>
       </div>
+
+      {/* ── Sign-in modal ─────────────────────────────────────────────── */}
+      {showSignIn && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSignIn(false); }}
+        >
+          <div className="relative w-full max-w-[480px]">
+            <button
+              onClick={() => setShowSignIn(false)}
+              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-card border shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <SignIn
+              routing="virtual"
+              fallbackRedirectUrl={`${window.location.origin}${basePath}/connect`}
+            />
+          </div>
+        </div>
+      )}
     </PublicShell>
   );
 }

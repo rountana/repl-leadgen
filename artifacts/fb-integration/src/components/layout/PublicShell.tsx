@@ -3,7 +3,13 @@ import { Button } from "@/components/ui/button";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-export function PublicShell({ children }: { children: React.ReactNode }) {
+export function PublicShell({
+  children,
+  onSignIn,
+}: {
+  children: React.ReactNode;
+  onSignIn?: () => void;
+}) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="w-full absolute top-0 z-50 bg-transparent">
@@ -14,11 +20,14 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <nav className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
-              <Link href="/sign-in">Log in</Link>
+            <Button variant="ghost" onClick={onSignIn}>
+              Log in
             </Button>
-            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all">
-              <Link href="/sign-in">Get Started</Link>
+            <Button
+              onClick={onSignIn}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all"
+            >
+              Get Started
             </Button>
           </nav>
         </div>

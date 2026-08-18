@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, Show, useClerk } from '@clerk/react';
+import { ClerkProvider, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from 'wouter';
@@ -78,21 +78,6 @@ const clerkAppearance = {
   },
 };
 
-function SignInPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 relative overflow-hidden">
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
-      <div className="z-10 w-full flex justify-center">
-        <SignIn
-          routing="path"
-          path={`${basePath}/sign-in`}
-          fallbackRedirectUrl={`${window.location.origin}${basePath}/connect`}
-        />
-      </div>
-    </div>
-  );
-}
-
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <>
@@ -102,7 +87,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
         </Shell>
       </Show>
       <Show when="signed-out">
-        <Redirect to="/sign-in" />
+        <Redirect to="/" />
       </Show>
     </>
   );
@@ -135,7 +120,7 @@ function ClerkProviderWithRoutes() {
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
+      signInUrl={`${basePath}/`}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
@@ -150,7 +135,6 @@ function ClerkProviderWithRoutes() {
               <Landing />
             </Show>
           </Route>
-          <Route path="/sign-in/*?" component={SignInPage} />
           <Route path="/auth/callback" component={MockOAuthCallback} />
           <Route path="/connect">
             <ProtectedRoute component={Connect} />
