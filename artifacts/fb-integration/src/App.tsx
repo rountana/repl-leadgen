@@ -52,7 +52,7 @@ const clerkAppearance = {
     logoPlacement: "inside" as const,
   },
   variables: {
-    colorPrimary: "hsl(214 89% 52%)",
+    colorPrimary: "hsl(221 83% 53%)",
     colorForeground: "hsl(220 47% 11%)",
     colorMutedForeground: "hsl(215 16% 47%)",
     colorDanger: "hsl(0 84% 60%)",

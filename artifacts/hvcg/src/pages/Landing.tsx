@@ -129,10 +129,10 @@ export function Landing() {
         <footer className="py-12 bg-card border-t text-center text-muted-foreground">
           <div className="container mx-auto px-4">
             <div className="flex justify-center items-center gap-2 mb-4">
-              <img src={`${basePath}/logo.svg`} alt="HVCG Logo" className="w-6 h-6 grayscale opacity-50" />
-              <span className="font-semibold text-foreground opacity-50">HVCG</span>
+              <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-6 h-6 grayscale opacity-50" />
+              <span className="font-semibold text-foreground opacity-50">Addlaunch</span>
             </div>
-            <p>© {new Date().getFullYear()} HVCG Inc. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Addlaunch. All rights reserved.</p>
           </div>
         </footer>
       </div>
