@@ -200,7 +200,7 @@ export function Landing() {
                 Discover new customers and opportunities—minus the heavy lifting
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Facebook has millions of people in your area. Addlaunch helps you put the right offer in front of the right locals — without needing to figure out Ads Manager.
+                Addlaunch helps you put the right offer in front of the right locals — without needing to figure out Ads Manager.
               </p>
             </div>
 
