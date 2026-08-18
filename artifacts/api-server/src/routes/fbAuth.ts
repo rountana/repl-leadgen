@@ -364,9 +364,24 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
       redirectUrl = `${frontend}/connect?fb_connected=1`;
     } else {
       // 3b. Multiple options → let the frontend show a picker.
+      //
+      // Always store the pending result locally so /complete can retrieve the
+      // real access token regardless of whether a cross-origin relay was also
+      // needed. Without this, a normal single-origin production deployment
+      // (relayToOrigin=false) never populated pendingOAuthResults, causing
+      // handlePickerSave to fall through to the tokenless createConnection path
+      // and save a connection with no partnerToken — reported as "disconnected".
+      pendingOAuthResults.set(state ?? "", {
+        userId,
+        accessToken,
+        pages,
+        adAccounts,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      });
       const fbData = Buffer.from(JSON.stringify({ pages, adAccounts })).toString("base64");
-      const stateParam = relayToOrigin ? `&fb_state=${encodeURIComponent(state ?? "")}` : "";
-      redirectUrl = `${frontend}/connect?fb_data=${encodeURIComponent(fbData)}${stateParam}`;
+      // Always pass fb_state so Connect.tsx always routes through /complete,
+      // which fetches the token from pendingOAuthResults and calls upsertConnection.
+      redirectUrl = `${frontend}/connect?fb_data=${encodeURIComponent(fbData)}&fb_state=${encodeURIComponent(state ?? "")}`;
     }
 
     cacheResult(state, redirectUrl);
