@@ -123,6 +123,46 @@ export function Landing() {
           </div>
         </section>
 
+        {/* ── Who it's for ─────────────────────────────────────────────── */}
+        <section className="py-24 bg-card border-y">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Discover new customers and opportunities—minus the heavy lifting
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Addlaunch helps you put the right offer in front of the right locals — without needing to figure out Ads Manager.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {INDUSTRIES.map((ind, i) => (
+                <div
+                  key={i}
+                  className="bg-background rounded-2xl border p-6 hover:border-primary/40 hover:shadow-md transition-all"
+                >
+                  <div className="text-3xl mb-4">{ind.emoji}</div>
+                  <h3 className="font-bold text-lg mb-2">{ind.label}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{ind.desc}</p>
+                </div>
+              ))}
+
+              {/* "and more" card */}
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col items-start justify-between">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-sm font-medium text-foreground leading-relaxed mb-4">
+                  "I used to spend $500/month on a marketing agency. Now I spend $10/day on ads and do it myself in twenty minutes."
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">— Addlaunch user</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── Addpage feature ──────────────────────────────────────────── */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-4 max-w-6xl">
@@ -131,13 +171,11 @@ export function Landing() {
               <div className="relative order-2 md:order-1">
                 <div className="absolute inset-0 bg-violet-500/5 rounded-3xl transform -rotate-2" />
                 <div className="bg-card rounded-3xl border shadow-xl relative z-10 overflow-hidden">
-                  {/* Mock page header */}
                   <div className="bg-gradient-to-br from-primary to-violet-600 px-6 py-8 text-white text-center">
                     <div className="text-xs font-medium uppercase tracking-widest opacity-80 mb-2">Free Guide</div>
                     <div className="text-lg font-bold leading-snug mb-1">5 Things Every Homeowner Should Know Before Hiring a Contractor</div>
                     <div className="text-sm opacity-80 mt-2">Download instantly — no fluff, just practical advice.</div>
                   </div>
-                  {/* Mock form */}
                   <div className="p-6 space-y-3">
                     <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2.5">
                       <User className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -187,46 +225,6 @@ export function Landing() {
                     </li>
                   ))}
                 </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Who it's for ─────────────────────────────────────────────── */}
-        <section className="py-24 bg-card border-y">
-          <div className="container mx-auto px-4 max-w-6xl">
-            <div className="text-center mb-14">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Discover new customers and opportunities—minus the heavy lifting
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Addlaunch helps you put the right offer in front of the right locals — without needing to figure out Ads Manager.
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {INDUSTRIES.map((ind, i) => (
-                <div
-                  key={i}
-                  className="bg-background rounded-2xl border p-6 hover:border-primary/40 hover:shadow-md transition-all"
-                >
-                  <div className="text-3xl mb-4">{ind.emoji}</div>
-                  <h3 className="font-bold text-lg mb-2">{ind.label}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{ind.desc}</p>
-                </div>
-              ))}
-
-              {/* "and more" card */}
-              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col items-start justify-between">
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <p className="text-sm font-medium text-foreground leading-relaxed mb-4">
-                  "I used to spend $500/month on a marketing agency. Now I spend $10/day on ads and do it myself in twenty minutes."
-                </p>
-                <p className="text-xs text-muted-foreground font-medium">— Addlaunch user</p>
               </div>
             </div>
           </div>
