@@ -11,6 +11,7 @@ import { MockOAuthCallback } from "@/pages/MockOAuthCallback";
 import { CampaignWizard } from "@/pages/CampaignWizard";
 import { Campaigns } from "@/pages/Campaigns";
 import { Profile } from "@/pages/Profile";
+import { Landing } from "@/pages/Landing";
 import { Shell } from "@/components/layout/Shell";
 
 const queryClient = new QueryClient({
@@ -141,7 +142,12 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <Switch>
           <Route path="/">
-            <Redirect to="/connect" />
+            <Show when="signed-in">
+              <Redirect to="/campaigns" />
+            </Show>
+            <Show when="signed-out">
+              <Landing />
+            </Show>
           </Route>
           <Route path="/sign-in/*?" component={SignInPage} />
           <Route path="/auth/callback" component={MockOAuthCallback} />
