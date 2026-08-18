@@ -419,6 +419,10 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
           // access to the Page's linked Instagram account (Meta error 200/1815199).
           // Business owners who haven't connected Instagram can still run ads.
           publisher_platforms: ["facebook"],
+          // Meta now requires this field to be explicitly set. 0 = manual
+          // targeting (preserves our geo/age/gender/interest spec). 1 would
+          // hand control to Meta's Advantage audience AI and ignore our spec.
+          targeting_automation: { advantage_audience: 0 },
         },
         // ACTIVE — the campaign is PAUSED, so no budget is spent yet.
         // When the user activates the campaign in Ads Manager, this ad set
