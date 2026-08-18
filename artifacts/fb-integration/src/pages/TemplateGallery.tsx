@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Sparkles, ArrowRight, PenLine, Star, Trash2, BookmarkCheck } from "lucide-react";
+import { Link } from "wouter";
+import { Sparkles, ArrowRight, PenLine, Star, Trash2, BookmarkCheck, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -232,6 +233,21 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           You can edit everything before launching.
         </p>
       </div>
+
+      {/* Industry nudge — shown only when profile is loaded but industry is unset */}
+      {profile && !profile.industry && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+          <Briefcase className="w-4 h-4 shrink-0 text-amber-600" />
+          <p className="flex-1">
+            Set your industry in your profile to get personalised template recommendations.
+          </p>
+          <Link href="/profile">
+            <span className="whitespace-nowrap font-medium underline underline-offset-2 hover:text-amber-700 transition-colors cursor-pointer">
+              Set industry
+            </span>
+          </Link>
+        </div>
+      )}
 
       {/* My templates section */}
       {myTemplates.length > 0 && (
