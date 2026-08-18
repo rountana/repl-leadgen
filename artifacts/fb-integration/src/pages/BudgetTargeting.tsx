@@ -17,6 +17,7 @@ import {
   getGetFbMinimumBudgetQueryKey,
   type FbConnection,
 } from "@workspace/api-client-react";
+import { RadiusMap } from "@/components/RadiusMap";
 
 interface BudgetTargetingProps {
   connection: FbConnection;
@@ -362,6 +363,9 @@ export function BudgetTargeting({
           <p className="text-sm text-muted-foreground">
             Reach people within <span className="font-semibold text-foreground">{radius} miles</span> of {effectiveLocation || connection.fbPageName || "your location"}
           </p>
+
+          {/* Radius map preview */}
+          <RadiusMap address={effectiveLocation} radiusMiles={radius} />
         </div>
 
         {/* Age and gender */}
