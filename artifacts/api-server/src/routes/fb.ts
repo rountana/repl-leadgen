@@ -39,6 +39,17 @@ function verifyWebhookSignature(rawBody: Buffer, secret: string, signatureHeader
 const router: IRouter = Router();
 
 function requireAuth(req: any, res: any, next: any) {
+  // Integration-test bypass: only active when NODE_ENV === "test".
+  // Production and development builds never enter this branch.
+  if (process.env.NODE_ENV === "test") {
+    const testUserId = req.headers["x-test-user-id"] as string | undefined;
+    if (testUserId) {
+      req.userId = testUserId;
+      next();
+      return;
+    }
+  }
+
   const auth = getAuth(req);
   const userId = auth?.userId;
   if (!userId) {
@@ -130,9 +141,6 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
 
   let conn: typeof fbConnectionsTable.$inferSelect;
   if (existing) {
-    // Clear the shared campaign whenever the ad account changes — the campaign
-    // belongs to the old ad account and cannot be used with a new one.
-    const accountChanged = existing.adAccountId !== adAccountId;
     const [updated] = await db
       .update(fbConnectionsTable)
       .set({
@@ -145,6 +153,9 @@ router.post("/fb/connection", requireAuth, async (req: any, res): Promise<void> 
       .where(eq(fbConnectionsTable.userId, userId))
       .returning();
     conn = updated;
+    // Log whether the user switched ad accounts — useful for debugging launch failures
+    // where they might be trying to use the old account's shared campaign.
+    const accountChanged = existing.adAccountId !== adAccountId;
     req.log.info({ userId, fbPageId, accountChanged }, "FB connection updated");
   } else {
     const [inserted] = await db
