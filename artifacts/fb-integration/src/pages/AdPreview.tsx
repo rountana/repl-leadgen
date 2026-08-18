@@ -403,7 +403,7 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
                 {/* Manual URL override */}
                 <div className="space-y-1.5 pt-1 border-t border-border">
                   <Label htmlFor="destUrl" className="text-xs text-muted-foreground">
-                    Or paste a URL directly
+                     Already have a webpage? Paste its link here
                   </Label>
                   <Input
                     id="destUrl"

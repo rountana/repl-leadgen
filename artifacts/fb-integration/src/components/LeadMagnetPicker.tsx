@@ -7,6 +7,8 @@ import {
   getListLeadMagnetsQueryKey,
 } from "@workspace/api-client-react";
 
+const ADDPAGE_DASHBOARD_URL = "https://lead-magnet-hub-shaamsarath1.replit.app/dashboard";
+
 export interface SelectedMagnet {
   id: number;
   title: string;
@@ -27,8 +29,7 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
   const published = magnets.filter((m) => m.status === "live" && m.shareUrl);
 
   const handleCreateNew = () => {
-    // Cross-artifact navigation — opens HVCG in same tab
-    window.open("/hvcg/new", "_blank", "noopener");
+    window.open(ADDPAGE_DASHBOARD_URL, "_blank", "noopener,noreferrer");
   };
 
   if (isLoading) {
@@ -54,9 +55,14 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
             instead of just page views.
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={handleCreateNew} className="gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleCreateNew}
+          className="gap-2 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+        >
           <PlusCircle className="w-3.5 h-3.5" />
-          Open Lead Magnet Builder
+          Create with Addpage
           <ExternalLink className="w-3 h-3 opacity-60" />
         </Button>
       </div>
@@ -119,10 +125,10 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
       <button
         type="button"
         onClick={handleCreateNew}
-        className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+        className="w-full flex items-center justify-center gap-1.5 text-xs text-primary font-semibold hover:text-primary/80 transition-colors py-1"
       >
         <PlusCircle className="w-3 h-3" />
-        Create a new lead magnet in the Lead Magnet Builder
+        Create with Addpage
         <ExternalLink className="w-3 h-3 opacity-60" />
       </button>
     </div>
