@@ -224,15 +224,15 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
 
         {/* Bottom strip — chip + status note on the left, primary action on the right */}
         {confirmDelete ? (
-          <div className={`rounded-lg border p-3 space-y-2 ${theme.panel}`}>
-            <p className="text-xs text-center text-muted-foreground leading-snug">
+          <div className={`rounded-lg border px-3 py-2 flex items-center justify-between gap-3 ${theme.panel}`}>
+            <p className="text-xs text-muted-foreground leading-snug">
               {campaign.status === "paused"
                 ? "Remove from this app? The paused campaign in Ads Manager won't be affected."
                 : "Remove this ad from the app?"}
             </p>
-            <div className="flex gap-1.5">
-              <Button size="sm" variant="outline" className="flex-1 text-xs h-7 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-              <Button size="sm" variant="destructive" className="flex-1 text-xs h-7" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
+            <div className="flex gap-1.5 shrink-0">
+              <Button size="sm" variant="outline" className="text-xs h-6 px-2.5 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+              <Button size="sm" variant="destructive" className="text-xs h-6 px-2.5" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
                 {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
               </Button>
             </div>
