@@ -23,6 +23,13 @@ export interface UserProfileUpdate {
   logoUrl?: string | null;
 }
 
+export interface UserProfileUpdate {
+  businessName?: string | null;
+  businessLocation?: string | null;
+  industry?: string | null;
+  logoUrl?: string | null;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -289,6 +296,7 @@ export const FbCampaignStatus = {
   launching: 'launching',
   live: 'live',
   paused: 'paused',
+  in_review: 'in_review',
   error: 'error',
 } as const;
 
@@ -464,4 +472,3 @@ export type SyncFbCampaigns200 = {
   synced: number;
   updated: number;
 };
-

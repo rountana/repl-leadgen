@@ -407,6 +407,7 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
           eq(fbCampaignsTable.status, "live"),
           eq(fbCampaignsTable.status, "launching"),
           eq(fbCampaignsTable.status, "paused"),
+          eq(fbCampaignsTable.status, "in_review"),
         ),
       ),
     );
@@ -450,11 +451,20 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
           conn.partnerToken,
         );
         // Map Meta effective_status → our internal status + leadDeliveryStatus
-        const newStatus: "live" | "paused" = result.active ? "live" : "paused";
-        // "unverified" while paused (user hasn't activated yet); "active" once live
+        // ACTIVE              → live    + active
+        // PENDING_REVIEW / IN_PROCESS → in_review + unverified
+        // PAUSED / CAMPAIGN_PAUSED / ADSET_PAUSED → paused + unverified
+        // DISAPPROVED / WITH_ISSUES / unknown → error + failed
+        const newStatus: "live" | "paused" | "in_review" | "error" = result.active
+          ? "live"
+          : result.inReview
+            ? "in_review"
+            : result.paused
+              ? "paused"
+              : "error";
         const newLeadDelivery: "active" | "unverified" | "failed" = result.active
           ? "active"
-          : result.paused
+          : result.paused || result.inReview
             ? "unverified"
             : "failed";
 
@@ -714,18 +724,26 @@ router.get(
       conn.partnerToken,
     );
     // Map Meta effective_status to our delivery status:
-    // ACTIVE            → "active"     (ad set is delivering)
-    // PAUSED            → "unverified" (ad set manually paused)
-    // CAMPAIGN_PAUSED   → "unverified" (parent campaign paused; user hasn't activated yet)
-    // anything else     → "failed"
+    // ACTIVE                      → "active"     (ad set is delivering)
+    // PAUSED / CAMPAIGN_PAUSED    → "unverified" (user hasn't activated yet / manually paused)
+    // PENDING_REVIEW / IN_PROCESS → "unverified" (Meta is reviewing)
+    // DISAPPROVED / WITH_ISSUES / unknown → "failed" (delivery/policy problem)
     const deliveryStatus: "active" | "failed" | "unverified" = result.active
       ? "active"
-      : result.paused
+      : result.paused || result.inReview
         ? "unverified"
         : "failed";
 
-    // Also keep the campaign status column consistent with what Meta reports
-    const campaignStatus = result.active ? "live" : "paused";
+    // Also keep the campaign status column consistent with what Meta reports:
+    // ACTIVE → live | PENDING_REVIEW/IN_PROCESS → in_review |
+    // PAUSED/CAMPAIGN_PAUSED → paused | everything else → error
+    const campaignStatus: "live" | "paused" | "in_review" | "error" = result.active
+      ? "live"
+      : result.inReview
+        ? "in_review"
+        : result.paused
+          ? "paused"
+          : "error";
 
     // Persist the verified status
     await db

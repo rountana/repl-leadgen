@@ -56,6 +56,8 @@ export interface VerifyLeadDeliveryResult {
   active: boolean;
   /** true when Meta reports the campaign is paused (submitted but not yet activated) */
   paused: boolean;
+  /** true when Meta is actively reviewing the ad (effective_status === "IN_PROCESS") */
+  inReview: boolean;
   checkedAt: string;
 }
 
@@ -588,10 +590,18 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     // effective_status reflects actual delivery (accounts for campaign-level pauses etc.)
     const active = data.effective_status === "ACTIVE";
     // CAMPAIGN_PAUSED = parent campaign is paused; user hasn't activated it yet.
-    // PAUSED = ad set explicitly paused after initial submission.
+    // PAUSED / ADSET_PAUSED = ad set explicitly paused after initial submission.
     const paused =
       data.effective_status === "PAUSED" ||
-      data.effective_status === "CAMPAIGN_PAUSED";
+      data.effective_status === "CAMPAIGN_PAUSED" ||
+      data.effective_status === "ADSET_PAUSED";
+    // PENDING_REVIEW = queued for Meta's moderation review (most common in-review state).
+    // IN_PROCESS = being actively processed/reviewed by Meta's systems.
+    // NOTE: WITH_ISSUES and DISAPPROVED are rejection/delivery-problem signals, not
+    // pending-review states — they fall through so callers map them to "failed".
+    const inReview =
+      data.effective_status === "PENDING_REVIEW" ||
+      data.effective_status === "IN_PROCESS";
 
     logger.info(
       {
@@ -600,11 +610,12 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         effectiveStatus: data.effective_status,
         active,
         paused,
+        inReview,
       },
       "Meta: ad set status checked",
     );
 
-    return { active, paused, checkedAt: new Date().toISOString() };
+    return { active, paused, inReview, checkedAt: new Date().toISOString() };
   },
 };
 
@@ -629,7 +640,7 @@ export const stubFbPartnerAdapter: FbPartnerAdapter = {
   },
   async verifyLeadDelivery(partnerAdSetId, _accessToken) {
     logger.warn({ partnerAdSetId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub paused");
-    return { active: false, paused: true, checkedAt: new Date().toISOString() };
+    return { active: false, paused: true, inReview: false, checkedAt: new Date().toISOString() };
   },
 };
 

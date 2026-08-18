@@ -1071,7 +1071,7 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [draft, launching, live, paused, error]
+          enum: [draft, launching, live, paused, in_review, error]
         leadDeliveryStatus:
           type: string
           enum: [unverified, active, failed]

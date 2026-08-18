@@ -62,9 +62,9 @@ const STATE_THEME = {
 } as const;
 
 function statusTheme(status: FbCampaignStatus) {
-  if (status === "live")                    return STATE_THEME.live;
-  if (status === "paused" || status === "launching") return STATE_THEME.pending;
-  if (status === "error")                   return STATE_THEME.failed;
+  if (status === "live")                              return STATE_THEME.live;
+  if (status === "paused" || status === "launching" || status === "in_review") return STATE_THEME.pending;
+  if (status === "error")                             return STATE_THEME.failed;
   return STATE_THEME.neutral;
 }
 
@@ -73,7 +73,8 @@ function StatusBadge({ status }: { status: FbCampaignStatus }) {
   switch (status) {
     case "live":      return <Badge className={`${t.badge} gap-1`}><CheckCircle2 className="w-3 h-3" /> Live</Badge>;
     case "launching": return <Badge className={`${t.badge} gap-1`}><Clock className="w-3 h-3" /> Launching</Badge>;
-    case "paused":    return <Badge className={`${t.badge} gap-1`}><FileText className="w-3 h-3" /> Draft</Badge>;
+    case "paused":    return <Badge className={`${t.badge} gap-1`}><Clock className="w-3 h-3" /> Paused</Badge>;
+    case "in_review": return <Badge className={`${t.badge} gap-1`}><Clock className="w-3 h-3" /> In review</Badge>;
     case "error":     return <Badge className={`${t.badge} gap-1`}><AlertTriangle className="w-3 h-3" /> Launch failed</Badge>;
     default:          return <Badge className={`${t.badge} gap-1`}><FileText className="w-3 h-3" /> Draft</Badge>;
   }
@@ -126,7 +127,7 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
 
   // Items that go in the ⋯ corner menu
   const canEdit = campaign.status === "paused" || campaign.status === "error" || campaign.status === "draft";
-  const canDelete = campaign.status !== "live" && campaign.status !== "launching";
+  const canDelete = campaign.status !== "live" && campaign.status !== "launching" && campaign.status !== "in_review";
 
   // Primary action shown in the bottom-right of the card
   const primaryAction = campaign.status === "live" ? (
@@ -141,6 +142,12 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
         <ExternalLink className="w-3.5 h-3.5" /> Activate in Ads Manager
       </a>
     </Button>
+  ) : campaign.status === "in_review" ? (
+    <Button variant="outline" size="sm" className="gap-1.5 bg-background shrink-0" asChild>
+      <a href={adsManagerUrl(adAccountId, sharedCampaignId ?? campaign.partnerCampaignId)} target="_blank" rel="noopener noreferrer">
+        <ExternalLink className="w-3.5 h-3.5" /> View in Ads Manager
+      </a>
+    </Button>
   ) : campaign.status === "error" ? (
     <Button size="sm" variant="outline" className="gap-1.5 bg-background shrink-0" disabled={launch.isPending} onClick={() => launch.mutate({ id: campaign.id })}>
       {launch.isPending ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Retrying…</> : <><RefreshCw className="w-3.5 h-3.5" />Retry</>}
@@ -153,9 +160,11 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
       {campaign.errorMessage.length > 100 ? campaign.errorMessage.slice(0, 100) + "…" : campaign.errorMessage}
     </span>
   ) : campaign.status === "paused" ? (
-    <span className={`text-xs font-medium ${theme.label}`}>Ready to go live</span>
+    <span className={`text-xs font-medium ${theme.label}`}>Activate in Ads Manager to go live</span>
+  ) : campaign.status === "in_review" ? (
+    <span className={`text-xs font-medium ${theme.label}`}>Meta is reviewing · usually live within 24 h</span>
   ) : campaign.status === "launching" ? (
-    <span className="text-xs text-muted-foreground">Under review · usually live within minutes</span>
+    <span className="text-xs text-muted-foreground">Submitting to Meta…</span>
   ) : campaign.status === "live" ? (
     <LeadDeliveryPill status={campaign.leadDeliveryStatus} />
   ) : null;
@@ -261,13 +270,15 @@ export function Campaigns() {
   });
 
   const hasSyncable = campaigns?.some(
-    (c) => c.status === "live" || c.status === "launching" || c.status === "paused",
+    (c) => c.status === "live" || c.status === "launching" || c.status === "paused" || c.status === "in_review",
   );
 
-  const liveCount    = campaigns?.filter((c) => c.status === "live").length ?? 0;
-  const draftCount   = campaigns?.filter((c) => c.status === "paused").length ?? 0;
-  const failedCount  = campaigns?.filter((c) => c.status === "error").length ?? 0;
-  const totalCount   = campaigns?.length ?? 0;
+  const liveCount     = campaigns?.filter((c) => c.status === "live").length ?? 0;
+  const pausedCount   = campaigns?.filter((c) => c.status === "paused").length ?? 0;
+  const inReviewCount = campaigns?.filter((c) => c.status === "in_review").length ?? 0;
+  const draftCount    = campaigns?.filter((c) => c.status === "draft").length ?? 0;
+  const failedCount   = campaigns?.filter((c) => c.status === "error").length ?? 0;
+  const totalCount    = campaigns?.length ?? 0;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -283,6 +294,16 @@ export function Campaigns() {
               {liveCount > 0 && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
                   ● {liveCount} live
+                </span>
+              )}
+              {inReviewCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+                  ◌ {inReviewCount} in review
+                </span>
+              )}
+              {pausedCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                  {pausedCount} paused
                 </span>
               )}
               {draftCount > 0 && (

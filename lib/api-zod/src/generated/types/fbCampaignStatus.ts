@@ -14,5 +14,6 @@ export const FbCampaignStatus = {
   launching: 'launching',
   live: 'live',
   paused: 'paused',
+  in_review: 'in_review',
   error: 'error',
 } as const;

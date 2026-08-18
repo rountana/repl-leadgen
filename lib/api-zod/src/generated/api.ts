@@ -450,7 +450,7 @@ export const ListFbCampaignsResponseItem = zod.object({
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'in_review', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -470,7 +470,6 @@ export const createFbCampaignBodyTargetingAgeMaxMax = 65;
 
 export const createFbCampaignBodyTargetingGenderDefault = `all`;
 export const createFbCampaignBodyTargetingInterestsMax = 5;
-
 
 
 export const CreateFbCampaignBody = zod.object({
@@ -507,7 +506,7 @@ export const CreateFbCampaignResponse = zod.object({
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'in_review', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -550,7 +549,7 @@ export const GetFbCampaignResponse = zod.object({
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'in_review', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -572,7 +571,6 @@ export const updateFbCampaignBodyTargetingAgeMaxMin = 18;
 export const updateFbCampaignBodyTargetingAgeMaxMax = 65;
 
 export const updateFbCampaignBodyTargetingInterestsMax = 5;
-
 
 
 export const UpdateFbCampaignBody = zod.object({
@@ -609,7 +607,7 @@ export const UpdateFbCampaignResponse = zod.object({
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'in_review', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -653,7 +651,7 @@ export const LaunchFbCampaignResponse = zod.object({
   "partnerCampaignId": zod.string().nullish(),
   "partnerAdSetId": zod.string().nullish(),
   "partnerAdId": zod.string().nullish(),
-  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'error']),
+  "status": zod.enum(['draft', 'launching', 'live', 'paused', 'in_review', 'error']),
   "leadDeliveryStatus": zod.enum(['unverified', 'active', 'failed']),
   "errorMessage": zod.string().nullish(),
   "createdAt": zod.string(),
@@ -703,5 +701,4 @@ export const AiExtractBrandingResponse = zod.object({
   "tagline": zod.string().nullish(),
   "primaryColor": zod.string().nullish()
 })
-
 
