@@ -23,13 +23,6 @@ export interface UserProfileUpdate {
   logoUrl?: string | null;
 }
 
-export interface UserProfileUpdate {
-  businessName?: string | null;
-  businessLocation?: string | null;
-  industry?: string | null;
-  logoUrl?: string | null;
-}
-
 export interface HealthStatus {
   status: string;
 }
@@ -453,6 +446,30 @@ export interface FbMinimumBudget {
   formatted: string | null;
 }
 
+export interface FbAdTemplate {
+  id: number;
+  userId: string;
+  name: string;
+  headline: string;
+  bodyText: string;
+  imageUrl: string;
+  /** @nullable */
+  suggestedDailyBudget?: number | null;
+  /** @nullable */
+  suggestedRadiusMiles?: number | null;
+  createdAt: string;
+}
+
+export interface FbAdTemplateInput {
+  /** @maxLength 60 */
+  name: string;
+  headline: string;
+  bodyText: string;
+  imageUrl: string;
+  suggestedDailyBudget?: number;
+  suggestedRadiusMiles?: number;
+}
+
 export interface FbLeadWebhookPayload {
   campaignId: number;
   firstName: string;
@@ -472,3 +489,4 @@ export type SyncFbCampaigns200 = {
   synced: number;
   updated: number;
 };
+

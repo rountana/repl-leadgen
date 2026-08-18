@@ -472,6 +472,7 @@ export const createFbCampaignBodyTargetingGenderDefault = `all`;
 export const createFbCampaignBodyTargetingInterestsMax = 5;
 
 
+
 export const CreateFbCampaignBody = zod.object({
   "headline": zod.string(),
   "bodyText": zod.string(),
@@ -571,6 +572,7 @@ export const updateFbCampaignBodyTargetingAgeMaxMin = 18;
 export const updateFbCampaignBodyTargetingAgeMaxMax = 65;
 
 export const updateFbCampaignBodyTargetingInterestsMax = 5;
+
 
 
 export const UpdateFbCampaignBody = zod.object({
@@ -673,6 +675,62 @@ export const GetFbCampaignLeadStatusResponse = zod.object({
 
 
 /**
+ * @summary List the current user's saved personal ad templates
+ */
+export const ListFbAdTemplatesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "headline": zod.string(),
+  "bodyText": zod.string(),
+  "imageUrl": zod.string(),
+  "suggestedDailyBudget": zod.number().nullish(),
+  "suggestedRadiusMiles": zod.number().nullish(),
+  "createdAt": zod.string()
+})
+export const ListFbAdTemplatesResponse = zod.array(ListFbAdTemplatesResponseItem)
+
+
+/**
+ * @summary Save a personal ad template
+ */
+export const createFbAdTemplateBodyNameMax = 60;
+
+
+
+export const CreateFbAdTemplateBody = zod.object({
+  "name": zod.string().max(createFbAdTemplateBodyNameMax),
+  "headline": zod.string(),
+  "bodyText": zod.string(),
+  "imageUrl": zod.string(),
+  "suggestedDailyBudget": zod.number().optional(),
+  "suggestedRadiusMiles": zod.number().optional()
+})
+
+export const CreateFbAdTemplateResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "name": zod.string(),
+  "headline": zod.string(),
+  "bodyText": zod.string(),
+  "imageUrl": zod.string(),
+  "suggestedDailyBudget": zod.number().nullish(),
+  "suggestedRadiusMiles": zod.number().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a personal ad template
+ */
+export const DeleteFbAdTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteFbAdTemplateResponse = zod.void()
+
+
+/**
  * @summary Receive an inbound lead from the partner (public, no auth)
  */
 export const ReceiveFbLeadBody = zod.object({
@@ -701,4 +759,5 @@ export const AiExtractBrandingResponse = zod.object({
   "tagline": zod.string().nullish(),
   "primaryColor": zod.string().nullish()
 })
+
 

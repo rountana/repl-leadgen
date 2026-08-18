@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, ArrowRight, PenLine, Star } from "lucide-react";
+import { Sparkles, ArrowRight, PenLine, Star, Trash2, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,10 +8,15 @@ import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/data/campaignTempla
 import {
   useGetProfile,
   useListIndustries,
+  useListFbAdTemplates,
+  useDeleteFbAdTemplate,
   getGetProfileQueryKey,
   getListIndustriesQueryKey,
+  getListFbAdTemplatesQueryKey,
   type FbAdDraft,
+  type FbAdTemplate,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TemplateGalleryProps {
   onSelectTemplate: (draft: FbAdDraft, budget: number, radius: number) => void;
@@ -25,6 +30,9 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
   // Detect user's industry so we can surface the matching template first
   const { data: profile } = useGetProfile({ query: { queryKey: getGetProfileQueryKey() } });
   const { data: industries = [] } = useListIndustries({ query: { queryKey: getListIndustriesQueryKey() } });
+  const { data: myTemplates = [] } = useListFbAdTemplates({ query: { queryKey: getListFbAdTemplatesQueryKey() } });
+  const deleteTemplate = useDeleteFbAdTemplate();
+  const queryClient = useQueryClient();
 
   const userSlug = industries.find((i) => i.name === profile?.industry)?.slug ?? null;
 
@@ -132,6 +140,82 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
     );
   };
 
+  const handleDeleteMyTemplate = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await deleteTemplate.mutateAsync({ id });
+    await queryClient.invalidateQueries({ queryKey: getListFbAdTemplatesQueryKey() });
+    if (selected === `my-${id}`) setSelected(null);
+  };
+
+  const renderMyTemplateCard = (template: FbAdTemplate) => {
+    const key = `my-${template.id}`;
+    const isSelected = selected === key;
+    return (
+      <Card
+        key={template.id}
+        className={cn(
+          "cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
+          isSelected && "border-primary ring-2 ring-primary/20 shadow-md",
+        )}
+        onClick={() => setSelected(isSelected ? null : key)}
+      >
+        {/* Image */}
+        <div className="relative h-36 bg-muted overflow-hidden">
+          {template.imageUrl ? (
+            <img src={template.imageUrl} alt={template.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <BookmarkCheck className="w-8 h-8 text-muted-foreground/40" />
+            </div>
+          )}
+          <div className="absolute top-2 left-2">
+            <Badge className="bg-black/60 text-white border-transparent text-xs backdrop-blur-sm gap-1">
+              <BookmarkCheck className="w-2.5 h-2.5" /> Saved
+            </Badge>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => handleDeleteMyTemplate(template.id, e)}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-red-500/80 transition-colors"
+            title="Delete template"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          {isSelected && (
+            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          )}
+        </div>
+        <CardContent className="p-4 space-y-3">
+          <div>
+            <p className="font-semibold text-sm leading-snug">{template.name}</p>
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.headline}</p>
+          </div>
+          {isSelected && (
+            <Button
+              size="sm"
+              className="w-full gap-2 mt-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectTemplate(
+                  { headline: template.headline, bodyText: template.bodyText, imageUrl: template.imageUrl },
+                  template.suggestedDailyBudget ?? 10,
+                  template.suggestedRadiusMiles ?? 10,
+                );
+              }}
+            >
+              Use This Template
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,6 +232,18 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           You can edit everything before launching.
         </p>
       </div>
+
+      {/* My templates section */}
+      {myTemplates.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            My saved templates
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {myTemplates.map((t) => renderMyTemplateCard(t))}
+          </div>
+        </div>
+      )}
 
       {/* Recommended section (only shown when we have a match) */}
       {recommended.length > 0 && (

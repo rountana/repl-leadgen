@@ -8,3 +8,4 @@ export * from "./fbConnectionCampaigns";
 export * from "./fbCampaigns";
 export * from "./fbLeads";
 export * from "./userProfiles";
+export * from "./fbAdTemplates";

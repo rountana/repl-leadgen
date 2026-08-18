@@ -14,6 +14,8 @@ export * from './errorResponse';
 export * from './example';
 export * from './fbAdDraft';
 export * from './fbAdGenerationInput';
+export * from './fbAdTemplate';
+export * from './fbAdTemplateInput';
 export * from './fbCampaign';
 export * from './fbCampaignInput';
 export * from './fbCampaignInputTargetingGender';

@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, or } from "drizzle-orm";
 import { createHmac, timingSafeEqual } from "crypto";
 import { getAuth } from "@clerk/express";
-import { db, fbConnectionsTable, fbConnectionCampaignsTable, fbCampaignsTable, fbLeadsTable } from "@workspace/db";
+import { db, fbConnectionsTable, fbConnectionCampaignsTable, fbCampaignsTable, fbLeadsTable, fbAdTemplatesTable } from "@workspace/db";
 import {
   CreateFbConnectionBody,
   GenerateFbAdBody,
@@ -12,6 +12,7 @@ import {
   LaunchFbCampaignParams,
   GetFbCampaignLeadStatusParams,
   ReceiveFbLeadBody,
+  CreateFbAdTemplateBody,
 } from "@workspace/api-zod";
 import { activeFbPartnerAdapter, getMinimumDailyBudget, formatBudget } from "../lib/fbPartnerAdapter";
 import { generateFbAd } from "../lib/fbAdGenerator";
@@ -817,6 +818,45 @@ router.post("/fb/webhooks/leads", async (req: any, res): Promise<void> => {
   // Do not log PII (email, name, phone) — log only the campaign reference
   req.log.info({ campaignId }, "FB inbound lead received");
   res.json({ status: "ok" });
+});
+
+// ── Personal ad templates ──────────────────────────────────────────────────
+
+router.get("/fb/ad-templates", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+  const templates = await db
+    .select()
+    .from(fbAdTemplatesTable)
+    .where(eq(fbAdTemplatesTable.userId, userId))
+    .orderBy(fbAdTemplatesTable.createdAt);
+  res.json(templates);
+});
+
+router.post("/fb/ad-templates", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+  const parsed = CreateFbAdTemplateBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid template data." });
+    return;
+  }
+  const { name, headline, bodyText, imageUrl, suggestedDailyBudget, suggestedRadiusMiles } = parsed.data;
+  const [template] = await db
+    .insert(fbAdTemplatesTable)
+    .values({ userId, name, headline, bodyText, imageUrl, suggestedDailyBudget, suggestedRadiusMiles })
+    .returning();
+  res.status(201).json(template);
+});
+
+router.delete("/fb/ad-templates/:id", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+  const id = Number(req.params.id);
+  if (!id) { res.status(400).json({ error: "Invalid template ID." }); return; }
+  const [deleted] = await db
+    .delete(fbAdTemplatesTable)
+    .where(and(eq(fbAdTemplatesTable.id, id), eq(fbAdTemplatesTable.userId, userId)))
+    .returning();
+  if (!deleted) { res.status(404).json({ error: "Template not found." }); return; }
+  res.sendStatus(204);
 });
 
 export default router;

@@ -28,6 +28,8 @@ import type {
   Example,
   FbAdDraft,
   FbAdGenerationInput,
+  FbAdTemplate,
+  FbAdTemplateInput,
   FbCampaign,
   FbCampaignInput,
   FbCampaignUpdate,
@@ -2231,6 +2233,225 @@ export function useGetFbCampaignLeadStatus<TData = Awaited<ReturnType<typeof get
 
 
 
+
+export const getListFbAdTemplatesUrl = () => {
+
+
+
+
+  return `/api/fb/ad-templates`
+}
+
+/**
+ * @summary List the current user's saved personal ad templates
+ */
+export const listFbAdTemplates = async ( options?: Parameters<typeof customFetch>[1]): Promise<FbAdTemplate[]> => {
+
+  return customFetch<FbAdTemplate[]>(getListFbAdTemplatesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListFbAdTemplatesQueryKey = () => {
+    return [
+    `/api/fb/ad-templates`
+    ] as const;
+    }
+
+
+export const getListFbAdTemplatesQueryOptions = <TData = Awaited<ReturnType<typeof listFbAdTemplates>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFbAdTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListFbAdTemplatesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listFbAdTemplates>>> = ({ signal }) => listFbAdTemplates({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listFbAdTemplates>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListFbAdTemplatesQueryResult = NonNullable<Awaited<ReturnType<typeof listFbAdTemplates>>>
+export type ListFbAdTemplatesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the current user's saved personal ad templates
+ */
+
+export function useListFbAdTemplates<TData = Awaited<ReturnType<typeof listFbAdTemplates>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listFbAdTemplates>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListFbAdTemplatesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateFbAdTemplateUrl = () => {
+
+
+
+
+  return `/api/fb/ad-templates`
+}
+
+/**
+ * @summary Save a personal ad template
+ */
+export const createFbAdTemplate = async (fbAdTemplateInput: FbAdTemplateInput, options?: Parameters<typeof customFetch>[1]): Promise<FbAdTemplate> => {
+
+  return customFetch<FbAdTemplate>(getCreateFbAdTemplateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(fbAdTemplateInput)
+  }
+);}
+
+
+
+
+
+export const getCreateFbAdTemplateMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFbAdTemplate>>, TError,{data: BodyType<FbAdTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createFbAdTemplate>>, TError,{data: BodyType<FbAdTemplateInput>}, TContext> => {
+
+const mutationKey = ['createFbAdTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createFbAdTemplate>>, {data: BodyType<FbAdTemplateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createFbAdTemplate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateFbAdTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof createFbAdTemplate>>>
+    export type CreateFbAdTemplateMutationBody = BodyType<FbAdTemplateInput>
+    export type CreateFbAdTemplateMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save a personal ad template
+ */
+export const useCreateFbAdTemplate = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createFbAdTemplate>>, TError,{data: BodyType<FbAdTemplateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createFbAdTemplate>>,
+        TError,
+        {data: BodyType<FbAdTemplateInput>},
+        TContext
+      > => {
+      return useMutation(getCreateFbAdTemplateMutationOptions(options));
+    }
+
+export const getDeleteFbAdTemplateUrl = (id: number,) => {
+
+
+
+
+  return `/api/fb/ad-templates/${id}`
+}
+
+/**
+ * @summary Delete a personal ad template
+ */
+export const deleteFbAdTemplate = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteFbAdTemplateUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteFbAdTemplateMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFbAdTemplate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteFbAdTemplate>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteFbAdTemplate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteFbAdTemplate>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteFbAdTemplate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteFbAdTemplateMutationResult = NonNullable<Awaited<ReturnType<typeof deleteFbAdTemplate>>>
+
+    export type DeleteFbAdTemplateMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Delete a personal ad template
+ */
+export const useDeleteFbAdTemplate = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteFbAdTemplate>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteFbAdTemplate>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteFbAdTemplateMutationOptions(options));
+    }
 
 export const getReceiveFbLeadUrl = () => {
 

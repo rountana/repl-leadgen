@@ -15,6 +15,8 @@ import {
   ChevronUp,
   Magnet,
   Link2,
+  BookmarkPlus,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,9 +29,12 @@ import {
   useGenerateFbAd,
   useListIndustries,
   useGetProfile,
+  useCreateFbAdTemplate,
   getListIndustriesQueryKey,
   getGetProfileQueryKey,
+  getListFbAdTemplatesQueryKey,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { LeadMagnetPicker, type SelectedMagnet } from "@/components/LeadMagnetPicker";
 
 interface AdPreviewProps {
@@ -60,6 +65,14 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   const [selectedMagnet, setSelectedMagnet] = useState<SelectedMagnet | null>(null);
   // Keep this visible for new campaigns so the HVCG lead-magnet flow is easy to discover.
   const [magnetOpen, setMagnetOpen] = useState(true);
+
+  // ── Save-as-template state ─────────────────────────────────────────────
+  const [templatePanelOpen, setTemplatePanelOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateSaved, setTemplateSaved] = useState(false);
+
+  const queryClient = useQueryClient();
+  const createTemplate = useCreateFbAdTemplate();
 
   const imageInputRef = useRef<HTMLInputElement>(null);
 
@@ -424,6 +437,74 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
             <p className="text-xs text-center text-muted-foreground">
               Add a headline and body copy to continue.
             </p>
+          )}
+
+          {/* Save as personal template */}
+          {canContinue && (
+            <div className="border border-border rounded-lg overflow-hidden">
+              {!templatePanelOpen ? (
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+                  onClick={() => {
+                    setTemplatePanelOpen(true);
+                    setTemplateName(headline.slice(0, 60));
+                    setTemplateSaved(false);
+                  }}
+                >
+                  <BookmarkPlus className="w-4 h-4 shrink-0" />
+                  Save as personal template
+                </button>
+              ) : templateSaved ? (
+                <div className="flex items-center gap-2 px-4 py-2.5 text-sm text-green-700 bg-green-50">
+                  <Check className="w-4 h-4 shrink-0" />
+                  Template saved — it'll appear in your gallery next time.
+                </div>
+              ) : (
+                <div className="p-3 space-y-2 bg-secondary/20">
+                  <p className="text-xs font-medium text-muted-foreground">Name this template</p>
+                  <div className="flex gap-2">
+                    <input
+                      autoFocus
+                      type="text"
+                      maxLength={60}
+                      value={templateName}
+                      onChange={(e) => setTemplateName(e.target.value)}
+                      placeholder="e.g. Summer promo copy"
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") setTemplatePanelOpen(false);
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      disabled={!templateName.trim() || createTemplate.isPending}
+                      onClick={async () => {
+                        await createTemplate.mutateAsync({
+                          data: {
+                            name: templateName.trim(),
+                            headline,
+                            bodyText,
+                            imageUrl,
+                          },
+                        });
+                        await queryClient.invalidateQueries({ queryKey: getListFbAdTemplatesQueryKey() });
+                        setTemplateSaved(true);
+                      }}
+                    >
+                      {createTemplate.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Save"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setTemplatePanelOpen(false)}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

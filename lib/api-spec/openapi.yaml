@@ -591,6 +591,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /fb/ad-templates:
+    get:
+      operationId: listFbAdTemplates
+      tags: [fb]
+      summary: List the current user's saved personal ad templates
+      responses:
+        "200":
+          description: List of personal ad templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FbAdTemplate"
+    post:
+      operationId: createFbAdTemplate
+      tags: [fb]
+      summary: Save a personal ad template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FbAdTemplateInput"
+      responses:
+        "201":
+          description: Saved template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FbAdTemplate"
+
+  /fb/ad-templates/{id}:
+    delete:
+      operationId: deleteFbAdTemplate
+      tags: [fb]
+      summary: Delete a personal ad template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /fb/webhooks/leads:
     post:
       operationId: receiveFbLead
@@ -1201,6 +1254,58 @@ components:
         - minDailyBudgetDollars
         - currency
         - formatted
+
+    FbAdTemplate:
+      type: object
+      properties:
+        id:
+          type: number
+        userId:
+          type: string
+        name:
+          type: string
+        headline:
+          type: string
+        bodyText:
+          type: string
+        imageUrl:
+          type: string
+        suggestedDailyBudget:
+          type: ["number", "null"]
+        suggestedRadiusMiles:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - name
+        - headline
+        - bodyText
+        - imageUrl
+        - createdAt
+
+    FbAdTemplateInput:
+      type: object
+      required:
+        - name
+        - headline
+        - bodyText
+        - imageUrl
+      properties:
+        name:
+          type: string
+          maxLength: 60
+        headline:
+          type: string
+        bodyText:
+          type: string
+        imageUrl:
+          type: string
+        suggestedDailyBudget:
+          type: number
+        suggestedRadiusMiles:
+          type: number
 
     FbLeadWebhookPayload:
       type: object
