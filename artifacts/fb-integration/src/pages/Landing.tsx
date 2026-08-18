@@ -197,10 +197,10 @@ export function Landing() {
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Built for professionals who live and die by leads.
+                If one new client makes your month, this is for you.
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                One new client can be worth thousands. Addlaunch helps high-value service professionals run local Facebook ads that generate real inquiries — without wasting hours in Ads Manager.
+                Facebook has millions of people in your area. Addlaunch helps you put the right offer in front of the right locals — without needing to figure out Ads Manager.
               </p>
             </div>
 
@@ -235,9 +235,9 @@ export function Landing() {
         {/* ── CTA ──────────────────────────────────────────────────────── */}
         <section className="py-24 bg-primary text-primary-foreground text-center">
           <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to fill your pipeline?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Give it a try — free to start.</h2>
             <p className="text-xl opacity-90 mb-10">
-              Join professionals running smarter Facebook ads with Addlaunch — and capturing more leads with Addpage.
+              Your first ad takes about five minutes. No agency, no contract, no complicated setup.
             </p>
             <Button
               size="lg"
