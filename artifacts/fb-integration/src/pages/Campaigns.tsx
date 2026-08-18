@@ -52,6 +52,11 @@ function adsManagerUrl(adAccountId?: string | null, partnerCampaignId?: string |
   return "https://adsmanager.facebook.com/adsmanager/manage/campaigns";
 }
 
+/** Real Meta ad accounts use the act_<digits> format. */
+function isRealAdAccountId(id: string | null | undefined): boolean {
+  return /^act_\d+$/.test(id ?? "");
+}
+
 // ─── Shared state palettes ───────────────────────────────────────────────────
 // Three semantic states each get one consistent colour across every surface.
 const STATE_THEME = {
@@ -347,6 +352,44 @@ export function Campaigns() {
           </Button>
         </div>
       </div>
+
+      {/* Current Facebook connection — compact and always close to the ads it controls */}
+      {connection && (
+        isRealAdAccountId(connection.adAccountId) ? (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {connection.fbPageName || "Facebook Page"}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span className="truncate">
+                {connection.adAccountName || connection.adAccountId}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 font-medium text-primary underline-offset-4 hover:underline"
+              onClick={() => setLocation("/connect")}
+            >
+              Switch account
+            </button>
+          </div>
+        ) : (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span>Ad account needs reconnecting</span>
+            </div>
+            <button
+              type="button"
+              className="shrink-0 font-medium text-amber-900 underline underline-offset-4 hover:text-amber-950"
+              onClick={() => setLocation("/connect")}
+            >
+              Reconnect
+            </button>
+          </div>
+        )
+      )}
 
       {/* Content */}
       {isLoading ? (
