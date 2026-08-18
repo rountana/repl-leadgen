@@ -53,7 +53,7 @@ A web app that lets small business owners create professional lead capture pages
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Use the user's own `OPENAI_API_KEY` secret for future project work that requires OpenAI access.
 
 ## Gotchas
 
