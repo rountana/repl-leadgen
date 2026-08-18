@@ -197,7 +197,7 @@ export function Landing() {
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                If one new client makes your month, this is for you.
+                Discover new customers and opportunities—minus the heavy lifting
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Facebook has millions of people in your area. Addlaunch helps you put the right offer in front of the right locals — without needing to figure out Ads Manager.
