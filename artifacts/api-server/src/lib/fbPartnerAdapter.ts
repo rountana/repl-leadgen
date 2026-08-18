@@ -298,6 +298,68 @@ async function resolveMetaInterests(
   return resolved;
 }
 
+/**
+ * Filter out interest IDs that Meta's targetingsearch returned but that are
+ * no longer valid for use in ad targeting.
+ *
+ * Meta's adinterestvalid endpoint checks a list of interest objects and
+ * returns only the ones currently usable. Any IDs not in the response are
+ * silently dropped — the ad set will be created without them rather than
+ * failing entirely.
+ *
+ * This prevents the "Interests with ID X is invalid" error that occurs when
+ * targetingsearch returns deprecated IDs.
+ */
+async function filterValidMetaInterests(
+  actId: string,
+  interests: Array<{ id: string; name: string }>,
+  accessToken: string,
+): Promise<Array<{ id: string; name: string }>> {
+  if (interests.length === 0) return interests;
+
+  try {
+    const interestList = JSON.stringify(interests.map((i) => ({ id: i.id })));
+    const result = await graphGet(
+      `/${actId}/adinterestvalid`,
+      { interest_list: interestList },
+      accessToken,
+    );
+    const validData = Array.isArray(result?.data) ? result.data : [];
+    const validIds = new Set(validData.map((item: any) => String(item.id)));
+    const filtered = interests.filter((i) => validIds.has(i.id));
+    const dropped = interests.filter((i) => !validIds.has(i.id));
+    if (dropped.length > 0) {
+      logger.warn(
+        { droppedInterests: dropped },
+        "Meta: dropped deprecated interest IDs that failed adinterestvalid — ad will run without them",
+      );
+    }
+    return filtered;
+  } catch (err) {
+    // adinterestvalid is a best-effort check. If it fails (e.g. the endpoint
+    // is unavailable), proceed with the original list — the ad-set POST will
+    // catch any remaining invalid IDs via the retry logic below.
+    logger.warn({ err }, "Meta: adinterestvalid check failed — proceeding without pre-validation");
+    return interests;
+  }
+}
+
+/**
+ * Parse invalid interest IDs out of a Meta error message.
+ * Handles both the raw error format ("Interests with ID 123 is invalid")
+ * and the user-facing variant Meta sometimes wraps it in.
+ */
+function parseInvalidInterestIds(errorMessage: string): Set<string> {
+  const ids = new Set<string>();
+  // Match patterns like "Interests with ID 103153189725242 is invalid"
+  for (const match of errorMessage.matchAll(/Interests? with ID[s]? (\d+(?:,\s*\d+)*) (?:is|are) invalid/gi)) {
+    for (const id of match[1].split(/,\s*/)) {
+      ids.add(id.trim());
+    }
+  }
+  return ids;
+}
+
 // ── Ad-set payload builder ─────────────────────────────────────────────────
 
 export interface AdSetPayloadParams {
@@ -520,10 +582,14 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       ? await resolveMetaInterests(actId, targetingInterests, accessToken)
       : [];
 
-    // Budget lives here (ASBO mode) — each ad has its own daily_budget
-    // independent of other ads under the same shared campaign.
-    const adSetData = await graphPost(
-      `/${actId}/adsets`,
+    // Pre-validate: drop any IDs that targetingsearch returned but Meta no
+    // longer accepts for targeting. This prevents the "Interests with ID X
+    // is invalid" error when interests are deprecated after we indexed them.
+    const validInterests = resolvedInterests.length > 0
+      ? await filterValidMetaInterests(actId, resolvedInterests, accessToken)
+      : [];
+
+    const buildPayload = (interests: Array<{ id: string; name: string }>) =>
       buildAdSetPayload({
         headline,
         partnerCampaignId,
@@ -534,10 +600,30 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
         targetingGender,
         targetingLatitude,
         targetingLongitude,
-        resolvedInterests,
-      }),
-      accessToken,
-    );
+        resolvedInterests: interests,
+      });
+
+    // Budget lives here (ASBO mode) — each ad has its own daily_budget
+    // independent of other ads under the same shared campaign.
+    // Retry safety net: if Meta still rejects with invalid interest IDs
+    // (e.g. an ID became invalid between the validation check and the POST),
+    // parse the bad IDs out, strip them, and retry once without them.
+    let adSetData: any;
+    try {
+      adSetData = await graphPost(`/${actId}/adsets`, buildPayload(validInterests), accessToken);
+    } catch (err) {
+      const invalidIds = err instanceof Error ? parseInvalidInterestIds(err.message) : new Set<string>();
+      if (invalidIds.size > 0 && validInterests.length > 0) {
+        const retryInterests = validInterests.filter((i) => !invalidIds.has(i.id));
+        logger.warn(
+          { invalidIds: [...invalidIds], retryInterests },
+          "Meta: invalid interest IDs in ad-set POST error — retrying without them",
+        );
+        adSetData = await graphPost(`/${actId}/adsets`, buildPayload(retryInterests), accessToken);
+      } else {
+        throw err;
+      }
+    }
     const adSetId: string = adSetData.id;
     logger.info({ adSetId, partnerCampaignId }, "Meta: ad set created");
 

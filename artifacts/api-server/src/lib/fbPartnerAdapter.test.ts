@@ -327,17 +327,19 @@ describe("createAd", () => {
   test("uses interest IDs resolved from Meta targeting search", async () => {
     // 1. minimum_budgets
     mockFetch({ data: { data: [{ currency: "USD", min_daily_budget_high_freq: 100 }] } });
-    // 2. targetingsearch for "Coffee"  (resolveMetaInterests runs before adsets POST)
+    // 2. targetingsearch for "Coffee"
     mockFetch({ data: { data: [{ id: "6003020834693", name: "Coffee" }] } });
-    // 3. ad set
+    // 3. adinterestvalid — confirms the resolved ID is still valid
+    mockFetch({ data: { data: [{ id: "6003020834693", name: "Coffee" }] } });
+    // 4. ad set
     mockFetch({ data: { id: AD_SET_ID } });
-    // 4. instagram accounts (ad account edge — empty)
+    // 5. instagram accounts (ad account edge — empty)
     mockFetch({ data: { data: [] } });
-    // 5. instagram accounts (page edge — empty)
+    // 6. instagram accounts (page edge — empty)
     mockFetch({ data: { data: [] } });
-    // 6. creative
+    // 7. creative
     mockFetch({ data: { id: CREATIVE_ID } });
-    // 7. ad
+    // 8. ad
     mockFetch({ data: { id: AD_ID } });
 
     await metaFbPartnerAdapter.createAd({
@@ -351,6 +353,75 @@ describe("createAd", () => {
     assert.ok(flexSpec, "flexible_spec must be present when interests are provided");
     const interests = flexSpec.interests as Array<{ id: string; name: string }>;
     assert.equal(interests[0].id, "6003020834693");
+  });
+
+  test("filters out deprecated interest IDs flagged by adinterestvalid", async () => {
+    // 1. minimum_budgets
+    mockFetch({ data: { data: [{ currency: "USD", min_daily_budget_high_freq: 100 }] } });
+    // 2. targetingsearch returns an ID that's now invalid
+    mockFetch({ data: { data: [{ id: "103153189725242", name: "Fitness and wellness" }] } });
+    // 3. adinterestvalid returns empty — ID is not valid anymore
+    mockFetch({ data: { data: [] } });
+    // 4. ad set — created without any flexible_spec (no valid interests)
+    mockFetch({ data: { id: AD_SET_ID } });
+    // 5. instagram (ad account edge)
+    mockFetch({ data: { data: [] } });
+    // 6. instagram (page edge)
+    mockFetch({ data: { data: [] } });
+    // 7. creative
+    mockFetch({ data: { id: CREATIVE_ID } });
+    // 8. ad
+    mockFetch({ data: { id: AD_ID } });
+
+    const result = await metaFbPartnerAdapter.createAd({
+      ...BASE_CREATE_AD_PARAMS,
+      targetingInterests: ["Fitness and wellness"],
+    });
+
+    assert.equal(result.partnerAdSetId, AD_SET_ID, "ad must still be created even when interest is invalid");
+    const adSetCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/adsets`))!;
+    const targeting = adSetCall.body?.targeting as Record<string, unknown>;
+    assert.ok(
+      !("flexible_spec" in targeting),
+      "flexible_spec must be omitted when all interest IDs are filtered out by adinterestvalid",
+    );
+  });
+
+  test("retries ad-set POST without invalid interest IDs when Meta error names them", async () => {
+    // 1. minimum_budgets
+    mockFetch({ data: { data: [{ currency: "USD", min_daily_budget_high_freq: 100 }] } });
+    // 2. targetingsearch — interest resolves to an ID
+    mockFetch({ data: { data: [{ id: "103153189725242", name: "Fitness and wellness" }] } });
+    // 3. adinterestvalid — passes pre-validation (race condition: ID became invalid after check)
+    mockFetch({ data: { data: [{ id: "103153189725242" }] } });
+    // 4. ad set POST fails with the invalid-interest error
+    mockFetch({ data: { error: { code: 100, message: "Interests with ID 103153189725242 is invalid." } } });
+    // 5. retry ad set POST without the bad ID — succeeds
+    mockFetch({ data: { id: AD_SET_ID } });
+    // 6. instagram (ad account edge)
+    mockFetch({ data: { data: [] } });
+    // 7. instagram (page edge)
+    mockFetch({ data: { data: [] } });
+    // 8. creative
+    mockFetch({ data: { id: CREATIVE_ID } });
+    // 9. ad
+    mockFetch({ data: { id: AD_ID } });
+
+    const result = await metaFbPartnerAdapter.createAd({
+      ...BASE_CREATE_AD_PARAMS,
+      targetingInterests: ["Fitness and wellness"],
+    });
+
+    assert.equal(result.partnerAdSetId, AD_SET_ID, "ad must succeed after retry");
+
+    // The retry call must omit the invalid interest
+    const adSetCalls = capturedCalls.filter((c) => c.url.includes(`/${ACT_ID}/adsets`) && c.method === "POST");
+    assert.equal(adSetCalls.length, 2, "must have made exactly two ad-set POST attempts");
+    const retryPayload = adSetCalls[1].body?.targeting as Record<string, unknown>;
+    assert.ok(
+      !("flexible_spec" in retryPayload),
+      "retry must omit flexible_spec when the only interest was invalid",
+    );
   });
 });
 
