@@ -280,7 +280,7 @@ export function LaunchConfirm({
               {isLocationError ? (
                 <Button
                   variant="outline"
-                  onClick={() => setLocation("/profile")}
+                  onClick={() => setLocation("/profile?returnTo=/campaign/new")}
                   className="gap-2"
                 >
                   <MapPin className="w-4 h-4" />
