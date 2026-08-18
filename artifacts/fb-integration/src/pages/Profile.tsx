@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Building2, MapPin, Briefcase, Upload, X, Check, Loader2, Info } from "lucide-react";
+import { Building2, MapPin, Briefcase, Upload, X, Check, Loader2, Info, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ export function Profile() {
   const [industryIsOther, setIndustryIsOther] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
   const [saved, setSaved] = useState(false);
+  const [addressWarning, setAddressWarning] = useState<string | null>(null);
 
   // Populate form when profile loads
   useEffect(() => {
@@ -74,7 +75,7 @@ export function Profile() {
   };
 
   const handleSave = async () => {
-    await updateProfile.mutateAsync({
+    const result = await updateProfile.mutateAsync({
       data: {
         businessName: businessName || null,
         businessLocation: businessLocation || null,
@@ -82,6 +83,7 @@ export function Profile() {
         logoUrl: logoUrl || null,
       },
     });
+    setAddressWarning(result.addressWarning ?? null);
     queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -197,8 +199,17 @@ export function Profile() {
               id="location"
               placeholder="e.g. Austin, TX"
               value={businessLocation}
-              onChange={(e) => setBusinessLocation(e.target.value)}
+              onChange={(e) => {
+                setBusinessLocation(e.target.value);
+                setAddressWarning(null);
+              }}
             />
+            {addressWarning && (
+              <div className="flex items-start gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-xs">{addressWarning}</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

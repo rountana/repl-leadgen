@@ -3,6 +3,29 @@ import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, userProfilesTable, fbConnectionsTable, leadMagnetsTable } from "@workspace/db";
 
+/** Attempt to geocode an address via Nominatim. Returns true if at least one result is found. */
+async function isAddressGeocodable(address: string): Promise<boolean> {
+  try {
+    const params = new URLSearchParams({ q: address.trim(), format: "json", limit: "1" });
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      {
+        headers: {
+          "User-Agent": "HVCG-FbIntegration/1.0 (contact@hvcg.app)",
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+    if (!response.ok) return true; // don't penalise saves when Nominatim is unavailable
+    const results = (await response.json()) as Array<unknown>;
+    return results.length > 0;
+  } catch {
+    // Network/timeout — treat as "can't verify", don't block the save
+    return true;
+  }
+}
+
 const router = Router();
 
 function requireAuth(req: any, res: any, next: any) {
@@ -92,20 +115,36 @@ router.put("/profile", requireAuth, async (req: any, res): Promise<void> => {
     if (existing) { res.json(serializeProfile(existing)); return; }
   }
 
+  // Geocode check — run before the DB write so we can attach the warning to the response.
+  // The save always succeeds; this is a soft warning only.
+  let addressWarning: string | null = null;
+  const locationToCheck =
+    businessLocation !== undefined ? businessLocation : null;
+  if (locationToCheck && locationToCheck.trim() !== "") {
+    const geocodable = await isAddressGeocodable(locationToCheck);
+    if (!geocodable) {
+      addressWarning =
+        "We couldn't find this address on the map. Check for typos before creating an ad.";
+    }
+  }
+
+  let profile: any;
   if (existing) {
     const [updated] = await db
       .update(userProfilesTable)
       .set(Object.keys(data).length ? data : { businessName: null })
       .where(eq(userProfilesTable.userId, userId))
       .returning();
-    res.json(serializeProfile(updated));
+    profile = updated;
   } else {
     const [created] = await db
       .insert(userProfilesTable)
       .values({ userId, ...data })
       .returning();
-    res.json(serializeProfile(created));
+    profile = created;
   }
+
+  res.json({ ...serializeProfile(profile), addressWarning });
 });
 
 export default router;

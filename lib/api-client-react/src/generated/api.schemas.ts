@@ -12,6 +12,8 @@ export interface UserProfile {
   businessLocation?: string | null;
   industry?: string | null;
   logoUrl?: string | null;
+  /** Present when the saved businessLocation could not be geocoded. The profile is saved regardless — this is a soft warning only. */
+  addressWarning?: string | null;
   createdAt: string;
   updatedAt: string;
 }

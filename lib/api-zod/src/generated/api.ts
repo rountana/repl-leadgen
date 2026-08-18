@@ -18,6 +18,7 @@ export const GetProfileResponse = zod.object({
   "businessLocation": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
+  "addressWarning": zod.string().nullish().describe('Present when the saved businessLocation could not be geocoded. The profile is saved regardless — this is a soft warning only.\n'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -40,6 +41,7 @@ export const UpdateProfileResponse = zod.object({
   "businessLocation": zod.string().nullish(),
   "industry": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
+  "addressWarning": zod.string().nullish().describe('Present when the saved businessLocation could not be geocoded. The profile is saved regardless — this is a soft warning only.\n'),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
