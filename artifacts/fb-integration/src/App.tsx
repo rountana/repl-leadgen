@@ -71,6 +71,7 @@ const clerkAppearance = {
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-2xl font-bold tracking-tight text-foreground",
     headerSubtitle: "text-muted-foreground",
+    socialButtonsBlockButtonText: "text-foreground font-medium",
     formButtonPrimary: "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md",
     formFieldInput: "border-border focus:border-primary focus:ring-1 focus:ring-primary rounded-md bg-background text-foreground",
     main: "p-8",
