@@ -1,15 +1,55 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle2, Rocket, Target, LayoutDashboard, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Rocket,
+  Target,
+  LayoutDashboard,
+  Zap,
+  FileText,
+  Mail,
+  Phone,
+  User,
+  Star,
+} from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+const INDUSTRIES = [
+  {
+    emoji: "🏠",
+    label: "Home contractors",
+    desc: "Fill your schedule with nearby renovation and remodeling leads — before your competitors do.",
+  },
+  {
+    emoji: "🛡️",
+    label: "Insurance agents",
+    desc: "Generate exclusive home, auto, and life insurance leads in your territory without buying shared lists.",
+  },
+  {
+    emoji: "🏦",
+    label: "Mortgage lenders",
+    desc: "Reach first-time buyers and refinancers in your lending area at exactly the right moment.",
+  },
+  {
+    emoji: "📈",
+    label: "Financial advisors",
+    desc: "Attract local clients who are ready to talk about retirement, investment, and wealth planning.",
+  },
+  {
+    emoji: "✈️",
+    label: "Travel agents",
+    desc: "Promote vacation packages and group trips to nearby families and couples looking to get away.",
+  },
+];
 
 export function Landing() {
   return (
     <PublicShell>
       <div className="flex flex-col min-h-screen">
-        {/* Hero Section */}
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background -z-10" />
           <div className="container mx-auto px-4 text-center max-w-4xl relative z-10">
@@ -43,7 +83,7 @@ export function Landing() {
           </div>
         </section>
 
-        {/* How it works */}
+        {/* ── How it works ─────────────────────────────────────────────── */}
         <section className="py-24 bg-card border-y">
           <div className="container mx-auto px-4 max-w-5xl">
             <div className="text-center mb-16">
@@ -83,67 +123,121 @@ export function Landing() {
           </div>
         </section>
 
-        {/* Who it's for */}
+        {/* ── Addpage feature ──────────────────────────────────────────── */}
         <section className="py-24 bg-background">
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                  Built for business owners, not marketers.
+              {/* Left: mock lead capture page */}
+              <div className="relative order-2 md:order-1">
+                <div className="absolute inset-0 bg-violet-500/5 rounded-3xl transform -rotate-2" />
+                <div className="bg-card rounded-3xl border shadow-xl relative z-10 overflow-hidden">
+                  {/* Mock page header */}
+                  <div className="bg-gradient-to-br from-primary to-violet-600 px-6 py-8 text-white text-center">
+                    <div className="text-xs font-medium uppercase tracking-widest opacity-80 mb-2">Free Guide</div>
+                    <div className="text-lg font-bold leading-snug mb-1">5 Things Every Homeowner Should Know Before Hiring a Contractor</div>
+                    <div className="text-sm opacity-80 mt-2">Download instantly — no fluff, just practical advice.</div>
+                  </div>
+                  {/* Mock form */}
+                  <div className="p-6 space-y-3">
+                    <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2.5">
+                      <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground">Your name</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2.5">
+                      <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground">Email address</span>
+                    </div>
+                    <div className="flex items-center gap-2.5 rounded-lg border bg-background px-3 py-2.5">
+                      <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-muted-foreground">Phone (optional)</span>
+                    </div>
+                    <div className="w-full rounded-lg bg-primary py-2.5 text-center text-sm font-semibold text-primary-foreground">
+                      Send Me the Guide →
+                    </div>
+                    <p className="text-[10px] text-muted-foreground text-center">No spam. Unsubscribe any time.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: copy */}
+              <div className="order-1 md:order-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm font-medium mb-6">
+                  <FileText className="w-3.5 h-3.5" />
+                  Introducing Addpage
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
+                  No landing page?{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-primary">
+                    Build one in 60 seconds.
+                  </span>
                 </h2>
                 <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                  You know your customers better than any agency does. Now you can reach them on Facebook — without spending weeks learning Ads Manager.
+                  Every great ad needs somewhere to send people. Addpage lets you build a high-converting giveaway page — a free guide, checklist, or offer — that captures names, emails, and phone numbers automatically.
                 </p>
-                <ul className="space-y-4">
+                <ul className="space-y-4 mb-8">
                   {[
-                    "Restaurants promoting weekend specials to nearby diners",
-                    "Gyms filling morning class slots with local residents",
-                    "Salons running first-visit discount campaigns",
-                    "Service businesses reaching homeowners within 10 miles",
+                    "Pair your ad directly with a lead capture page",
+                    "Offer a free guide, checklist, or consultation",
+                    "Leads delivered straight to your dashboard",
+                    "No developer or web designer needed",
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-3 text-foreground font-medium">
-                      <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-5 h-5 text-violet-600 shrink-0 mt-0.5" />
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/5 rounded-3xl transform rotate-3" />
-                <div className="bg-card rounded-3xl p-8 border shadow-xl relative z-10">
-                  <div className="flex items-center gap-3 mb-6">
-                    <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-10 h-10" />
-                    <div>
-                      <div className="h-3 w-28 bg-muted rounded mb-1.5" />
-                      <div className="h-3 w-16 bg-muted/60 rounded" />
-                    </div>
-                  </div>
-                  <div className="w-full h-36 bg-gradient-to-br from-primary/20 to-indigo-400/20 rounded-xl mb-6 flex items-center justify-center">
-                    <Rocket className="w-12 h-12 text-primary/60" />
-                  </div>
-                  <div className="h-4 w-3/4 bg-muted rounded mb-3" />
-                  <div className="h-4 w-1/2 bg-muted rounded mb-6" />
-                  <div className="flex justify-between items-center">
-                    <div className="h-10 w-32 bg-primary rounded-lg flex items-center justify-center">
-                      <span className="text-primary-foreground text-xs font-semibold">Launch Ad</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      Live
-                    </div>
-                  </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Who it's for ─────────────────────────────────────────────── */}
+        <section className="py-24 bg-card border-y">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Built for professionals who live and die by leads.
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                One new client can be worth thousands. Addlaunch helps high-value service professionals run local Facebook ads that generate real inquiries — without wasting hours in Ads Manager.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {INDUSTRIES.map((ind, i) => (
+                <div
+                  key={i}
+                  className="bg-background rounded-2xl border p-6 hover:border-primary/40 hover:shadow-md transition-all"
+                >
+                  <div className="text-3xl mb-4">{ind.emoji}</div>
+                  <h3 className="font-bold text-lg mb-2">{ind.label}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{ind.desc}</p>
                 </div>
+              ))}
+
+              {/* "and more" card */}
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col items-start justify-between">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-sm font-medium text-foreground leading-relaxed mb-4">
+                  "I used to spend $500/month on a marketing agency. Now I spend $10/day on ads and do it myself in twenty minutes."
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">— Addlaunch user</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CTA */}
+        {/* ── CTA ──────────────────────────────────────────────────────── */}
         <section className="py-24 bg-primary text-primary-foreground text-center">
           <div className="container mx-auto px-4 max-w-3xl">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to reach more customers?</h2>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to fill your pipeline?</h2>
             <p className="text-xl opacity-90 mb-10">
-              Join local business owners running smarter Facebook ads with Addlaunch.
+              Join professionals running smarter Facebook ads with Addlaunch — and capturing more leads with Addpage.
             </p>
             <Button
               size="lg"
