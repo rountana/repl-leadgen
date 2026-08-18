@@ -298,6 +298,148 @@ async function resolveMetaInterests(
   return resolved;
 }
 
+// ── Ad-set payload builder ─────────────────────────────────────────────────
+
+export interface AdSetPayloadParams {
+  headline: string;
+  partnerCampaignId: string;
+  dailyBudgetCents: number;
+  targetingRadiusMiles: number;
+  targetingAgeMin: number;
+  targetingAgeMax: number;
+  targetingGender: string;
+  targetingLatitude: number;
+  targetingLongitude: number;
+  resolvedInterests: Array<{ id: string; name: string }>;
+}
+
+/**
+ * Builds the exact ad-set creation payload sent to Meta.
+ *
+ * Extracted so the preflight validation (validateAdSetPreflight) and the
+ * CI smoke test exercise the SAME payload the production path submits —
+ * any drift between what we validate and what we send is impossible.
+ */
+export function buildAdSetPayload(params: AdSetPayloadParams): Record<string, unknown> {
+  const {
+    headline,
+    partnerCampaignId,
+    dailyBudgetCents,
+    targetingRadiusMiles,
+    targetingAgeMin,
+    targetingAgeMax,
+    targetingGender,
+    targetingLatitude,
+    targetingLongitude,
+    resolvedInterests,
+  } = params;
+
+  return {
+    name: `${headline.slice(0, 200)} — Ad Set`,
+    campaign_id: partnerCampaignId,
+    // Meta Marketing API daily_budget is in the account currency's smallest
+    // unit. For USD that is cents, which matches our dailyBudgetCents exactly.
+    daily_budget: dailyBudgetCents,
+    billing_event: "IMPRESSIONS",
+    optimization_goal: "LINK_CLICKS",
+    bid_strategy: "LOWEST_COST_WITHOUT_CAP",
+    targeting: {
+      geo_locations: {
+        custom_locations: [
+          {
+            latitude: targetingLatitude,
+            longitude: targetingLongitude,
+            radius: targetingRadiusMiles,
+            distance_unit: "mile",
+          },
+        ],
+      },
+      age_min: targetingAgeMin,
+      age_max: targetingAgeMax,
+      // "all" is Meta's default; omitting genders keeps the audience open.
+      // Meta uses 1 for men and 2 for women in ad-set targeting.
+      ...(targetingGender === "male"
+        ? { genders: [1] }
+        : targetingGender === "female"
+          ? { genders: [2] }
+          : {}),
+      ...(resolvedInterests.length > 0
+        ? { flexible_spec: [{ interests: resolvedInterests }] }
+        : {}),
+      // Restrict to Facebook placements only. Without this Meta defaults to
+      // Facebook + Instagram, which requires the ad account to have explicit
+      // access to the Page's linked Instagram account (Meta error 200/1815199).
+      // Business owners who haven't connected Instagram can still run ads.
+      publisher_platforms: ["facebook"],
+      // Meta now requires this field to be explicitly set. 0 = manual
+      // targeting (preserves our geo/age/gender/interest spec). 1 would
+      // hand control to Meta's Advantage audience AI and ignore our spec.
+      targeting_automation: { advantage_audience: 0 },
+    },
+    // ACTIVE — the campaign is PAUSED, so no budget is spent yet.
+    // When the user activates the campaign in Ads Manager, this ad set
+    // (and its ad) start delivering immediately without needing a second toggle.
+    status: "ACTIVE",
+  };
+}
+
+/**
+ * Validates our ad-set payload against Meta's CURRENT API requirements
+ * without creating anything or spending budget.
+ *
+ * Uses Meta's execution_options: ["validate_only"] — the Graph API runs
+ * full server-side validation (required fields, enum values, targeting
+ * spec shape) and returns success or the exact error a real submission
+ * would produce, but never persists an object.
+ *
+ * This is how the smoke test caught-class of failures (e.g. Meta making
+ * targeting_automation.advantage_audience mandatory) surface in CI instead
+ * of in front of a business owner.
+ */
+export async function validateAdSetPreflight(opts: {
+  adAccountId: string;
+  partnerCampaignId: string;
+  accessToken: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const actId = opts.adAccountId.startsWith("act_")
+    ? opts.adAccountId
+    : `act_${opts.adAccountId}`;
+
+  // Use the account's real minimum budget (in its own currency's smallest
+  // unit) so a non-USD or high-minimum account doesn't fail validation for
+  // budget reasons and masquerade as a requirement-drift alert. Falls back
+  // to a generous default when the edge is unavailable.
+  const minimum = await getMinimumDailyBudget(actId, opts.accessToken);
+  const budget = minimum ? minimum.amount * 2 : 5000;
+
+  const payload = buildAdSetPayload({
+    headline: "Preflight Validation Check",
+    partnerCampaignId: opts.partnerCampaignId,
+    dailyBudgetCents: budget,
+    targetingRadiusMiles: 10,
+    targetingAgeMin: 18,
+    targetingAgeMax: 65,
+    targetingGender: "all",
+    targetingLatitude: 30.2672, // Austin, TX — arbitrary valid US coords
+    targetingLongitude: -97.7431,
+    resolvedInterests: [],
+  });
+
+  try {
+    await graphPost(
+      `/${actId}/adsets`,
+      { ...payload, execution_options: ["validate_only"] },
+      opts.accessToken,
+    );
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 // ── Meta Marketing API adapter ─────────────────────────────────────────────
 
 export const metaFbPartnerAdapter: FbPartnerAdapter = {
@@ -382,53 +524,18 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     // independent of other ads under the same shared campaign.
     const adSetData = await graphPost(
       `/${actId}/adsets`,
-      {
-        name: `${headline.slice(0, 200)} — Ad Set`,
-        campaign_id: partnerCampaignId,
-        // Meta Marketing API daily_budget is in the account currency's smallest
-        // unit. For USD that is cents, which matches our dailyBudgetCents exactly.
-        daily_budget: dailyBudgetCents,
-        billing_event: "IMPRESSIONS",
-        optimization_goal: "LINK_CLICKS",
-        bid_strategy: "LOWEST_COST_WITHOUT_CAP",
-        targeting: {
-          geo_locations: {
-            custom_locations: [
-              {
-                latitude: targetingLatitude,
-                longitude: targetingLongitude,
-                radius: targetingRadiusMiles,
-                distance_unit: "mile",
-              },
-            ],
-          },
-          age_min: targetingAgeMin,
-          age_max: targetingAgeMax,
-          // "all" is Meta's default; omitting genders keeps the audience open.
-          // Meta uses 1 for men and 2 for women in ad-set targeting.
-          ...(targetingGender === "male"
-            ? { genders: [1] }
-            : targetingGender === "female"
-              ? { genders: [2] }
-              : {}),
-          ...(resolvedInterests.length > 0
-            ? { flexible_spec: [{ interests: resolvedInterests }] }
-            : {}),
-          // Restrict to Facebook placements only. Without this Meta defaults to
-          // Facebook + Instagram, which requires the ad account to have explicit
-          // access to the Page's linked Instagram account (Meta error 200/1815199).
-          // Business owners who haven't connected Instagram can still run ads.
-          publisher_platforms: ["facebook"],
-          // Meta now requires this field to be explicitly set. 0 = manual
-          // targeting (preserves our geo/age/gender/interest spec). 1 would
-          // hand control to Meta's Advantage audience AI and ignore our spec.
-          targeting_automation: { advantage_audience: 0 },
-        },
-        // ACTIVE — the campaign is PAUSED, so no budget is spent yet.
-        // When the user activates the campaign in Ads Manager, this ad set
-        // (and its ad) start delivering immediately without needing a second toggle.
-        status: "ACTIVE",
-      },
+      buildAdSetPayload({
+        headline,
+        partnerCampaignId,
+        dailyBudgetCents,
+        targetingRadiusMiles,
+        targetingAgeMin,
+        targetingAgeMax,
+        targetingGender,
+        targetingLatitude,
+        targetingLongitude,
+        resolvedInterests,
+      }),
       accessToken,
     );
     const adSetId: string = adSetData.id;
