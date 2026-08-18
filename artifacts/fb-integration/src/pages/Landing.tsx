@@ -264,20 +264,29 @@ export function Landing() {
       {/* ── Sign-in modal ─────────────────────────────────────────────── */}
       {showSignIn && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setShowSignIn(false); }}
         >
-          <div className="relative w-full max-w-[480px]">
+          <div className="relative w-full max-w-[440px] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
+            {/* Close button — top-right inside the card */}
             <button
               onClick={() => setShowSignIn(false)}
-              className="absolute -top-3 -right-3 z-10 w-8 h-8 rounded-full bg-card border shadow-md flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>
+            {/* Strip Clerk's own card/box chrome so our wrapper owns all framing */}
             <SignIn
               routing="virtual"
               fallbackRedirectUrl={`${window.location.origin}${basePath}/connect`}
+              appearance={{
+                elements: {
+                  rootBox: "w-full",
+                  cardBox: "w-full !shadow-none !border-0 !rounded-none",
+                  card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+                },
+              }}
             />
           </div>
         </div>
