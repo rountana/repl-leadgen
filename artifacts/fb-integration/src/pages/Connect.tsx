@@ -174,13 +174,10 @@ export function Connect() {
       <WizardProgress currentStep={1} />
 
       <div className="mt-4 space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <Facebook className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Connect Facebook</h1>
-          <p className="text-muted-foreground mt-2">
-            Log in with Facebook to link your Business Page and Ad Account — we'll pull the details automatically.
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Connect Facebook</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Link your Business Page and Ad Account to start running ads.
           </p>
         </div>
 
@@ -341,17 +338,7 @@ export function Connect() {
           /* ── Login button (initial or update) ── */
           <>
             <Card>
-              <CardContent className="p-8 flex flex-col items-center gap-5">
-                <div className="w-14 h-14 rounded-2xl bg-[#1877F2]/10 flex items-center justify-center">
-                  <Facebook className="w-7 h-7 text-[#1877F2]" />
-                </div>
-                <div className="text-center space-y-1.5">
-                  <p className="font-semibold text-lg">One click to connect</p>
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    Log in with Facebook and we'll automatically find your Business Page and Ad Account — no copying IDs.
-                  </p>
-                </div>
-
+              <CardContent className="p-6 flex flex-col items-center gap-4">
                 <Button
                   className="w-full max-w-xs h-11 text-base font-semibold gap-3 bg-[#1877F2] hover:bg-[#166fe5] text-white"
                   onClick={handleFacebookLogin}
