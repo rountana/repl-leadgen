@@ -629,7 +629,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
     }
 
     // ── Create the ad under the verified shared campaign ──────────────────
-    const adResult = await activeFbPartnerAdapter.createAd({
+    const adParams = {
       partnerCampaignId,
       headline: campaign.headline ?? "",
       bodyText: campaign.bodyText ?? "",
@@ -646,7 +646,55 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       adAccountId: conn.adAccountId,
       accessToken: conn.partnerToken!,
       destinationUrl: campaign.destinationUrl ?? undefined,
-    });
+    };
+
+    let adResult: Awaited<ReturnType<typeof activeFbPartnerAdapter.createAd>>;
+    try {
+      adResult = await activeFbPartnerAdapter.createAd(adParams);
+    } catch (firstErr) {
+      // Safety net: if the campaign was archived between our campaignExists check
+      // and this createAd call (race condition), Meta returns:
+      // "Ad Sets may not be added to archived Campaigns."
+      // Recover by creating a fresh campaign and retrying once.
+      const isArchivedError =
+        firstErr instanceof Error &&
+        /archived campaign/i.test(firstErr.message);
+
+      if (!isArchivedError) throw firstErr;
+
+      req.log.warn(
+        { partnerCampaignId, connectionId: conn.id, adAccountId },
+        "FB shared campaign archived at ad-set creation — creating a replacement and retrying",
+      );
+
+      const replacement = await activeFbPartnerAdapter.ensureCampaign({
+        adAccountId,
+        accessToken: conn.partnerToken!,
+      });
+      const replacementId = replacement.partnerCampaignId;
+
+      // Persist the new campaign ID, replacing the archived one.
+      await db
+        .update(fbConnectionCampaignsTable)
+        .set({ partnerCampaignId: replacementId })
+        .where(
+          and(
+            eq(fbConnectionCampaignsTable.connectionId, conn.id),
+            eq(fbConnectionCampaignsTable.adAccountId, adAccountId),
+          ),
+        );
+
+      partnerCampaignId = replacementId;
+      adResult = await activeFbPartnerAdapter.createAd({
+        ...adParams,
+        partnerCampaignId: replacementId,
+      });
+
+      req.log.info(
+        { replacementCampaignId: replacementId, connectionId: conn.id, adAccountId },
+        "FB ad submitted under replacement campaign after archived-campaign recovery",
+      );
+    }
 
     // ── Mark the ad as submitted (PAUSED) ─────────────────────────────────
     // Store the shared campaign ID alongside the ad-specific IDs so sync/

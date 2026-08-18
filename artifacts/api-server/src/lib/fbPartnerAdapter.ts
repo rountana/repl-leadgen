@@ -299,52 +299,6 @@ async function resolveMetaInterests(
 }
 
 /**
- * Filter out interest IDs that Meta's targetingsearch returned but that are
- * no longer valid for use in ad targeting.
- *
- * Meta's adinterestvalid endpoint checks a list of interest objects and
- * returns only the ones currently usable. Any IDs not in the response are
- * silently dropped — the ad set will be created without them rather than
- * failing entirely.
- *
- * This prevents the "Interests with ID X is invalid" error that occurs when
- * targetingsearch returns deprecated IDs.
- */
-async function filterValidMetaInterests(
-  actId: string,
-  interests: Array<{ id: string; name: string }>,
-  accessToken: string,
-): Promise<Array<{ id: string; name: string }>> {
-  if (interests.length === 0) return interests;
-
-  try {
-    const interestList = JSON.stringify(interests.map((i) => ({ id: i.id })));
-    const result = await graphGet(
-      `/${actId}/adinterestvalid`,
-      { interest_list: interestList },
-      accessToken,
-    );
-    const validData = Array.isArray(result?.data) ? result.data : [];
-    const validIds = new Set(validData.map((item: any) => String(item.id)));
-    const filtered = interests.filter((i) => validIds.has(i.id));
-    const dropped = interests.filter((i) => !validIds.has(i.id));
-    if (dropped.length > 0) {
-      logger.warn(
-        { droppedInterests: dropped },
-        "Meta: dropped deprecated interest IDs that failed adinterestvalid — ad will run without them",
-      );
-    }
-    return filtered;
-  } catch (err) {
-    // adinterestvalid is a best-effort check. If it fails (e.g. the endpoint
-    // is unavailable), proceed with the original list — the ad-set POST will
-    // catch any remaining invalid IDs via the retry logic below.
-    logger.warn({ err }, "Meta: adinterestvalid check failed — proceeding without pre-validation");
-    return interests;
-  }
-}
-
-/**
  * Parse invalid interest IDs out of a Meta error message.
  * Handles both the raw error format ("Interests with ID 123 is invalid")
  * and the user-facing variant Meta sometimes wraps it in.
@@ -582,12 +536,10 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       ? await resolveMetaInterests(actId, targetingInterests, accessToken)
       : [];
 
-    // Pre-validate: drop any IDs that targetingsearch returned but Meta no
-    // longer accepts for targeting. This prevents the "Interests with ID X
-    // is invalid" error when interests are deprecated after we indexed them.
-    const validInterests = resolvedInterests.length > 0
-      ? await filterValidMetaInterests(actId, resolvedInterests, accessToken)
-      : [];
+    // The retry safety net below (catch on the ad-set POST) is the reliable
+    // way to handle deprecated interest IDs — if Meta rejects an ID by name
+    // in the error, it is stripped and the request retried once without it.
+    const validInterests = resolvedInterests;
 
     const buildPayload = (interests: Array<{ id: string; name: string }>) =>
       buildAdSetPayload({
@@ -748,7 +700,14 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
 
   async campaignExists(partnerCampaignId, accessToken) {
     try {
-      await graphGet(`/${partnerCampaignId}`, { fields: "id,status" }, accessToken);
+      const data = await graphGet(`/${partnerCampaignId}`, { fields: "id,status" }, accessToken);
+      // An ARCHIVED or DELETED campaign exists in Meta but cannot receive new ad sets.
+      // Treat these the same as "not found" so the caller creates a replacement.
+      const status = typeof data?.status === "string" ? data.status.toUpperCase() : "";
+      if (status === "ARCHIVED" || status === "DELETED") {
+        logger.warn({ partnerCampaignId, status }, "Meta: shared campaign is archived/deleted — will create a replacement");
+        return false;
+      }
       return true;
     } catch (err) {
       // Only return false (campaign deleted) when Meta explicitly reports the object

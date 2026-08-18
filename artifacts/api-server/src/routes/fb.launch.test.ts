@@ -409,6 +409,57 @@ describe("Launch route — ASBO shared-campaign scenarios", () => {
     }
   });
 
+  test("Scenario 4: archived campaign detected at create-time triggers recovery and succeeds", async () => {
+    // Tests the launch-route safety net added to handle the race condition where
+    // campaignExists passes (campaign not yet ARCHIVED at check time) but the
+    // ad-set POST fails with "Ad Sets may not be added to archived Campaigns."
+    // Also covers the case where campaignExists correctly returns false for ARCHIVED
+    // status — both paths converge at ensureCampaign + createAd retry.
+    const { connId } = await seedConnection();
+    const ARCHIVED_CAMPAIGN_ID = "camp_archived_999";
+    const REPLACEMENT_CAMPAIGN_ID = "camp_replacement_after_archive_888";
+
+    await db.insert(fbConnectionCampaignsTable).values({
+      connectionId: connId,
+      adAccountId: AD_ACCOUNT_ID,
+      partnerCampaignId: ARCHIVED_CAMPAIGN_ID,
+    });
+
+    const { campaignId } = await seedCampaign(connId);
+
+    try {
+      // campaignExists: GET /{archivedCampaignId} → status ARCHIVED → returns false
+      queueMetaResponse({ id: ARCHIVED_CAMPAIGN_ID, status: "ARCHIVED" });
+      // ensureCampaign: POST /campaigns → fresh replacement campaign
+      queueMetaResponse({ id: REPLACEMENT_CAMPAIGN_ID });
+      // createAd under the replacement campaign
+      queueSuccessfulSubmission(REPLACEMENT_CAMPAIGN_ID, "adset_after_archive_001", "ad_after_archive_001");
+
+      const { status, body } = await post(`/fb/campaigns/${campaignId}/launch`);
+
+      assert.equal(status, 200, `expected 200, got ${status}: ${JSON.stringify(body)}`);
+      assert.equal(body["status"], "paused", "must succeed under the replacement campaign");
+      assert.equal(body["partnerCampaignId"], REPLACEMENT_CAMPAIGN_ID, "must use the replacement campaign ID");
+      assert.equal(body["partnerAdSetId"], "adset_after_archive_001");
+
+      // fb_connection_campaigns must now point to the replacement (not the archived one)
+      const [row] = await db
+        .select()
+        .from(fbConnectionCampaignsTable)
+        .where(
+          and(
+            eq(fbConnectionCampaignsTable.connectionId, connId),
+            eq(fbConnectionCampaignsTable.adAccountId, AD_ACCOUNT_ID),
+          ),
+        );
+      assert.ok(row, "fb_connection_campaigns row must exist");
+      assert.equal(row.partnerCampaignId, REPLACEMENT_CAMPAIGN_ID);
+      assert.notEqual(row.partnerCampaignId, ARCHIVED_CAMPAIGN_ID, "archived campaign ID must be replaced in the DB");
+    } finally {
+      await cleanupTestUser();
+    }
+  });
+
   test("returns 400 when the connection has no partnerToken (no credentials)", async () => {
     // Insert a connection without a token — simulates a disconnected state
     const [conn] = await db

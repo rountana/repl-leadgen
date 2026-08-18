@@ -7,7 +7,11 @@ import {
   getListLeadMagnetsQueryKey,
 } from "@workspace/api-client-react";
 
-const ADDPAGE_DASHBOARD_URL = "https://lead-magnet-hub-shaamsarath1.replit.app/dashboard";
+// Configurable via VITE_ADDPAGE_DASHBOARD_URL (set in the Replit environment).
+// Falls back to the internal HVCG builder path if not set.
+const ADDPAGE_DASHBOARD_URL =
+  import.meta.env.VITE_ADDPAGE_DASHBOARD_URL ||
+  "/hvcg/dashboard";
 
 export interface SelectedMagnet {
   id: number;

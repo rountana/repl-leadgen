@@ -28,6 +28,7 @@ channel = "stable-25_05"
 APP_BASE_URL = "https://lead-magnet-hub-shaamsarath1.replit.app"
 
 [userenv.shared]
+VITE_ADDPAGE_DASHBOARD_URL = "https://lead-magnet-hub-shaamsarath1.replit.app/dashboard"
 
 [userenv.development]
 APP_BASE_URL = "https://lead-magnet-hub-shaamsarath1.replit.app"

@@ -329,17 +329,15 @@ describe("createAd", () => {
     mockFetch({ data: { data: [{ currency: "USD", min_daily_budget_high_freq: 100 }] } });
     // 2. targetingsearch for "Coffee"
     mockFetch({ data: { data: [{ id: "6003020834693", name: "Coffee" }] } });
-    // 3. adinterestvalid — confirms the resolved ID is still valid
-    mockFetch({ data: { data: [{ id: "6003020834693", name: "Coffee" }] } });
-    // 4. ad set
+    // 3. ad set
     mockFetch({ data: { id: AD_SET_ID } });
-    // 5. instagram accounts (ad account edge — empty)
+    // 4. instagram accounts (ad account edge — empty)
     mockFetch({ data: { data: [] } });
-    // 6. instagram accounts (page edge — empty)
+    // 5. instagram accounts (page edge — empty)
     mockFetch({ data: { data: [] } });
-    // 7. creative
+    // 6. creative
     mockFetch({ data: { id: CREATIVE_ID } });
-    // 8. ad
+    // 7. ad
     mockFetch({ data: { id: AD_ID } });
 
     await metaFbPartnerAdapter.createAd({
@@ -355,14 +353,17 @@ describe("createAd", () => {
     assert.equal(interests[0].id, "6003020834693");
   });
 
-  test("filters out deprecated interest IDs flagged by adinterestvalid", async () => {
+  test("retries ad-set POST without a deprecated interest ID when Meta names it in the error", async () => {
+    // Meta's targetingsearch can return IDs that have since been deprecated.
+    // When the ad-set POST fails with "Interests with ID X is invalid", the
+    // adapter parses out the bad ID, removes it, and retries once without it.
     // 1. minimum_budgets
     mockFetch({ data: { data: [{ currency: "USD", min_daily_budget_high_freq: 100 }] } });
-    // 2. targetingsearch returns an ID that's now invalid
+    // 2. targetingsearch — resolves to an ID that Meta has since deprecated
     mockFetch({ data: { data: [{ id: "103153189725242", name: "Fitness and wellness" }] } });
-    // 3. adinterestvalid returns empty — ID is not valid anymore
-    mockFetch({ data: { data: [] } });
-    // 4. ad set — created without any flexible_spec (no valid interests)
+    // 3. ad set POST fails with the invalid-interest error
+    mockFetch({ data: { error: { code: 100, message: "Interests with ID 103153189725242 is invalid." } } });
+    // 4. retry ad set POST without the bad ID — succeeds
     mockFetch({ data: { id: AD_SET_ID } });
     // 5. instagram (ad account edge)
     mockFetch({ data: { data: [] } });
@@ -371,40 +372,6 @@ describe("createAd", () => {
     // 7. creative
     mockFetch({ data: { id: CREATIVE_ID } });
     // 8. ad
-    mockFetch({ data: { id: AD_ID } });
-
-    const result = await metaFbPartnerAdapter.createAd({
-      ...BASE_CREATE_AD_PARAMS,
-      targetingInterests: ["Fitness and wellness"],
-    });
-
-    assert.equal(result.partnerAdSetId, AD_SET_ID, "ad must still be created even when interest is invalid");
-    const adSetCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/adsets`))!;
-    const targeting = adSetCall.body?.targeting as Record<string, unknown>;
-    assert.ok(
-      !("flexible_spec" in targeting),
-      "flexible_spec must be omitted when all interest IDs are filtered out by adinterestvalid",
-    );
-  });
-
-  test("retries ad-set POST without invalid interest IDs when Meta error names them", async () => {
-    // 1. minimum_budgets
-    mockFetch({ data: { data: [{ currency: "USD", min_daily_budget_high_freq: 100 }] } });
-    // 2. targetingsearch — interest resolves to an ID
-    mockFetch({ data: { data: [{ id: "103153189725242", name: "Fitness and wellness" }] } });
-    // 3. adinterestvalid — passes pre-validation (race condition: ID became invalid after check)
-    mockFetch({ data: { data: [{ id: "103153189725242" }] } });
-    // 4. ad set POST fails with the invalid-interest error
-    mockFetch({ data: { error: { code: 100, message: "Interests with ID 103153189725242 is invalid." } } });
-    // 5. retry ad set POST without the bad ID — succeeds
-    mockFetch({ data: { id: AD_SET_ID } });
-    // 6. instagram (ad account edge)
-    mockFetch({ data: { data: [] } });
-    // 7. instagram (page edge)
-    mockFetch({ data: { data: [] } });
-    // 8. creative
-    mockFetch({ data: { id: CREATIVE_ID } });
-    // 9. ad
     mockFetch({ data: { id: AD_ID } });
 
     const result = await metaFbPartnerAdapter.createAd({
@@ -434,6 +401,20 @@ describe("campaignExists", () => {
 
     const exists = await metaFbPartnerAdapter.campaignExists(PARTNER_CAMPAIGN_ID, ACCESS_TOKEN);
     assert.equal(exists, true);
+  });
+
+  test("returns false when campaign status is ARCHIVED (cannot receive new ad sets)", async () => {
+    mockFetch({ data: { id: PARTNER_CAMPAIGN_ID, status: "ARCHIVED" } });
+
+    const exists = await metaFbPartnerAdapter.campaignExists(PARTNER_CAMPAIGN_ID, ACCESS_TOKEN);
+    assert.equal(exists, false, "ARCHIVED campaigns cannot receive new ad sets — must return false to trigger recovery");
+  });
+
+  test("returns false when campaign status is DELETED", async () => {
+    mockFetch({ data: { id: PARTNER_CAMPAIGN_ID, status: "DELETED" } });
+
+    const exists = await metaFbPartnerAdapter.campaignExists(PARTNER_CAMPAIGN_ID, ACCESS_TOKEN);
+    assert.equal(exists, false, "DELETED campaigns must return false to trigger recovery");
   });
 
   test("returns false for Meta error code 803 (object not found)", async () => {
