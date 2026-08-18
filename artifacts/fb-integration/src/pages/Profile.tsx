@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Building2, MapPin, Briefcase, Upload, X, Check, Loader2, Info, AlertTriangle } from "lucide-react";
+import { Building2, MapPin, Briefcase, Upload, X, Check, Loader2, Info, AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,14 @@ import {
   getListIndustriesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation, useSearch } from "wouter";
 
 export function Profile() {
   const queryClient = useQueryClient();
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [, navigate] = useLocation();
+  const search = useSearch();
+  const returnTo = new URLSearchParams(search).get("returnTo") ?? null;
 
   const { data: profile, isLoading } = useGetProfile({
     query: { queryKey: getGetProfileQueryKey() },
@@ -85,6 +89,10 @@ export function Profile() {
     });
     setAddressWarning(result.addressWarning ?? null);
     queryClient.invalidateQueries({ queryKey: getGetProfileQueryKey() });
+    if (returnTo) {
+      navigate(returnTo);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -103,6 +111,17 @@ export function Profile() {
     <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
       {/* Header */}
       <div>
+        {returnTo && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 -ml-2 mb-3 text-muted-foreground hover:text-foreground"
+            onClick={() => navigate(returnTo)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to ad builder
+          </Button>
+        )}
         <h1 className="text-2xl font-bold tracking-tight">Business Profile</h1>
         <p className="text-muted-foreground mt-1">
           Save your business details once — they'll be pre-filled in every new ad.

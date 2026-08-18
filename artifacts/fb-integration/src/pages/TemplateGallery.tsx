@@ -241,7 +241,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           <p className="flex-1">
             Set your industry in your profile to get personalised template recommendations.
           </p>
-          <Link href="/profile">
+          <Link href="/profile?returnTo=/campaign/new">
             <span className="whitespace-nowrap font-medium underline underline-offset-2 hover:text-amber-700 transition-colors cursor-pointer">
               Set industry
             </span>
