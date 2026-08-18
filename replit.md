@@ -53,7 +53,7 @@ A web app that lets small business owners create professional lead capture pages
 
 ## User preferences
 
-- Use the user's own `OPENAI_API_KEY` secret for future project work that requires OpenAI access.
+- Use the user's own OpenRouter key, currently stored as `OPENAI_API_KEY`, for future AI project work. Configure OpenRouter's endpoint and choose the model explicitly.
 
 ## Gotchas
 
