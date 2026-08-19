@@ -16,11 +16,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   useCreateFbCampaign,
+  useGetFbConnection,
   useLaunchFbCampaign,
   useUpdateFbCampaign,
   type FbAdDraft,
   type FbCampaign,
 } from "@workspace/api-client-react";
+import { adsManagerUrl } from "@/lib/adsManagerUrl";
 
 interface LaunchConfirmProps {
   adDraft: FbAdDraft;
@@ -82,6 +84,7 @@ export function LaunchConfirm({
   const createCampaign = useCreateFbCampaign();
   const updateCampaign = useUpdateFbCampaign();
   const launchCampaign = useLaunchFbCampaign();
+  const { data: connection } = useGetFbConnection();
 
   const runLaunchSequence = async () => {
     if (hasFired.current) return;
@@ -311,14 +314,10 @@ export function LaunchConfirm({
     );
   }
 
-  /* ── Build Ads Manager deep-link ──────────────────────────── */
-  const adsManagerHref = (() => {
-    if (campaign?.partnerCampaignId) {
-      // Deep-link directly to the submitted campaign
-      return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?selected_campaign_ids=${campaign.partnerCampaignId}`;
-    }
-    return "https://adsmanager.facebook.com/adsmanager/manage/campaigns";
-  })();
+  const adsManagerHref = adsManagerUrl(
+    connection?.adAccountId,
+    campaign?.partnerCampaignId,
+  );
 
   /* ── Success state ─────────────────────────────────────────── */
   return (

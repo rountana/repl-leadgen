@@ -40,22 +40,7 @@ import {
   type FbCampaignStatus,
   type FbCampaignLeadDeliveryStatus,
 } from "@workspace/api-client-react";
-
-function adsManagerUrl(adAccountId?: string | null, partnerCampaignId?: string | null): string {
-  const act = adAccountId?.replace(/^act_/, "");
-  if (act && partnerCampaignId) {
-    return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${act}&selected_campaign_ids=${partnerCampaignId}`;
-  }
-  if (act) {
-    return `https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=${act}`;
-  }
-  return "https://adsmanager.facebook.com/adsmanager/manage/campaigns";
-}
-
-/** Real Meta ad accounts use the act_<digits> format. */
-function isRealAdAccountId(id: string | null | undefined): boolean {
-  return /^act_\d+$/.test(id ?? "");
-}
+import { adsManagerUrl, isRealAdAccountId } from "@/lib/adsManagerUrl";
 
 // ─── Shared state palettes ───────────────────────────────────────────────────
 // Three semantic states each get one consistent colour across every surface.
