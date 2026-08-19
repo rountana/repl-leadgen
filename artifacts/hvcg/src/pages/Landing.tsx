@@ -1,11 +1,91 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Zap, Layout, FileText, MousePointerClick } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
+const legalDocuments = {
+  privacy: {
+    label: "Privacy",
+    title: "Privacy Policy",
+    paragraphs: [
+      "Addlaunch uses the information you provide to create and operate your account, build landing pages, connect advertising accounts, and deliver leads to you.",
+      "Depending on how you use the service, this may include account details, uploaded files, business information, landing-page content, and lead information. We may also receive information from service providers that help us authenticate accounts, host the service, or connect to advertising platforms.",
+      "Please do not upload sensitive personal information unless you have a lawful reason and the appropriate permissions to do so. You are responsible for providing any notices and obtaining any consent required for the data you collect through your pages and ads.",
+    ],
+  },
+  terms: {
+    label: "Terms",
+    title: "Terms of Use",
+    paragraphs: [
+      "By using Addlaunch, you agree to use the service lawfully and to follow the rules of any advertising, email, hosting, or other platform you connect to it.",
+      "You are responsible for the content you upload or publish, the accuracy of your offers and claims, the permissions you have for your files and brand assets, and the leads you collect. Addlaunch does not guarantee ad approval, delivery, conversions, or uninterrupted availability.",
+      "We may update, suspend, or discontinue parts of the service as it evolves. Please review the final terms, billing terms, and any supplemental agreements that apply to your account before launch.",
+    ],
+  },
+  disclaimer: {
+    label: "Disclaimer",
+    title: "Important Disclaimer",
+    paragraphs: [
+      "Addlaunch is a marketing software tool, not a law firm, advertising compliance service, financial adviser, or guarantee of business results.",
+      "You should review your landing-page copy, offers, disclosures, consent flows, and ad settings for compliance with the laws and platform policies that apply to your business and audience.",
+      "Results vary by business, audience, offer, creative, budget, and platform review. Please get professional advice when you need guidance specific to your situation.",
+    ],
+  },
+  cookies: {
+    label: "Cookie Notice",
+    title: "Cookie Notice",
+    paragraphs: [
+      "Addlaunch may use essential cookies and similar technologies to keep you signed in, protect the service, remember preferences, and support secure account functionality.",
+      "If optional analytics or integrations are enabled, those providers may use their own technologies subject to their policies. You can control available browser permissions through your browser settings.",
+    ],
+  },
+} as const;
+
+type LegalDocumentKey = keyof typeof legalDocuments;
+
+function LegalDialog({
+  documentKey,
+  onClose,
+}: {
+  documentKey: LegalDocumentKey | null;
+  onClose: () => void;
+}) {
+  const document = documentKey ? legalDocuments[documentKey] : null;
+
+  return (
+    <Dialog open={document !== null} onOpenChange={(open) => !open && onClose()}>
+      {document && (
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{document.title}</DialogTitle>
+            <DialogDescription>
+              Draft information for review before publishing. This is not legal advice.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm leading-6 text-muted-foreground">
+            {document.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </DialogContent>
+      )}
+    </Dialog>
+  );
+}
+
 export function Landing() {
+  const [activeLegalDocument, setActiveLegalDocument] = useState<LegalDocumentKey | null>(null);
+
   return (
     <PublicShell>
       <div className="flex flex-col min-h-screen">
@@ -126,16 +206,42 @@ export function Landing() {
           </div>
         </section>
 
-        <footer className="py-12 bg-card border-t text-center text-muted-foreground">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-center items-center gap-2 mb-4">
-              <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-6 h-6 grayscale opacity-50" />
-              <span className="font-semibold text-foreground opacity-50">Addlaunch</span>
+        <footer className="py-12 bg-card border-t text-muted-foreground">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-6 h-6 grayscale opacity-50" />
+                  <span className="font-semibold text-foreground opacity-70">Addlaunch</span>
+                </div>
+                <p className="max-w-md text-sm leading-6">
+                  Marketing software for building landing pages and connecting with the advertising tools you use.
+                </p>
+              </div>
+              <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-3 text-sm md:justify-end">
+                {(Object.keys(legalDocuments) as LegalDocumentKey[]).map((documentKey) => (
+                  <button
+                    key={documentKey}
+                    type="button"
+                    className="underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+                    onClick={() => setActiveLegalDocument(documentKey)}
+                  >
+                    {legalDocuments[documentKey].label}
+                  </button>
+                ))}
+              </nav>
             </div>
-            <p>© {new Date().getFullYear()} Addlaunch. All rights reserved.</p>
+            <div className="mt-8 flex flex-col gap-3 border-t pt-5 text-xs leading-5 md:flex-row md:items-center md:justify-between">
+              <p>© {new Date().getFullYear()} Addlaunch. All rights reserved.</p>
+              <p>
+                By using Addlaunch, you agree to the Terms and acknowledge the Privacy Policy. Review all content and
+                platform requirements before publishing.
+              </p>
+            </div>
           </div>
         </footer>
       </div>
+      <LegalDialog documentKey={activeLegalDocument} onClose={() => setActiveLegalDocument(null)} />
     </PublicShell>
   );
 }
