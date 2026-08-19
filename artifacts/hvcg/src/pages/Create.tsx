@@ -23,8 +23,6 @@ import {
   useListTemplates,
   useListExamples,
   useListIndustries,
-  useAiPrefill,
-  useAiExtractBranding,
   useGetProfile,
   getGetProfileQueryKey,
 } from "@workspace/api-client-react";
@@ -62,17 +60,9 @@ export function Create() {
   const [fileDataUrl, setFileDataUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [aiPrefill, setAiPrefill] = useState(false);
-  const [aiBranding, setAiBranding] = useState(false);
-  
-  const [aiPrefillUrl, setAiPrefillUrl] = useState("");
-  const [aiBrandingUrl, setAiBrandingUrl] = useState("");
-  
   const createLeadMagnet = useCreateLeadMagnet();
   const updateLeadMagnet = useUpdateLeadMagnet();
   const uploadFile = useUploadLeadMagnetFile();
-  const aiPrefillMut = useAiPrefill();
-  const aiBrandingMut = useAiExtractBranding();
   const { data: templates } = useListTemplates();
   const { data: industries } = useListIndustries();
   const { data: existingMagnet } = useGetLeadMagnet(editId ?? 0, {
@@ -198,33 +188,6 @@ export function Create() {
     }
   };
 
-  const handleAiPrefill = async () => {
-    if (!aiPrefillUrl) return;
-    try {
-      const res = await aiPrefillMut.mutateAsync({ data: { sourceUrl: aiPrefillUrl } });
-      if (res.title) form.setValue("title", res.title);
-      if (res.description) form.setValue("description", res.description);
-      if (res.businessName) form.setValue("businessName", res.businessName);
-      if (res.businessLocation) form.setValue("businessLocation", res.businessLocation);
-      toast({ title: "Content pre-filled!" });
-    } catch {
-      toast({ title: "Failed to extract content", variant: "destructive" });
-    }
-  };
-
-  const handleAiBranding = async () => {
-    if (!aiBrandingUrl) return;
-    try {
-      const res = await aiBrandingMut.mutateAsync({ data: { sourceUrl: aiBrandingUrl } });
-      toast({ title: "Branding extracted!", description: "Colors and logo will be applied to your page." });
-      // The API saves branding config, or we would apply it to form state here if form had color fields.
-      // Since the form in /create doesn't have color fields (those are set in /review),
-      // we'd rely on backend setting default customBgColor etc on creation, or we can just show a success message.
-    } catch {
-      toast({ title: "Failed to extract branding", variant: "destructive" });
-    }
-  };
-
   const isSubmitting = createLeadMagnet.isPending || updateLeadMagnet.isPending || uploadFile.isPending;
 
   return (
@@ -289,46 +252,40 @@ export function Create() {
             </CardContent>
           </Card>
 
-          {/* AI Helpers (Visual only for now, can be hooked up if API was fully active for them) */}
+          {/* AI Helpers */}
           <div className="grid sm:grid-cols-2 gap-4">
-            <Card className="border border-border/50 shadow-sm">
+            <Card className="border border-border/50 bg-secondary/20 shadow-sm">
               <CardContent className="p-4 flex items-start gap-4">
-                <div className="mt-1"><Wand2 className="w-5 h-5 text-indigo-500" /></div>
+                <div className="mt-1"><Wand2 className="w-5 h-5 text-indigo-500/70" /></div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm">Auto-fill from website</h4>
-                    <Switch checked={aiPrefill} onCheckedChange={setAiPrefill} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 mb-2">Extract details from your existing site.</p>
-                  {aiPrefill && (
-                    <div className="flex gap-2">
-                      <Input placeholder="https://yourwebsite.com" className="h-8 text-sm flex-1" value={aiPrefillUrl} onChange={e => setAiPrefillUrl(e.target.value)} />
-                      <Button type="button" size="sm" className="h-8 px-2" disabled={aiPrefillMut.isPending || !aiPrefillUrl} onClick={handleAiPrefill}>
-                        {aiPrefillMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Fill"}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-sm">Auto-fill from website</h4>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                        Coming soon
+                      </span>
                     </div>
-                  )}
+                    <Switch checked={false} disabled aria-label="Auto-fill from website coming soon" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Extract details from your existing site automatically.</p>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="border border-border/50 shadow-sm">
+            <Card className="border border-border/50 bg-secondary/20 shadow-sm">
               <CardContent className="p-4 flex items-start gap-4">
-                <div className="mt-1"><ImageIcon className="w-5 h-5 text-indigo-500" /></div>
+                <div className="mt-1"><ImageIcon className="w-5 h-5 text-indigo-500/70" /></div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-sm">Extract logo & colors</h4>
-                    <Switch checked={aiBranding} onCheckedChange={setAiBranding} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 mb-2">Pull your brand identity automatically.</p>
-                  {aiBranding && (
-                    <div className="flex gap-2">
-                      <Input placeholder="https://yourwebsite.com" className="h-8 text-sm flex-1" value={aiBrandingUrl} onChange={e => setAiBrandingUrl(e.target.value)} />
-                      <Button type="button" size="sm" className="h-8 px-2" disabled={aiBrandingMut.isPending || !aiBrandingUrl} onClick={handleAiBranding}>
-                        {aiBrandingMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Pull"}
-                      </Button>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-sm">Extract logo &amp; colors</h4>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                        Coming soon
+                      </span>
                     </div>
-                  )}
+                    <Switch checked={false} disabled aria-label="Extract logo and colors coming soon" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Pull your brand identity automatically.</p>
                 </div>
               </CardContent>
             </Card>

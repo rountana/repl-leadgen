@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import { User, LogOut, ArrowRight, Loader2, UserCircle } from "lucide-react";
+import { User, LogOut, ArrowRight, Loader2, UserCircle, CircleHelp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -19,11 +19,26 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
           </Link>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {!isLoaded ? (
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             ) : (
               <>
+                <Link
+                  href="/how-it-works"
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:hidden"
+                  title="How it works"
+                >
+                  <CircleHelp className="h-5 w-5" />
+                  <span className="sr-only">How it works</span>
+                </Link>
+                <Link
+                  href="/how-it-works"
+                  className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <CircleHelp className="w-4 h-4" />
+                  How it works
+                </Link>
                 <Link
                   href="/profile"
                   className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

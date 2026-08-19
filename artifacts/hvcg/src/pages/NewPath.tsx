@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Link as LinkIcon, FileText, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Link as LinkIcon, FileText, ArrowRight, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ export function NewPath() {
   
   const [url, setUrl] = useState("");
   const [isSubmittingUrl, setIsSubmittingUrl] = useState(false);
+  const [showExistingPage, setShowExistingPage] = useState(false);
   
   const createLeadMagnet = useCreateLeadMagnet();
 
@@ -56,50 +57,63 @@ export function NewPath() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">How do you want to capture leads?</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Choose whether you want to build a new high-converting giveaway page with us, or track an existing page you already have.
+    <div className="container mx-auto max-w-3xl px-4 py-12">
+      <div className="mb-10 text-center">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+          <CheckCircle2 className="h-4 w-4" />
+          Recommended for capturing new leads
+        </div>
+        <h1 className="mb-4 text-4xl font-bold tracking-tight">Create your Give-Away Page</h1>
+        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+          Turn your best resource into a high-converting page that captures leads for your business.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Option 1: Build a new one */}
-        <Card className="relative overflow-hidden border-2 hover:border-primary transition-colors cursor-pointer group flex flex-col" onClick={() => setLocation("/create")}>
-          <div className="absolute top-0 right-0 p-4">
-            <div className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-              <CheckCircle2 className="w-3 h-3" /> Recommended
-            </div>
+      <Card className="relative mx-auto flex max-w-2xl flex-col overflow-hidden border-2 border-primary/60 shadow-lg">
+        <div className="absolute right-0 top-0 p-4">
+          <div className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-sm">
+            <CheckCircle2 className="h-3 w-3" /> Recommended
           </div>
-          <CardHeader className="pt-8">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+        </div>
+        <CardHeader className="pt-8">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
               <FileText className="w-8 h-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Create a Give-Away Page</CardTitle>
-            <CardDescription className="text-base mt-2">
-              Upload a PDF, pick a template, and we'll build a custom landing page for you in 60 seconds.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="mt-auto pt-6">
-            <Button className="w-full text-lg h-12 shadow-md">
-              Start Building <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+          <CardTitle className="text-2xl">Build a new lead magnet page</CardTitle>
+          <CardDescription className="mt-2 text-base">
+            Upload a PDF, pick a template, and create a custom landing page your next ad can send people to.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <Button onClick={() => setLocation("/create")} className="h-12 w-full text-lg shadow-md">
+            Start Building <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </CardContent>
+      </Card>
 
-        {/* Option 2: Existing URL */}
-        <Card className="flex flex-col">
-          <CardHeader className="pt-8">
-            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-4">
-              <LinkIcon className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <CardTitle className="text-2xl">I already have a webpage</CardTitle>
-            <CardDescription className="text-base mt-2">
-              Paste the link to your existing landing page or booking site to add it to your dashboard.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="mt-auto pt-6">
+      <div className="mx-auto mt-6 max-w-2xl text-center">
+        <Button
+          type="button"
+          variant="ghost"
+          className="gap-2 text-muted-foreground hover:text-foreground"
+          onClick={() => setShowExistingPage((current) => !current)}
+          aria-expanded={showExistingPage}
+          aria-controls="existing-page-form"
+        >
+          <LinkIcon className="h-4 w-4" />
+          I already have a webpage
+          {showExistingPage ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+
+        {showExistingPage && (
+          <Card id="existing-page-form" className="mt-4 text-left">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Add an existing webpage</CardTitle>
+              <CardDescription>
+                Paste the link to your current landing page or booking site to keep it in your dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
             <form onSubmit={handleExistingUrl} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="url">Your webpage URL</Label>
@@ -117,8 +131,9 @@ export function NewPath() {
                 {isSubmittingUrl ? "Saving..." : "Add Link"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

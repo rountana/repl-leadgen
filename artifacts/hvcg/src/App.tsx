@@ -14,6 +14,7 @@ import { Review } from "@/pages/Review";
 import { Live } from "@/pages/Live";
 import { Profile } from "@/pages/Profile";
 import { PublicCapture } from "@/pages/PublicCapture";
+import { HowItWorks } from "@/pages/HowItWorks";
 import { Shell } from "@/components/layout/Shell";
 
 const queryClient = new QueryClient();
@@ -202,6 +203,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/sign-up/*?" component={SignUpPage} />
           
           <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
+          <Route path="/how-it-works"><ProtectedRoute component={HowItWorks} /></Route>
           <Route path="/new"><ProtectedRoute component={NewPath} /></Route>
           <Route path="/create"><ProtectedRoute component={Create} /></Route>
           <Route path="/review/:id"><ProtectedRoute component={Review} /></Route>
