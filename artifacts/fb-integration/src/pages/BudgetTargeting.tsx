@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   MapPin, DollarSign, ChevronRight, Users, TrendingUp,
-  Loader2, Pencil, Check, X, Info, AlertCircle,
+  Loader2, Pencil, Check, X, Info, AlertCircle, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,9 @@ interface BudgetTargetingProps {
   initialAgeMax?: number;
   initialGender?: TargetGender;
   initialInterests?: string[];
+  /** Existing campaign center, retained until the user explicitly changes location. */
+  initialLatitude?: number;
+  initialLongitude?: number;
   onNext: (
     dailyBudget: number,
     radiusMiles: number,
@@ -35,6 +38,8 @@ interface BudgetTargetingProps {
     ageMax: number,
     gender: TargetGender,
     interests: string[],
+    targetingLatitude: number | null,
+    targetingLongitude: number | null,
   ) => void;
 }
 
@@ -84,6 +89,8 @@ export function BudgetTargeting({
   initialAgeMax = 65,
   initialGender = "all",
   initialInterests = [],
+  initialLatitude,
+  initialLongitude,
   onNext,
 }: BudgetTargetingProps) {
   const [budget, setBudget] = useState(initialBudget);
@@ -93,9 +100,11 @@ export function BudgetTargeting({
   const [gender, setGender] = useState<TargetGender>(initialGender);
   const [interests, setInterests] = useState<string[]>(initialInterests);
   const [budgetInput, setBudgetInput] = useState(String(initialBudget));
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Editable target location
   const [locationOverride, setLocationOverride] = useState<string | null>(null);
+  const [locationWasChanged, setLocationWasChanged] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [locationInput, setLocationInput] = useState("");
 
@@ -113,6 +122,10 @@ export function BudgetTargeting({
 
   // Effective location: user override takes precedence over profile value
   const effectiveLocation = locationOverride ?? profileLocation;
+  const hasSavedTargetCenter =
+    typeof initialLatitude === "number" && typeof initialLongitude === "number";
+  const usingSavedTargetCenter = hasSavedTargetCenter && !locationWasChanged;
+  const locationNeedsAttention = !isProfileLoading && !effectiveLocation && !usingSavedTargetCenter;
 
   // Minimum daily budget in display units (dollars for USD).
   // null means the minimum couldn't be fetched — fall back to server-side validation.
@@ -130,6 +143,7 @@ export function BudgetTargeting({
 
   const saveLocation = () => {
     setLocationOverride(locationInput.trim() || null);
+    setLocationWasChanged(true);
     setIsEditingLocation(false);
   };
 
@@ -185,13 +199,14 @@ export function BudgetTargeting({
     <TooltipProvider delayDuration={200}>
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Budget & Targeting</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Review Budget & Audience</h2>
           <p className="text-muted-foreground mt-1">
-            Set how much to spend and who to reach each day.
+            Your template is ready. Confirm your daily budget and age range, or adjust the targeting details.
           </p>
         </div>
 
-        {/* Target location */}
+        {/* Location is only surfaced immediately when it needs to be added. */}
+        {(advancedOpen || locationNeedsAttention) && (
         <Card className="bg-secondary/30">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -229,6 +244,22 @@ export function BudgetTargeting({
                     <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">Loading…</span>
                   </div>
+                ) : usingSavedTargetCenter ? (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div>
+                      <p className="font-semibold text-sm">Original campaign location</p>
+                      <p className="text-xs text-muted-foreground">Saved map center</p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={startEditLocation}
+                      aria-label="Change campaign target location"
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                  </div>
                 ) : effectiveLocation ? (
                   <div className="flex items-center gap-2 mt-0.5">
                     <p className="font-semibold text-sm truncate">{effectiveLocation}</p>
@@ -253,6 +284,7 @@ export function BudgetTargeting({
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Daily budget */}
         <div className="space-y-3">
@@ -338,7 +370,31 @@ export function BudgetTargeting({
           </p>
         </div>
 
+        <button
+          type="button"
+          aria-expanded={advancedOpen}
+          onClick={() => setAdvancedOpen((open) => !open)}
+          className="w-full rounded-xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-secondary/30 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          <span className="flex items-center justify-between gap-3">
+            <span>
+              <span className="block text-sm font-semibold">
+                {advancedOpen ? "Hide targeting details" : "Edit targeting details"}
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                {usingSavedTargetCenter
+                  ? "Original campaign location, radius, gender, interests, and map"
+                  : "Location, radius, gender, interests, and map"}
+              </span>
+            </span>
+            {advancedOpen
+              ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+              : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+          </span>
+        </button>
+
         {/* Targeting radius */}
+        {advancedOpen && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
@@ -361,12 +417,21 @@ export function BudgetTargeting({
             <span>50 miles</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Reach people within <span className="font-semibold text-foreground">{radius} miles</span> of {effectiveLocation || connection.fbPageName || "your location"}
+            Reach people within <span className="font-semibold text-foreground">{radius} miles</span> of {usingSavedTargetCenter ? "your original campaign location" : effectiveLocation || connection.fbPageName || "your location"}
           </p>
 
           {/* Radius map preview */}
-          <RadiusMap address={effectiveLocation} radiusMiles={radius} />
+          <RadiusMap
+            address={usingSavedTargetCenter ? null : effectiveLocation}
+            radiusMiles={radius}
+            coordinates={
+              usingSavedTargetCenter && initialLatitude !== undefined && initialLongitude !== undefined
+                ? { lat: initialLatitude, lng: initialLongitude }
+                : undefined
+            }
+          />
         </div>
+        )}
 
         {/* Age and gender */}
         <div className="space-y-3">
@@ -396,6 +461,7 @@ export function BudgetTargeting({
             </select>
             <span className="text-sm text-muted-foreground">years</span>
           </div>
+          {advancedOpen && (
           <div className="flex items-center gap-3 rounded-md bg-secondary/40 px-3 py-2 text-sm">
             <Label htmlFor="gender" className="font-medium">Gender</Label>
             <select
@@ -411,9 +477,11 @@ export function BudgetTargeting({
             </select>
             <InfoTip content="Everyone is selected by default. You can narrow the audience to Men or Women if that better fits your offer." />
           </div>
+          )}
         </div>
 
         {/* Interests */}
+        {advancedOpen && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-1.5">
@@ -444,6 +512,7 @@ export function BudgetTargeting({
             Optional — broader targeting can help Meta find people likely to respond.
           </p>
         </div>
+        )}
 
         {/* Estimated reach callout */}
         <Card className="border-primary/20 bg-primary/5">
@@ -472,7 +541,19 @@ export function BudgetTargeting({
 
         <Button
           className="w-full h-12 text-base font-semibold gap-2"
-          onClick={() => onNext(budget, radius, effectiveLocation ?? "", ageMin, ageMax, gender, interests)}
+          onClick={() =>
+            onNext(
+              budget,
+              radius,
+              effectiveLocation ?? "",
+              ageMin,
+              ageMax,
+              gender,
+              interests,
+              usingSavedTargetCenter ? initialLatitude ?? null : null,
+              usingSavedTargetCenter ? initialLongitude ?? null : null,
+            )
+          }
           disabled={isProfileLoading || isBelowMinimum}
         >
           Submit for Review

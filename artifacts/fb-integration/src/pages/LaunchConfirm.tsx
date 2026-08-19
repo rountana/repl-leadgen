@@ -39,6 +39,9 @@ interface LaunchConfirmProps {
   destinationUrl?: string;
   /** Business address string to geocode for targeting (from user's Profile) */
   businessLocation?: string;
+  /** Reuse existing targeting coordinates unless the user explicitly changed location. */
+  targetingLatitude?: number;
+  targetingLongitude?: number;
 }
 
 type LaunchPhase = "geocoding" | "creating" | "launching" | "done" | "error";
@@ -69,6 +72,8 @@ export function LaunchConfirm({
   campaignId,
   destinationUrl,
   businessLocation,
+  targetingLatitude,
+  targetingLongitude,
 }: LaunchConfirmProps) {
   const [, setLocation] = useLocation();
   const genderLabel = gender === "male" ? "Men" : gender === "female" ? "Women" : "Everyone";
@@ -94,7 +99,10 @@ export function LaunchConfirm({
       // ── Step 1: Geocode the business location ──────────────────────────
       setPhase("geocoding");
 
-      if (!businessLocation || businessLocation.trim() === "") {
+      const shouldReuseSavedCoordinates =
+        typeof targetingLatitude === "number" && typeof targetingLongitude === "number";
+
+      if (!shouldReuseSavedCoordinates && (!businessLocation || businessLocation.trim() === "")) {
         setErrorMessage(
           "Your business location is not set. Please go to Profile and add your business address, then try again.",
         );
@@ -104,21 +112,27 @@ export function LaunchConfirm({
 
       let lat: number;
       let lng: number;
-      try {
-        const coords = await geocodeAddress(businessLocation);
-        lat = coords.lat;
-        lng = coords.lng;
-        setGeocodedLocation(businessLocation);
-      } catch (geoErr: unknown) {
-        const msg =
-          geoErr instanceof Error
-            ? geoErr.message
-            : "Could not find coordinates for your business address.";
-        setErrorMessage(
-          `${msg} Please update your business location in Profile and try again.`,
-        );
-        setPhase("error");
-        return;
+      if (shouldReuseSavedCoordinates) {
+        lat = targetingLatitude;
+        lng = targetingLongitude;
+        setGeocodedLocation("Original campaign location");
+      } else {
+        try {
+          const coords = await geocodeAddress(businessLocation!);
+          lat = coords.lat;
+          lng = coords.lng;
+          setGeocodedLocation(businessLocation!);
+        } catch (geoErr: unknown) {
+          const msg =
+            geoErr instanceof Error
+              ? geoErr.message
+              : "Could not find coordinates for your business address.";
+          setErrorMessage(
+            `${msg} Please update your business location in Profile and try again.`,
+          );
+          setPhase("error");
+          return;
+        }
       }
 
       const campaignFields = {
@@ -134,7 +148,7 @@ export function LaunchConfirm({
         targetingInterests: interests,
         targetingLatitude: lat,
         targetingLongitude: lng,
-        ...(destinationUrl ? { destinationUrl } : {}),
+        ...(destinationUrl !== undefined ? { destinationUrl } : {}),
       };
 
       // ── Step 2: Create or update the campaign ─────────────────────────

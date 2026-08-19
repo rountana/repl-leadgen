@@ -22,6 +22,12 @@ function normalizeGender(value: string | null | undefined): TargetGender {
   return value === "male" || value === "female" ? value : "all";
 }
 
+function normalizeCoordinate(value: string | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
+}
+
 interface WizardState {
   step: WizardStep;
   adDraft: FbAdDraft | null;
@@ -35,6 +41,9 @@ interface WizardState {
   destinationUrl: string;
   /** Business address from the user's Profile, collected on the Budget & Targeting step */
   businessLocation: string;
+  /** Existing campaign coordinates are retained unless the user explicitly changes location. */
+  targetingLatitude: number | null;
+  targetingLongitude: number | null;
 }
 
 export function CampaignWizard() {
@@ -73,6 +82,8 @@ export function CampaignWizard() {
     gender: "all",
     destinationUrl: magnetUrl,
     businessLocation: "",
+    targetingLatitude: null,
+    targetingLongitude: null,
   });
   const [preloaded, setPreloaded] = useState(false);
 
@@ -111,6 +122,8 @@ export function CampaignWizard() {
         gender: normalizeGender(editCampaign.targetingGender),
         destinationUrl: editCampaign.destinationUrl ?? "",
         businessLocation: "",
+        targetingLatitude: normalizeCoordinate(editCampaign.targetingLatitude),
+        targetingLongitude: normalizeCoordinate(editCampaign.targetingLongitude),
       });
       setPreloaded(true);
     }
@@ -170,12 +183,14 @@ export function CampaignWizard() {
       gender: "all",
       destinationUrl: "",
       businessLocation: "",
+      targetingLatitude: null,
+      targetingLongitude: null,
     });
     if (!editId) setShowTemplates(true);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
       <WizardProgress currentStep={wizard.step} />
 
       {/* Template gallery — shown before step 2 for new campaigns without a HVCG deep-link */}
@@ -224,7 +239,9 @@ export function CampaignWizard() {
               initialAgeMax={wizard.ageMax}
               initialGender={wizard.gender}
               initialInterests={wizard.interests}
-              onNext={(dailyBudget, radiusMiles, businessLocation, ageMin, ageMax, gender, interests) =>
+              initialLatitude={wizard.targetingLatitude ?? undefined}
+              initialLongitude={wizard.targetingLongitude ?? undefined}
+              onNext={(dailyBudget, radiusMiles, businessLocation, ageMin, ageMax, gender, interests, targetingLatitude, targetingLongitude) =>
                 setWizard((prev) => ({
                   ...prev,
                   step: 4,
@@ -235,6 +252,8 @@ export function CampaignWizard() {
                   ageMax,
                   gender,
                   interests,
+                  targetingLatitude,
+                  targetingLongitude,
                 }))
               }
             />
@@ -249,8 +268,10 @@ export function CampaignWizard() {
               ageMax={wizard.ageMax}
               gender={wizard.gender}
               interests={wizard.interests}
-              destinationUrl={wizard.destinationUrl || undefined}
+              destinationUrl={wizard.destinationUrl}
               businessLocation={wizard.businessLocation || undefined}
+              targetingLatitude={wizard.targetingLatitude ?? undefined}
+              targetingLongitude={wizard.targetingLongitude ?? undefined}
               onReset={handleReset}
               campaignId={editId ?? undefined}
             />

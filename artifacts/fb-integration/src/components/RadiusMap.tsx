@@ -45,6 +45,7 @@ async function geocodeAddress(address: string): Promise<GeoResult | null> {
 interface RadiusMapProps {
   address: string | null;
   radiusMiles: number;
+  coordinates?: GeoResult;
 }
 
 type GeoState =
@@ -54,7 +55,7 @@ type GeoState =
   | { status: "not-found" }
   | { status: "no-address" };
 
-export function RadiusMap({ address, radiusMiles }: RadiusMapProps) {
+export function RadiusMap({ address, radiusMiles, coordinates }: RadiusMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const circleRef = useRef<L.Circle | null>(null);
@@ -63,6 +64,10 @@ export function RadiusMap({ address, radiusMiles }: RadiusMapProps) {
 
   // Geocode when address changes
   useEffect(() => {
+    if (coordinates) {
+      setGeoState({ status: "ok", lat: coordinates.lat, lng: coordinates.lng });
+      return;
+    }
     if (!address || address.trim() === "") {
       setGeoState({ status: "no-address" });
       return;
@@ -78,7 +83,7 @@ export function RadiusMap({ address, radiusMiles }: RadiusMapProps) {
       }
     });
     return () => { cancelled = true; };
-  }, [address]);
+  }, [address, coordinates?.lat, coordinates?.lng]);
 
   // Initialize / destroy the Leaflet map instance
   useEffect(() => {

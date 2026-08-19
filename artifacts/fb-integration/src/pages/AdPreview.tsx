@@ -74,10 +74,14 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   const [callToAction, setCallToAction] = useState<CallToAction>(
     initialDraft?.callToAction ?? DEFAULT_CALL_TO_ACTION,
   );
+  // A selected template is already a complete starting point. Keep the detailed
+  // controls out of the way unless the user needs to change something.
+  const [detailsOpen, setDetailsOpen] = useState(!initialDraft || !initialDraft.bodyText);
 
   // ── Lead magnet destination state ──────────────────────────────────────
   const [destinationUrl, setDestinationUrl] = useState(initialDestinationUrl ?? "");
   const [selectedMagnet, setSelectedMagnet] = useState<SelectedMagnet | null>(null);
+  const destinationHydrated = useRef(false);
   // Keep this visible for new campaigns so the HVCG lead-magnet flow is easy to discover.
   const [magnetOpen, setMagnetOpen] = useState(true);
 
@@ -121,16 +125,23 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
     },
   });
 
-  // Sync back if parent passes a draft after mount
+  // Edit campaigns can load just after this component mounts. Hydrate the empty
+  // local editor once the parent receives that saved draft, without overwriting
+  // a user's in-progress changes.
   useEffect(() => {
-    if (initialDraft && !headline && !bodyText) {
-      setHeadline(initialDraft.headline);
-      setBodyText(initialDraft.bodyText);
-      setImageUrl(initialDraft.imageUrl ?? "");
-      setCallToAction(initialDraft.callToAction ?? DEFAULT_CALL_TO_ACTION);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!initialDraft || headline || bodyText) return;
+    setHeadline(initialDraft.headline);
+    setBodyText(initialDraft.bodyText);
+    setImageUrl(initialDraft.imageUrl ?? "");
+    setCallToAction(initialDraft.callToAction ?? DEFAULT_CALL_TO_ACTION);
+    setDetailsOpen(false);
+  }, [initialDraft, headline, bodyText]);
+
+  useEffect(() => {
+    if (!initialDraft || destinationHydrated.current) return;
+    setDestinationUrl(initialDestinationUrl ?? "");
+    destinationHydrated.current = true;
+  }, [initialDraft, initialDestinationUrl]);
 
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleGenerate = () => {
@@ -172,16 +183,63 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Build Your Ad</h2>
+        <h2 className="text-2xl font-bold tracking-tight">
+          {initialDraft ? "Your ad is ready to review" : "Build Your Ad"}
+        </h2>
         <p className="text-muted-foreground mt-1">
-          Fill in your business details, generate copy with AI, then tweak to perfection.
+          {initialDraft
+            ? "Your selected template is ready. Review the headline, then make only the changes you need."
+            : "Add the essential details below, then review how your ad will look."}
         </p>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 items-start">
         {/* ── LEFT: Editor ─────────────────────────────────────────────── */}
-        <div className="space-y-4">
+        <div className="order-last space-y-4 lg:order-first">
 
+          {/* The headline is the only creative field surfaced in the fast path. */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="headline" className="font-semibold">Headline</Label>
+              <span className={`text-xs tabular-nums ${headline.length > HEADLINE_LIMIT ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                {headline.length}/{HEADLINE_LIMIT}
+              </span>
+            </div>
+            <Input
+              id="headline"
+              placeholder="e.g. Save on Your AC This Summer"
+              value={headline}
+              onChange={(e) => setHeadline(e.target.value)}
+              className={headline.length > HEADLINE_LIMIT ? "border-destructive focus-visible:ring-destructive" : ""}
+            />
+            {headline.length > HEADLINE_LIMIT && (
+              <p className="text-xs text-destructive">Trim to {HEADLINE_LIMIT} characters — Facebook truncates longer headlines.</p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            aria-expanded={detailsOpen}
+            onClick={() => setDetailsOpen((open) => !open)}
+            className="w-full rounded-xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-secondary/30 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <span className="flex items-center justify-between gap-3">
+              <span>
+                <span className="block text-sm font-semibold">
+                  {detailsOpen ? "Hide ad details" : "Edit ad details"}
+                </span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Copy, image, button, destination, and AI tools
+                </span>
+              </span>
+              {detailsOpen
+                ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+                : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
+            </span>
+          </button>
+
+          {detailsOpen && (
+            <div className="space-y-4">
           {/* Business info accordion */}
           <Card>
             <CardHeader
@@ -275,26 +333,6 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
               </CardContent>
             )}
           </Card>
-
-          {/* Headline */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="headline" className="font-semibold">Headline</Label>
-              <span className={`text-xs tabular-nums ${headline.length > HEADLINE_LIMIT ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                {headline.length}/{HEADLINE_LIMIT}
-              </span>
-            </div>
-            <Input
-              id="headline"
-              placeholder="e.g. Save on Your AC This Summer"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              className={headline.length > HEADLINE_LIMIT ? "border-destructive focus-visible:ring-destructive" : ""}
-            />
-            {headline.length > HEADLINE_LIMIT && (
-              <p className="text-xs text-destructive">Trim to {HEADLINE_LIMIT} characters — Facebook truncates longer headlines.</p>
-            )}
-          </div>
 
           {/* Body text */}
           <div className="space-y-1.5">
@@ -479,22 +517,6 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
             )}
           </Card>
 
-          {/* Continue */}
-          <Button
-            className="w-full h-11 text-base font-semibold gap-2"
-            disabled={!canContinue}
-            onClick={() => onNext(draft, destinationUrl)}
-          >
-            Continue to Budget & Targeting
-            <ChevronRight className="w-5 h-5" />
-          </Button>
-
-          {!canContinue && (
-            <p className="text-xs text-center text-muted-foreground">
-              Add a headline and body copy to continue.
-            </p>
-          )}
-
           {/* Save as personal template */}
           {canContinue && (
             <div className="border border-border rounded-lg overflow-hidden">
@@ -562,10 +584,28 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
               )}
             </div>
           )}
+            </div>
+          )}
+
+          {/* Continue */}
+          <Button
+            className="w-full h-11 text-base font-semibold gap-2"
+            disabled={!canContinue}
+            onClick={() => onNext(draft, destinationUrl)}
+          >
+            Review Budget & Audience
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+
+          {!canContinue && (
+            <p className="text-xs text-center text-muted-foreground">
+              Expand ad details to add body copy before continuing.
+            </p>
+          )}
         </div>
 
         {/* ── RIGHT: Live preview ───────────────────────────────────────── */}
-        <div className="space-y-3 lg:sticky lg:top-6">
+        <div className="order-first space-y-3 lg:sticky lg:top-6 lg:order-last">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Preview
           </p>
@@ -670,6 +710,9 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
 
           <p className="text-xs text-muted-foreground text-center">
             This is an approximation of how your ad will look on Facebook.
+          </p>
+          <p className="text-xs text-muted-foreground text-center">
+            Ads currently target Facebook. Instagram and other placements are in the works.
           </p>
         </div>
       </div>

@@ -25,7 +25,6 @@ interface TemplateGalleryProps {
 }
 
 export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGalleryProps) {
-  const [selected, setSelected] = useState<string | null>(null);
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set());
 
   // Detect user's industry so we can surface the matching template first
@@ -51,6 +50,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
         headline: template.headline,
         bodyText: template.bodyText,
         imageUrl: template.imageUrl,
+        callToAction: "LEARN_MORE",
       },
       template.suggestedBudget,
       template.suggestedRadius,
@@ -58,7 +58,6 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
   };
 
   const renderCard = (template: CampaignTemplate, isRecommended = false) => {
-    const isSelected = selected === template.id;
     const imgFailed = imgErrors.has(template.id);
 
     return (
@@ -66,10 +65,8 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
         key={template.id}
         className={cn(
           "cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
-          isSelected && "border-primary ring-2 ring-primary/20 shadow-md",
-          isRecommended && !isSelected && "border-primary/30",
+          isRecommended && "border-primary/30",
         )}
-        onClick={() => setSelected(isSelected ? null : template.id)}
       >
         {/* Image */}
         <div className="relative h-36 bg-muted overflow-hidden">
@@ -98,14 +95,6 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
               </Badge>
             )}
           </div>
-          {/* Selected indicator */}
-          {isSelected && (
-            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-                <ArrowRight className="w-5 h-5" />
-              </div>
-            </div>
-          )}
         </div>
 
         <CardContent className="p-4 space-y-3">
@@ -122,20 +111,10 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
             <span>{template.suggestedRadius} mi radius</span>
           </div>
 
-          {/* Use button (visible when selected) */}
-          {isSelected && (
-            <Button
-              size="sm"
-              className="w-full gap-2 mt-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleUse(template);
-              }}
-            >
-              Use This Template
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          )}
+          <Button size="sm" className="w-full gap-2 mt-1" onClick={() => handleUse(template)}>
+            Use This Template
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Button>
         </CardContent>
       </Card>
     );
@@ -145,20 +124,15 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
     e.stopPropagation();
     await deleteTemplate.mutateAsync({ id });
     await queryClient.invalidateQueries({ queryKey: getListFbAdTemplatesQueryKey() });
-    if (selected === `my-${id}`) setSelected(null);
   };
 
   const renderMyTemplateCard = (template: FbAdTemplate) => {
-    const key = `my-${template.id}`;
-    const isSelected = selected === key;
     return (
       <Card
         key={template.id}
         className={cn(
           "cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
-          isSelected && "border-primary ring-2 ring-primary/20 shadow-md",
         )}
-        onClick={() => setSelected(isSelected ? null : key)}
       >
         {/* Image */}
         <div className="relative h-36 bg-muted overflow-hidden">
@@ -179,39 +153,35 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
             onClick={(e) => handleDeleteMyTemplate(template.id, e)}
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-red-500/80 transition-colors"
             title="Delete template"
+            aria-label={`Delete ${template.name} template`}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-          {isSelected && (
-            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-                <ArrowRight className="w-5 h-5" />
-              </div>
-            </div>
-          )}
         </div>
         <CardContent className="p-4 space-y-3">
           <div>
             <p className="font-semibold text-sm leading-snug">{template.name}</p>
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.headline}</p>
           </div>
-          {isSelected && (
-            <Button
-              size="sm"
-              className="w-full gap-2 mt-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelectTemplate(
-                  { headline: template.headline, bodyText: template.bodyText, imageUrl: template.imageUrl },
-                  template.suggestedDailyBudget ?? 10,
-                  template.suggestedRadiusMiles ?? 10,
-                );
-              }}
-            >
-              Use This Template
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            className="w-full gap-2 mt-1"
+            onClick={() =>
+              onSelectTemplate(
+                {
+                  headline: template.headline,
+                  bodyText: template.bodyText,
+                  imageUrl: template.imageUrl,
+                  callToAction: "LEARN_MORE",
+                },
+                template.suggestedDailyBudget ?? 10,
+                template.suggestedRadiusMiles ?? 10,
+              )
+            }
+          >
+            Use This Template
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Button>
         </CardContent>
       </Card>
     );
@@ -229,8 +199,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           Start with a ready-made template
         </h2>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
-          Pick a template for your industry — headline, body copy, and image are pre-filled.
-          You can edit everything before launching.
+          Pick a template for your industry and preview a ready-to-submit ad. You can make changes whenever you want.
         </p>
       </div>
 
