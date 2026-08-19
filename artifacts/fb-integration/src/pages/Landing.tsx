@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
+import { getSafeReturnPath, rememberPostSignInReturnTo } from "@/lib/authRedirect";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -49,9 +50,19 @@ const INDUSTRIES = [
 
 export function Landing() {
   const [showSignIn, setShowSignIn] = useState(false);
+  const returnTo = getSafeReturnPath(
+    new URLSearchParams(window.location.search).get("returnTo"),
+  );
+  const postSignInUrl = `${window.location.origin}${basePath}${returnTo ?? "/campaigns"}`;
+  const openSignIn = () => {
+    // OAuth callbacks can omit the landing-page query string. Preserve a
+    // validated protected-page destination for the authenticated root route.
+    rememberPostSignInReturnTo(returnTo);
+    setShowSignIn(true);
+  };
 
   return (
-    <PublicShell onSignIn={() => setShowSignIn(true)}>
+    <PublicShell onSignIn={openSignIn}>
       <div className="flex flex-col min-h-screen">
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
@@ -73,7 +84,7 @@ export function Landing() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
-                onClick={() => setShowSignIn(true)}
+                onClick={openSignIn}
                 className="text-lg px-8 py-6 h-auto shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
               >
                 Get Started <ArrowRight className="ml-2 w-5 h-5" />
@@ -242,7 +253,7 @@ export function Landing() {
             <Button
               size="lg"
               variant="secondary"
-              onClick={() => setShowSignIn(true)}
+              onClick={openSignIn}
               className="text-lg px-10 py-7 h-auto text-primary font-bold shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all bg-white hover:bg-gray-50"
             >
               Launch your first ad
@@ -278,8 +289,7 @@ export function Landing() {
             </button>
             {/* Strip Clerk's own card/box chrome so our wrapper owns all framing */}
             <SignIn
-              routing="virtual"
-              fallbackRedirectUrl={`${window.location.origin}${basePath}/connect`}
+              forceRedirectUrl={postSignInUrl}
               appearance={{
                 elements: {
                   rootBox: "w-full",

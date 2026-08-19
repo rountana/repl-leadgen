@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClerkProvider, Show, useClerk } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
@@ -13,6 +13,7 @@ import { Campaigns } from "@/pages/Campaigns";
 import { Profile } from "@/pages/Profile";
 import { Landing } from "@/pages/Landing";
 import { Shell } from "@/components/layout/Shell";
+import { takePostSignInReturnTo } from "@/lib/authRedirect";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,9 @@ const clerkAppearance = {
 };
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const [location] = useLocation();
+  const returnTo = `${location}${window.location.search}${window.location.hash}`;
+
   return (
     <>
       <Show when="signed-in">
@@ -87,10 +91,15 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
         </Shell>
       </Show>
       <Show when="signed-out">
-        <Redirect to="/" />
+        <Redirect to={`/?returnTo=${encodeURIComponent(returnTo)}`} />
       </Show>
     </>
   );
+}
+
+function AuthenticatedHomeRedirect() {
+  const [destination] = useState(() => takePostSignInReturnTo() ?? "/campaigns");
+  return <Redirect to={destination} />;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -129,7 +138,7 @@ function ClerkProviderWithRoutes() {
         <Switch>
           <Route path="/">
             <Show when="signed-in">
-              <Redirect to="/campaigns" />
+              <AuthenticatedHomeRedirect />
             </Show>
             <Show when="signed-out">
               <Landing />

@@ -3,3 +3,4 @@
 - [Meta campaign creation pitfalls](meta-campaign-creation.md) — use OUTCOME_TRAFFIC; omit campaign_budget_optimization and buying_type or get error 100/4834011.
 - [OpenAPI request schema naming](openapi-schema-naming.md) — use entity-style names for body components so Orval does not collide with generated operation schemas.
 - [Meta audience targeting](meta-audience-targeting.md) — age uses integer min/max; all genders omit `genders`, while men/women map to Meta IDs 1/2.
+- [Clerk sign-in redirects](clerk-signin-redirects.md) — force public dashboard redirects; persist validated protected deep links across OAuth callbacks.
