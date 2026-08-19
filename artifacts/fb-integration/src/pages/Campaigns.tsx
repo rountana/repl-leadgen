@@ -17,6 +17,7 @@ import {
   Loader2,
   Trash2,
   MoreVertical,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,7 +48,7 @@ import { adsManagerUrl, isRealAdAccountId } from "@/lib/adsManagerUrl";
 const STATE_THEME = {
   live:    { cardAccent: "border-l-4 border-l-green-400", panel: "bg-green-50 border-green-100", divider: "border-green-100", badge: "bg-green-100 text-green-800 border-green-200 hover:bg-green-100", label: "text-green-700" },
   pending: { cardAccent: "border-l-4 border-l-amber-400", panel: "bg-amber-50 border-amber-100", divider: "border-amber-100", badge: "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100", label: "text-amber-700" },
-  failed:  { cardAccent: "border-l-4 border-l-red-400",   panel: "bg-red-50 border-red-100",     divider: "border-red-100",   badge: "bg-red-100 text-red-800 border-red-200 hover:bg-red-100",       label: "text-red-700"   },
+  failed:  { cardAccent: "border-l-4 border-l-accent",    panel: "bg-accent/5 border-accent/20", divider: "border-accent/20", badge: "bg-accent/10 text-accent border-accent/25 hover:bg-accent/15", label: "text-accent" },
   neutral: { cardAccent: "",                               panel: "bg-muted/30 border-border/50", divider: "border-border/50", badge: "bg-muted text-muted-foreground border-border hover:bg-muted",    label: "text-muted-foreground" },
 } as const;
 
@@ -160,84 +161,88 @@ function CampaignCard({ campaign, adAccountId, sharedCampaignId }: { campaign: F
   ) : null;
 
   return (
-    <Card className={`overflow-hidden transition-colors ${theme.cardAccent}`}>
-      <CardContent className="p-5 space-y-3">
+    <Card className={`overflow-hidden border-border/50 shadow-sm transition-all hover:border-primary/50 hover:shadow-md ${theme.cardAccent}`}>
+      <div className="flex flex-col sm:flex-row">
+        <CardContent className="min-w-0 flex-1 p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <StatusBadge status={campaign.status} />
+              </div>
+              <h3 className="font-bold text-xl leading-tight">
+                {campaign.headline ?? "Untitled Ad"}
+              </h3>
+            </div>
+            {(canEdit || canDelete) && !confirmDelete && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost" className="shrink-0 -mt-1 -mr-1.5 w-8 h-8 text-muted-foreground hover:text-foreground">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {canEdit && (
+                    <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
+                      <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
+                      <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
 
-        {/* Title row with inline ⋮ menu */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-bold text-base leading-tight">
-            {campaign.headline ?? "Untitled Ad"}
-          </h3>
-          {(canEdit || canDelete) && !confirmDelete && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" className="shrink-0 -mt-1 -mr-1.5 w-7 h-7 text-muted-foreground hover:text-foreground">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {canEdit && (
-                  <DropdownMenuItem onClick={() => setLocation(`/campaign/new?edit=${campaign.id}`)}>
-                    <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
-                  </DropdownMenuItem>
-                )}
-                {canDelete && (
-                  <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setConfirmDelete(true)}>
-                    <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-
-        {/* Body text */}
-        {campaign.bodyText && (
-          <p className="text-sm text-muted-foreground -mt-1 line-clamp-2">
-            {campaign.bodyText}
-          </p>
-        )}
-
-        {/* Budget / radius */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-          {dailyBudgetDollars !== null && (
-            <span className="flex items-center gap-1">
-              <DollarSign className="w-3.5 h-3.5" />${dailyBudgetDollars}/day
-            </span>
-          )}
-          {campaign.targetingRadiusMiles != null && (
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5" />{campaign.targetingRadiusMiles} mi radius
-            </span>
-          )}
-        </div>
-
-        {/* Bottom strip — chip + status note on the left, primary action on the right */}
-        {confirmDelete ? (
-          <div className={`rounded-lg border px-3 py-2 flex items-center justify-between gap-3 ${theme.panel}`}>
-            <p className="text-xs text-muted-foreground leading-snug">
-              {campaign.status === "paused"
-                ? "Remove from this app? The paused campaign in Ads Manager won't be affected."
-                : "Remove this ad from the app?"}
+          {campaign.bodyText && (
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+              {campaign.bodyText}
             </p>
-            <div className="flex gap-1.5 shrink-0">
-              <Button size="sm" variant="outline" className="text-xs h-6 px-2.5 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
-              <Button size="sm" variant="destructive" className="text-xs h-6 px-2.5" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
-                {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0 flex-wrap">
-              <StatusBadge status={campaign.status} />
-              {statusNote}
-            </div>
-            {primaryAction}
-          </div>
-        )}
+          )}
 
-      </CardContent>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            {dailyBudgetDollars !== null && (
+              <span className="flex items-center gap-1.5">
+                <DollarSign className="w-4 h-4 text-primary" />${dailyBudgetDollars}/day
+              </span>
+            )}
+            {campaign.targetingRadiusMiles != null && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-primary" />{campaign.targetingRadiusMiles} mi radius
+              </span>
+            )}
+          </div>
+        </CardContent>
+
+        <div className="flex shrink-0 flex-col justify-center gap-3 border-t border-border/50 bg-secondary/20 p-5 sm:w-64 sm:border-t-0 sm:border-l">
+          {confirmDelete ? (
+            <>
+              <p className="text-xs text-muted-foreground leading-snug">
+                {campaign.status === "paused"
+                  ? "Remove from this app? The paused campaign in Ads Manager won't be affected."
+                  : "Remove this ad from the app?"}
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1 bg-background" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                <Button size="sm" variant="destructive" className="flex-1" disabled={deleteCampaign.isPending} onClick={() => deleteCampaign.mutate({ id: campaign.id })}>
+                  {deleteCampaign.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Delete"}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {statusNote && <div className={`rounded-lg border px-3 py-2 ${theme.panel}`}>{statusNote}</div>}
+              {primaryAction ? (
+                <div className="[&_button]:w-full [&_a]:justify-between">{primaryAction}</div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Manage this ad from the menu.</p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }
@@ -270,46 +275,21 @@ export function Campaigns() {
   const failedCount   = campaigns?.filter((c) => c.status === "error").length ?? 0;
   const totalCount    = campaigns?.length ?? 0;
 
+  const dashboardStats = [
+    { title: "Total ads", value: totalCount, icon: <BarChart3 className="w-5 h-5 text-primary" />, tone: "bg-primary/10" },
+    { title: "Live", value: liveCount, icon: <CheckCircle2 className="w-5 h-5 text-green-600" />, tone: "bg-green-500/10" },
+    { title: "In review", value: inReviewCount, icon: <Clock className="w-5 h-5 text-amber-600" />, tone: "bg-amber-500/10" },
+    { title: "Paused", value: pausedCount, icon: <Clock className="w-5 h-5 text-muted-foreground" />, tone: "bg-secondary" },
+    { title: "Drafts", value: draftCount, icon: <FileText className="w-5 h-5 text-muted-foreground" />, tone: "bg-secondary" },
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto max-w-6xl px-4 py-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          {totalCount > 0 ? (
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className="text-sm text-muted-foreground">
-                {totalCount} {totalCount === 1 ? "ad" : "ads"}
-              </span>
-              {liveCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 font-medium">
-                  ● {liveCount} live
-                </span>
-              )}
-              {inReviewCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
-                  ◌ {inReviewCount} in review
-                </span>
-              )}
-              {pausedCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                  {pausedCount} paused
-                </span>
-              )}
-              {draftCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                  {draftCount} draft
-                </span>
-              )}
-              {failedCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-medium">
-                  ⚠ {failedCount} failed
-                </span>
-              )}
-            </div>
-          ) : (
-            <p className="text-muted-foreground mt-1">Track your Facebook ads and lead delivery status.</p>
-          )}
+          <h1 className="text-3xl font-bold tracking-tight">Your Campaigns</h1>
+          <p className="mt-1 text-muted-foreground">Track your Facebook ads and lead delivery status.</p>
         </div>
         <div className="flex items-center gap-2">
           {hasSyncable && (
@@ -331,17 +311,37 @@ export function Campaigns() {
               )}
             </div>
           )}
-          <Button onClick={() => setLocation("/campaign/new")} className="gap-2">
+          <Button onClick={() => setLocation("/campaign/new")} size="lg" className="gap-2 shadow-md">
             <Plus className="w-4 h-4" />
             New Ad
           </Button>
         </div>
       </div>
 
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {dashboardStats.map((stat) => (
+          <Card key={stat.title} className="border-border/50 shadow-sm transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center justify-between p-5">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                {isLoading ? (
+                  <Skeleton className="mt-1 h-8 w-12" />
+                ) : (
+                  <p className="mt-1 text-3xl font-bold">{stat.value}</p>
+                )}
+              </div>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-full ${stat.tone}`}>
+                {stat.icon}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Current Facebook connection — compact and always close to the ads it controls */}
       {connection && (
         isRealAdAccountId(connection.adAccountId) ? (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-border/60 bg-muted/20 px-3 py-2 text-xs">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-border/50 bg-card px-4 py-3 text-sm shadow-sm">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground">
               <span className="font-medium text-foreground">
                 {connection.fbPageName || "Facebook Page"}
@@ -360,7 +360,7 @@ export function Campaigns() {
             </button>
           </div>
         ) : (
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-sm">
             <div className="flex min-w-0 items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               <span>Ad account needs reconnecting</span>
@@ -377,11 +377,22 @@ export function Campaigns() {
       )}
 
       {/* Content */}
-      {isLoading ? (
-        <div className="space-y-4">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-xl font-semibold">Campaign activity</h2>
+          {failedCount > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {failedCount} {failedCount === 1 ? "ad needs attention" : "ads need attention"}
+            </span>
+          )}
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
+            <Card key={i} className="border-border/50 shadow-sm">
+              <CardContent className="p-6">
                 <div className="flex justify-between items-start gap-4">
                   <div className="space-y-3 flex-1">
                     <div className="flex gap-2">
@@ -400,9 +411,9 @@ export function Campaigns() {
               </CardContent>
             </Card>
           ))}
-        </div>
-      ) : isError ? (
-        <Card className="border-destructive/20 bg-destructive/5">
+          </div>
+        ) : isError ? (
+        <Card className="border-destructive/20 bg-destructive/5 shadow-sm">
           <CardContent className="p-6 text-center space-y-3">
             <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
             <p className="font-semibold">Failed to load ads</p>
@@ -410,9 +421,9 @@ export function Campaigns() {
             <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
           </CardContent>
         </Card>
-      ) : !campaigns || campaigns.length === 0 ? (
+        ) : !campaigns || campaigns.length === 0 ? (
         /* Empty state */
-        <Card className="bg-secondary/30 border-dashed border-2 py-16 text-center">
+        <Card className="border-2 border-dashed border-border/70 bg-secondary/30 py-16 text-center shadow-sm">
           <CardContent className="flex flex-col items-center p-0">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
               <TrendingUp className="w-10 h-10 text-primary" />
@@ -427,8 +438,8 @@ export function Campaigns() {
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="space-y-4">
+        ) : (
+          <div className="grid gap-4">
           {campaigns.map((campaign) => (
             <CampaignCard
               key={campaign.id}
@@ -437,8 +448,9 @@ export function Campaigns() {
               sharedCampaignId={connection?.partnerCampaignId}
             />
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

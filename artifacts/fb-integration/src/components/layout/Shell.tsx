@@ -17,10 +17,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               href="/campaigns"
-              className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
@@ -28,7 +28,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
             <Link
               href="/profile"
-              className="hidden sm:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <UserCircle className="w-4 h-4" />
               Profile
@@ -38,7 +38,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             ) : (
               <>
-                <div className="hidden sm:flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2 ml-1">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
                     {user?.firstName?.[0] || <User className="w-4 h-4" />}
                   </div>
