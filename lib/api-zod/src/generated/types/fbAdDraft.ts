@@ -5,9 +5,11 @@
  * HVCG Lead Magnet Builder API
  * OpenAPI spec version: 0.1.0
  */
+import type { FbAdDraftCallToAction } from './fbAdDraftCallToAction';
 
 export interface FbAdDraft {
   headline: string;
   bodyText: string;
   imageUrl: string;
+  callToAction?: FbAdDraftCallToAction;
 }

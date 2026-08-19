@@ -5,12 +5,14 @@
  * HVCG Lead Magnet Builder API
  * OpenAPI spec version: 0.1.0
  */
+import type { FbCampaignUpdateCallToAction } from './fbCampaignUpdateCallToAction';
 import type { FbCampaignUpdateTargetingGender } from './fbCampaignUpdateTargetingGender';
 
 export interface FbCampaignUpdate {
   headline?: string;
   bodyText?: string;
   imageUrl?: string;
+  callToAction?: FbCampaignUpdateCallToAction;
   dailyBudgetCents?: number;
   targetingRadiusMiles?: number;
   /**

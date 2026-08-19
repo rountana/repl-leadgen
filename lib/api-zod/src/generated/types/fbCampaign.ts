@@ -5,6 +5,7 @@
  * HVCG Lead Magnet Builder API
  * OpenAPI spec version: 0.1.0
  */
+import type { FbCampaignCallToAction } from './fbCampaignCallToAction';
 import type { FbCampaignLeadDeliveryStatus } from './fbCampaignLeadDeliveryStatus';
 import type { FbCampaignStatus } from './fbCampaignStatus';
 import type { FbCampaignTargetingGender } from './fbCampaignTargetingGender';
@@ -20,6 +21,7 @@ export interface FbCampaign {
   bodyText?: string | null;
   /** @nullable */
   imageUrl?: string | null;
+  callToAction: FbCampaignCallToAction;
   /** @nullable */
   dailyBudgetCents?: number | null;
   /** @nullable */

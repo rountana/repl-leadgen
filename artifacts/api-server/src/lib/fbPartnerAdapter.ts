@@ -2,6 +2,15 @@ import { logger } from "./logger";
 
 const FB_VERSION = "v20.0";
 const GRAPH_BASE = `https://graph.facebook.com/${FB_VERSION}`;
+const DEFAULT_CALL_TO_ACTION = "LEARN_MORE";
+const SUPPORTED_CALL_TO_ACTIONS = new Set([
+  DEFAULT_CALL_TO_ACTION,
+  "GET_OFFER",
+  "DOWNLOAD",
+  "SIGN_UP",
+  "CONTACT_US",
+  "BOOK_NOW",
+]);
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -30,6 +39,8 @@ export interface CreateAdParams {
   headline: string;
   bodyText: string;
   imageUrl: string;
+  /** A Meta link-ad CTA type. Defaults to LEARN_MORE for campaigns created before CTA selection. */
+  callToAction?: string;
   dailyBudgetCents: number;
   targetingRadiusMiles: number;
   targetingAgeMin: number;
@@ -500,6 +511,7 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       headline,
       bodyText,
       imageUrl,
+      callToAction,
       dailyBudgetCents,
       targetingRadiusMiles,
       targetingAgeMin,
@@ -513,6 +525,9 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       accessToken,
       destinationUrl,
     } = params;
+    const selectedCallToAction = SUPPORTED_CALL_TO_ACTIONS.has(callToAction ?? "")
+      ? callToAction!
+      : DEFAULT_CALL_TO_ACTION;
 
     // Meta requires the account ID in "act_NNNN" format
     const actId = adAccountId.startsWith("act_") ? adAccountId : `act_${adAccountId}`;
@@ -650,7 +665,7 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
                 message: bodyText,
                 link: adDestinationUrl,
                 name: headline,
-                call_to_action: { type: "LEARN_MORE" },
+                call_to_action: { type: selectedCallToAction },
                 ...imageSpec,
               },
             },

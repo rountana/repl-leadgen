@@ -46,6 +46,18 @@ interface AdPreviewProps {
 
 const HEADLINE_LIMIT = 40;
 const BODY_LIMIT = 90;
+const DEFAULT_CALL_TO_ACTION = "LEARN_MORE" as const;
+
+type CallToAction = NonNullable<FbAdDraft["callToAction"]>;
+
+const CALL_TO_ACTION_OPTIONS: Array<{ value: CallToAction; label: string; description: string }> = [
+  { value: "LEARN_MORE", label: "Learn More", description: "Tell people more about your offer" },
+  { value: "GET_OFFER", label: "Get Offer", description: "Highlight a promotion or deal" },
+  { value: "DOWNLOAD", label: "Download", description: "Share a guide, checklist, or file" },
+  { value: "SIGN_UP", label: "Sign Up", description: "Invite people to register or join" },
+  { value: "CONTACT_US", label: "Contact Us", description: "Encourage prospective customers to reach out" },
+  { value: "BOOK_NOW", label: "Book Now", description: "Prompt people to schedule a service" },
+];
 
 export function AdPreview({ connection, onNext, initialDraft, initialDestinationUrl }: AdPreviewProps) {
   // ── Business info state ────────────────────────────────────────────────
@@ -59,6 +71,9 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   const [headline, setHeadline] = useState(initialDraft?.headline ?? "");
   const [bodyText, setBodyText] = useState(initialDraft?.bodyText ?? "");
   const [imageUrl, setImageUrl] = useState(initialDraft?.imageUrl ?? "");
+  const [callToAction, setCallToAction] = useState<CallToAction>(
+    initialDraft?.callToAction ?? DEFAULT_CALL_TO_ACTION,
+  );
 
   // ── Lead magnet destination state ──────────────────────────────────────
   const [destinationUrl, setDestinationUrl] = useState(initialDestinationUrl ?? "");
@@ -112,6 +127,7 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
       setHeadline(initialDraft.headline);
       setBodyText(initialDraft.bodyText);
       setImageUrl(initialDraft.imageUrl ?? "");
+      setCallToAction(initialDraft.callToAction ?? DEFAULT_CALL_TO_ACTION);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -150,7 +166,7 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
 
   const canContinue = headline.trim().length > 0 && bodyText.trim().length > 0;
 
-  const draft: FbAdDraft = { headline, bodyText, imageUrl };
+  const draft: FbAdDraft = { headline, bodyText, imageUrl, callToAction };
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
@@ -299,6 +315,46 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
             {bodyText.length > BODY_LIMIT && (
               <p className="text-xs text-destructive">Trim to {BODY_LIMIT} characters for best delivery.</p>
             )}
+          </div>
+
+          {/* Call to action */}
+          <div className="space-y-2">
+            <div>
+              <Label id="call-to-action-label" className="font-semibold">
+                Call-to-action button
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Facebook will show this button below your ad.
+              </p>
+            </div>
+            <div
+              className="grid grid-cols-2 gap-2"
+              role="radiogroup"
+              aria-labelledby="call-to-action-label"
+            >
+              {CALL_TO_ACTION_OPTIONS.map((option) => {
+                const selected = callToAction === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setCallToAction(option.value)}
+                    className={`rounded-lg border px-3 py-2.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                      selected
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border bg-background hover:border-primary/40 hover:bg-secondary/40"
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold">{option.label}</span>
+                    <span className="block mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                      {option.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Image */}
@@ -593,7 +649,7 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
                   variant="ghost"
                   tabIndex={-1}
                 >
-                  Learn More
+                  {CALL_TO_ACTION_OPTIONS.find((option) => option.value === callToAction)?.label ?? "Learn More"}
                 </Button>
               </div>
 

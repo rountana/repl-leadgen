@@ -63,6 +63,9 @@ function requireAuth(req: any, res: any, next: any) {
 function serializeCampaign(c: any) {
   return {
     ...c,
+    // Campaigns created before CTA selection have no persisted value. Keep their
+    // API response stable and make their existing Learn More behavior explicit.
+    callToAction: c.callToAction ?? "LEARN_MORE",
     targetingLatitude: c.targetingLatitude ?? null,
     targetingLongitude: c.targetingLongitude ?? null,
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
@@ -277,6 +280,7 @@ router.post("/fb/campaigns", requireAuth, async (req: any, res): Promise<void> =
     headline,
     bodyText,
     imageUrl,
+    callToAction,
     dailyBudgetCents,
     targetingRadiusMiles,
     targetingAgeMin,
@@ -296,6 +300,7 @@ router.post("/fb/campaigns", requireAuth, async (req: any, res): Promise<void> =
       headline,
       bodyText,
       imageUrl,
+      callToAction: callToAction ?? "LEARN_MORE",
       dailyBudgetCents,
       targetingRadiusMiles,
       targetingAgeMin,
@@ -634,6 +639,7 @@ router.post("/fb/campaigns/:id/launch", requireAuth, async (req: any, res): Prom
       headline: campaign.headline ?? "",
       bodyText: campaign.bodyText ?? "",
       imageUrl: campaign.imageUrl ?? "",
+      callToAction: campaign.callToAction ?? "LEARN_MORE",
       dailyBudgetCents: campaign.dailyBudgetCents ?? 0,
       targetingRadiusMiles: campaign.targetingRadiusMiles ?? 0,
       targetingAgeMin: campaign.targetingAgeMin ?? 18,

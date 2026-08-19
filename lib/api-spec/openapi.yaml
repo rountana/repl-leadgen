@@ -1081,6 +1081,10 @@ components:
           type: string
         imageUrl:
           type: string
+        callToAction:
+          type: string
+          enum: [LEARN_MORE, GET_OFFER, DOWNLOAD, SIGN_UP, CONTACT_US, BOOK_NOW]
+          default: LEARN_MORE
       required:
         - headline
         - bodyText
@@ -1101,6 +1105,9 @@ components:
           type: ["string", "null"]
         imageUrl:
           type: ["string", "null"]
+        callToAction:
+          type: string
+          enum: [LEARN_MORE, GET_OFFER, DOWNLOAD, SIGN_UP, CONTACT_US, BOOK_NOW]
         dailyBudgetCents:
           type: ["number", "null"]
         targetingRadiusMiles:
@@ -1143,6 +1150,7 @@ components:
       required:
         - id
         - userId
+        - callToAction
         - status
         - leadDeliveryStatus
         - createdAt
@@ -1167,6 +1175,10 @@ components:
           type: string
         imageUrl:
           type: string
+        callToAction:
+          type: string
+          enum: [LEARN_MORE, GET_OFFER, DOWNLOAD, SIGN_UP, CONTACT_US, BOOK_NOW]
+          default: LEARN_MORE
         dailyBudgetCents:
           type: number
         targetingRadiusMiles:
@@ -1204,6 +1216,9 @@ components:
           type: string
         imageUrl:
           type: string
+        callToAction:
+          type: string
+          enum: [LEARN_MORE, GET_OFFER, DOWNLOAD, SIGN_UP, CONTACT_US, BOOK_NOW]
         dailyBudgetCents:
           type: number
         targetingRadiusMiles:

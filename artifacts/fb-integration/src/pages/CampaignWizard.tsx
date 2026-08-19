@@ -58,6 +58,7 @@ export function CampaignWizard() {
         headline: magnetTitle.slice(0, 40),
         bodyText:  magnetDesc.slice(0, 90),
         imageUrl:  "",
+        callToAction: "LEARN_MORE",
       }
     : null;
 
@@ -97,6 +98,7 @@ export function CampaignWizard() {
               headline: editCampaign.headline,
               bodyText: editCampaign.bodyText ?? "",
               imageUrl: editCampaign.imageUrl ?? "",
+               callToAction: editCampaign.callToAction ?? "LEARN_MORE",
             }
           : null,
         dailyBudget: editCampaign.dailyBudgetCents

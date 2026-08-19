@@ -423,10 +423,13 @@ export const GenerateFbAdBody = zod.object({
   "offer": zod.string()
 })
 
+export const generateFbAdResponseCallToActionDefault = `LEARN_MORE`;
+
 export const GenerateFbAdResponse = zod.object({
   "headline": zod.string(),
   "bodyText": zod.string(),
-  "imageUrl": zod.string()
+  "imageUrl": zod.string(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']).default(generateFbAdResponseCallToActionDefault)
 })
 
 
@@ -440,6 +443,7 @@ export const ListFbCampaignsResponseItem = zod.object({
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingAgeMin": zod.number().nullish(),
@@ -464,6 +468,7 @@ export const ListFbCampaignsResponse = zod.array(ListFbCampaignsResponseItem)
 /**
  * @summary Create a new Facebook campaign
  */
+export const createFbCampaignBodyCallToActionDefault = `LEARN_MORE`;
 export const createFbCampaignBodyTargetingAgeMinMin = 18;
 export const createFbCampaignBodyTargetingAgeMinMax = 65;
 
@@ -479,6 +484,7 @@ export const CreateFbCampaignBody = zod.object({
   "headline": zod.string(),
   "bodyText": zod.string(),
   "imageUrl": zod.string(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']).default(createFbCampaignBodyCallToActionDefault),
   "dailyBudgetCents": zod.number(),
   "targetingRadiusMiles": zod.number(),
   "targetingAgeMin": zod.number().min(createFbCampaignBodyTargetingAgeMinMin).max(createFbCampaignBodyTargetingAgeMinMax),
@@ -497,6 +503,7 @@ export const CreateFbCampaignResponse = zod.object({
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingAgeMin": zod.number().nullish(),
@@ -540,6 +547,7 @@ export const GetFbCampaignResponse = zod.object({
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingAgeMin": zod.number().nullish(),
@@ -581,6 +589,7 @@ export const UpdateFbCampaignBody = zod.object({
   "headline": zod.string().optional(),
   "bodyText": zod.string().optional(),
   "imageUrl": zod.string().optional(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']).optional(),
   "dailyBudgetCents": zod.number().optional(),
   "targetingRadiusMiles": zod.number().optional(),
   "targetingAgeMin": zod.number().min(updateFbCampaignBodyTargetingAgeMinMin).max(updateFbCampaignBodyTargetingAgeMinMax).optional(),
@@ -599,6 +608,7 @@ export const UpdateFbCampaignResponse = zod.object({
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingAgeMin": zod.number().nullish(),
@@ -643,6 +653,7 @@ export const LaunchFbCampaignResponse = zod.object({
   "headline": zod.string().nullish(),
   "bodyText": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "callToAction": zod.enum(['LEARN_MORE', 'GET_OFFER', 'DOWNLOAD', 'SIGN_UP', 'CONTACT_US', 'BOOK_NOW']),
   "dailyBudgetCents": zod.number().nullish(),
   "targetingRadiusMiles": zod.number().nullish(),
   "targetingAgeMin": zod.number().nullish(),

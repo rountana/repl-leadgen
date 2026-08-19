@@ -12,6 +12,7 @@ export const fbCampaignsTable = pgTable(
     headline: text("headline"),
     bodyText: text("body_text"),
     imageUrl: text("image_url"),
+    callToAction: text("call_to_action").notNull().default("LEARN_MORE"),
     dailyBudgetCents: integer("daily_budget_cents"),
     targetingRadiusMiles: integer("targeting_radius_miles"),
     targetingAgeMin: integer("targeting_age_min"),

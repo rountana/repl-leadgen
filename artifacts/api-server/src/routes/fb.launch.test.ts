@@ -228,6 +228,30 @@ beforeEach(() => {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe("Launch route — ASBO shared-campaign scenarios", () => {
+  test("rejects unsupported campaign CTA values before saving or launching", async () => {
+    await seedConnection();
+
+    try {
+      const { status, body } = await post("/fb/campaigns", {
+        headline: "Free Coffee",
+        bodyText: "Visit our shop today!",
+        imageUrl: "https://example.com/test-img.jpg",
+        callToAction: "CUSTOM",
+        dailyBudgetCents: 1000,
+        targetingRadiusMiles: 5,
+        targetingAgeMin: 18,
+        targetingAgeMax: 65,
+        targetingLatitude: 37.7749,
+        targetingLongitude: -122.4194,
+      });
+
+      assert.equal(status, 400);
+      assert.match(String(body["error"]), /callToAction/i);
+    } finally {
+      await cleanupTestUser();
+    }
+  });
+
   test("Scenario 1: first submission creates a shared campaign and stores it in fb_connection_campaigns", async () => {
     const { connId } = await seedConnection();
     const { campaignId } = await seedCampaign(connId);

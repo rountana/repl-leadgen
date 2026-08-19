@@ -265,11 +265,36 @@ export interface FbAdGenerationInput {
   offer: string;
 }
 
+export type FbAdDraftCallToAction = typeof FbAdDraftCallToAction[keyof typeof FbAdDraftCallToAction];
+
+
+export const FbAdDraftCallToAction = {
+  LEARN_MORE: 'LEARN_MORE',
+  GET_OFFER: 'GET_OFFER',
+  DOWNLOAD: 'DOWNLOAD',
+  SIGN_UP: 'SIGN_UP',
+  CONTACT_US: 'CONTACT_US',
+  BOOK_NOW: 'BOOK_NOW',
+} as const;
+
 export interface FbAdDraft {
   headline: string;
   bodyText: string;
   imageUrl: string;
+  callToAction?: FbAdDraftCallToAction;
 }
+
+export type FbCampaignCallToAction = typeof FbCampaignCallToAction[keyof typeof FbCampaignCallToAction];
+
+
+export const FbCampaignCallToAction = {
+  LEARN_MORE: 'LEARN_MORE',
+  GET_OFFER: 'GET_OFFER',
+  DOWNLOAD: 'DOWNLOAD',
+  SIGN_UP: 'SIGN_UP',
+  CONTACT_US: 'CONTACT_US',
+  BOOK_NOW: 'BOOK_NOW',
+} as const;
 
 /**
  * @nullable
@@ -315,6 +340,7 @@ export interface FbCampaign {
   bodyText?: string | null;
   /** @nullable */
   imageUrl?: string | null;
+  callToAction: FbCampaignCallToAction;
   /** @nullable */
   dailyBudgetCents?: number | null;
   /** @nullable */
@@ -347,6 +373,18 @@ export interface FbCampaign {
   updatedAt: string;
 }
 
+export type FbCampaignInputCallToAction = typeof FbCampaignInputCallToAction[keyof typeof FbCampaignInputCallToAction];
+
+
+export const FbCampaignInputCallToAction = {
+  LEARN_MORE: 'LEARN_MORE',
+  GET_OFFER: 'GET_OFFER',
+  DOWNLOAD: 'DOWNLOAD',
+  SIGN_UP: 'SIGN_UP',
+  CONTACT_US: 'CONTACT_US',
+  BOOK_NOW: 'BOOK_NOW',
+} as const;
+
 export type FbCampaignInputTargetingGender = typeof FbCampaignInputTargetingGender[keyof typeof FbCampaignInputTargetingGender];
 
 
@@ -360,6 +398,7 @@ export interface FbCampaignInput {
   headline: string;
   bodyText: string;
   imageUrl: string;
+  callToAction?: FbCampaignInputCallToAction;
   dailyBudgetCents: number;
   targetingRadiusMiles: number;
   /**
@@ -380,6 +419,18 @@ export interface FbCampaignInput {
   targetingLongitude: number;
 }
 
+export type FbCampaignUpdateCallToAction = typeof FbCampaignUpdateCallToAction[keyof typeof FbCampaignUpdateCallToAction];
+
+
+export const FbCampaignUpdateCallToAction = {
+  LEARN_MORE: 'LEARN_MORE',
+  GET_OFFER: 'GET_OFFER',
+  DOWNLOAD: 'DOWNLOAD',
+  SIGN_UP: 'SIGN_UP',
+  CONTACT_US: 'CONTACT_US',
+  BOOK_NOW: 'BOOK_NOW',
+} as const;
+
 export type FbCampaignUpdateTargetingGender = typeof FbCampaignUpdateTargetingGender[keyof typeof FbCampaignUpdateTargetingGender];
 
 
@@ -393,6 +444,7 @@ export interface FbCampaignUpdate {
   headline?: string;
   bodyText?: string;
   imageUrl?: string;
+  callToAction?: FbCampaignUpdateCallToAction;
   dailyBudgetCents?: number;
   targetingRadiusMiles?: number;
   /**

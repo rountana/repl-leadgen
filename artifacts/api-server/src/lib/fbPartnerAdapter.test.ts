@@ -212,11 +212,35 @@ describe("createAd", () => {
     // Find the creative call
     const creativeCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/adcreatives`));
     assert.ok(creativeCall, "must POST to act_xxx/adcreatives");
+    const defaultCta = (
+      creativeCall!.body?.object_story_spec as {
+        link_data?: { call_to_action?: { type?: string } };
+      } | undefined
+    )?.link_data?.call_to_action?.type;
+    assert.equal(defaultCta, "LEARN_MORE", "must default existing campaigns to Learn More");
 
     // Find the ad call
     const adCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/ads`));
     assert.ok(adCall, "must POST to act_xxx/ads");
     assert.equal(adCall!.body?.status, "ACTIVE");
+  });
+
+  test("uses the selected Meta CTA in the creative payload", async () => {
+    queueSuccessfulAdCreation();
+
+    await metaFbPartnerAdapter.createAd({
+      ...BASE_CREATE_AD_PARAMS,
+      callToAction: "GET_OFFER",
+    });
+
+    const creativeCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/adcreatives`));
+    assert.ok(creativeCall, "must POST an ad creative");
+    const selectedCta = (
+      creativeCall!.body?.object_story_spec as {
+        link_data?: { call_to_action?: { type?: string } };
+      } | undefined
+    )?.link_data?.call_to_action?.type;
+    assert.equal(selectedCta, "GET_OFFER");
   });
 
   test("rejects when budget is below Meta minimum", async () => {
