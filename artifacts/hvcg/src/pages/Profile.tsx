@@ -103,7 +103,7 @@ export function Profile() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Business Profile</h1>
         <p className="text-muted-foreground mt-1">
-          Save your details once — they'll be pre-filled every time you build a new lead magnet campaign.
+          Save your details once — they'll be pre-filled every time you build a new lead magnet page.
         </p>
       </div>
 
@@ -112,7 +112,7 @@ export function Profile() {
         <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
           <Info className="w-4 h-4 shrink-0 mt-0.5" />
           <p className="text-xs">
-            We pulled some info from your previous campaigns. Review and update anything that needs changing.
+            We pulled some info from your previous pages. Review and update anything that needs changing.
           </p>
         </div>
       )}

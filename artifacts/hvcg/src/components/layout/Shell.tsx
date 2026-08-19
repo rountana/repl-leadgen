@@ -47,7 +47,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   <LogOut className="w-5 h-5" />
                 </Button>
                 <Button onClick={() => setLocation("/new")} className="hidden sm:flex gap-2">
-                  New Campaign <ArrowRight className="w-4 h-4" />
+                  New Page <ArrowRight className="w-4 h-4" />
                 </Button>
               </>
             )}

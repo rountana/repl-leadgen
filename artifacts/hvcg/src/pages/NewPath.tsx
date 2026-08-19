@@ -40,7 +40,7 @@ export function NewPath() {
       
       toast({
         title: "Link added!",
-        description: "Your existing webpage has been added as a campaign.",
+        description: "Your existing webpage has been added as a page.",
       });
       
       setLocation("/dashboard");

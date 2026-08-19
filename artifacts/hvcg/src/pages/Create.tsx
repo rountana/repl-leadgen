@@ -237,7 +237,7 @@ export function Create() {
           <ArrowLeft className="w-4 h-4" /> {isEditMode ? "Back to Review" : "Back"}
         </button>
         <h1 className="text-3xl font-bold tracking-tight">
-          {isEditMode ? "Edit Campaign" : "Create your Give-Away Page"}
+          {isEditMode ? "Edit Page" : "Create your Give-Away Page"}
         </h1>
         <p className="text-muted-foreground mt-2">
           {isEditMode
