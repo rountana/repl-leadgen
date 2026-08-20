@@ -38,6 +38,10 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
 
   const published = magnets.filter((m) => m.status === "live" && m.shareUrl);
 
+  const handleCreateNew = () => {
+    window.open(ADDPAGE_DASHBOARD_URL, "_blank", "noopener,noreferrer");
+  };
+
   const manageAddpageLink = (
     <TooltipProvider delayDuration={250}>
       <Tooltip>
@@ -58,10 +62,6 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
       </Tooltip>
     </TooltipProvider>
   );
-
-  const handleCreateNew = () => {
-    window.open(ADDPAGE_DASHBOARD_URL, "_blank", "noopener,noreferrer");
-  };
 
   if (isLoading) {
     return (

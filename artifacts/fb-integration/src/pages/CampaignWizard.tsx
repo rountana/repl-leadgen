@@ -214,7 +214,7 @@ export function CampaignWizard() {
             <div className="mb-4">
               <Button variant="ghost" size="sm" onClick={handleBack} className="gap-1 text-muted-foreground">
                 <ArrowLeft className="w-4 h-4" />
-                {wizard.step === 2 && !editId ? "Templates" : "Back"}
+                {wizard.step === 2 && !editId ? "Browse inspiration" : "Back"}
               </Button>
             </div>
           )}

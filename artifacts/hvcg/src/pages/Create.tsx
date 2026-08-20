@@ -307,7 +307,7 @@ export function Create() {
                           className="h-9 gap-1.5 px-3 text-xs font-semibold shadow-sm"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
-                          Browse Inspiration
+                          Browse inspiration
                           <Search className="w-3 h-3 opacity-80" />
                         </Button>
                       </DialogTrigger>

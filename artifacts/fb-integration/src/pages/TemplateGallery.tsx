@@ -112,7 +112,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           </div>
 
           <Button size="sm" className="w-full gap-2 mt-1" onClick={() => handleUse(template)}>
-            Use This Template
+              Use this template
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </CardContent>
@@ -145,7 +145,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           )}
           <div className="absolute top-2 left-2">
             <Badge className="bg-black/60 text-white border-transparent text-xs backdrop-blur-sm gap-1">
-              <BookmarkCheck className="w-2.5 h-2.5" /> Saved
+              <BookmarkCheck className="w-2.5 h-2.5" /> My template
             </Badge>
           </div>
           <button
@@ -179,7 +179,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
               )
             }
           >
-            Use This Template
+             Use this template
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </CardContent>
@@ -193,13 +193,13 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-3 py-1.5 rounded-full">
           <Sparkles className="w-3.5 h-3.5" />
-          Ad Templates
+          Browse inspiration
         </div>
         <h2 className="text-2xl font-bold tracking-tight">
-          Start with a ready-made template
+          Browse inspiration
         </h2>
         <p className="text-muted-foreground text-sm max-w-md mx-auto">
-          Pick a template for your industry and preview a ready-to-submit ad. You can make changes whenever you want.
+          Choose an idea for your industry and preview a pre-filled ad. You can make changes whenever you want.
         </p>
       </div>
 
@@ -222,7 +222,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
       {myTemplates.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            My saved templates
+             My templates
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 justify-items-center gap-4">
             {myTemplates.map((t) => renderMyTemplateCard(t))}
@@ -247,7 +247,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
         <div className="space-y-3">
           {recommended.length > 0 && (
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Other templates
+             More inspiration
             </p>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 justify-items-center gap-4">

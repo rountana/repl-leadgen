@@ -81,7 +81,7 @@ export function Landing() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-              No agency needed. Pick a template, set your budget and radius, and go live — straight from your dashboard.
+              No agency needed. Browse inspiration, set your budget and radius, and go live — straight from your dashboard.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
@@ -112,8 +112,8 @@ export function Landing() {
               {[
                 {
                   icon: <Zap className="w-6 h-6 text-primary" />,
-                  title: "1. Pick a template",
-                  desc: "Choose from ad templates built for your industry. Your headline, copy, and image — all pre-filled and ready to tweak.",
+                  title: "1. Browse inspiration",
+                  desc: "Choose an ad idea built for your industry. Your headline, copy, and image — all pre-filled and ready to tweak.",
                 },
                 {
                   icon: <Target className="w-6 h-6 text-primary" />,
