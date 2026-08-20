@@ -381,7 +381,16 @@ export function LaunchConfirm({
           <CardTitle className="text-base">Ad Summary</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="p-3 rounded-lg bg-secondary/30">
+           <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-2">
+             <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+             <div>
+               <p className="text-xs font-semibold text-amber-900">Your ad is off until you activate it</p>
+               <p className="text-sm text-amber-800 mt-0.5">
+                 Turn on the campaign, ad set, and this ad in Facebook Ads Manager after Meta finishes reviewing it. Nothing will spend before all three are active.
+               </p>
+             </div>
+           </div>
+           <div className="p-3 rounded-lg bg-secondary/30">
             <p className="text-xs text-muted-foreground mb-1">Headline</p>
             <p className="font-semibold text-sm">{adDraft.headline}</p>
           </div>
