@@ -1084,7 +1084,7 @@ components:
         callToAction:
           type: string
           enum: [LEARN_MORE, GET_OFFER, DOWNLOAD, SIGN_UP, CONTACT_US, BOOK_NOW]
-          default: LEARN_MORE
+          default: GET_OFFER
       required:
         - headline
         - bodyText
@@ -1178,7 +1178,7 @@ components:
         callToAction:
           type: string
           enum: [LEARN_MORE, GET_OFFER, DOWNLOAD, SIGN_UP, CONTACT_US, BOOK_NOW]
-          default: LEARN_MORE
+          default: GET_OFFER
         dailyBudgetCents:
           type: number
         targetingRadiusMiles:

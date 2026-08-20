@@ -139,7 +139,7 @@ export function LaunchConfirm({
         headline: adDraft.headline,
         bodyText: adDraft.bodyText,
         imageUrl: adDraft.imageUrl,
-        callToAction: adDraft.callToAction ?? "LEARN_MORE",
+        callToAction: adDraft.callToAction ?? "GET_OFFER",
         dailyBudgetCents: dailyBudget * 100,
         targetingRadiusMiles: radiusMiles,
         targetingAgeMin: ageMin,

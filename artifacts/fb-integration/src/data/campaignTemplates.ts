@@ -35,7 +35,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Dine With Us",
     headline: "Taste the Difference Today",
     bodyText:
-      "Join us for an unforgettable dining experience. Fresh ingredients, bold flavors, and a warm atmosphere you'll love. Reserve your table now!",
+      "Fresh flavors, a warm atmosphere, and a table waiting for you. Reserve today!",
     imageUrl: unsplash("photo-1546069901-ba9599a7e63c"),
     photoCredit: "Unsplash",
     suggestedBudget: 15,
@@ -49,7 +49,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Transform Your Body",
     headline: "Start Your Fitness Journey Today",
     bodyText:
-      "Expert trainers, modern equipment, and a community that keeps you motivated. Your first week is completely free — come see what you've been missing.",
+      "Expert trainers, modern equipment, and your first week free. Start today!",
     imageUrl: unsplash("photo-1534438327276-14e5300c3a48"),
     photoCredit: "Unsplash",
     suggestedBudget: 20,
@@ -63,7 +63,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Look Your Best",
     headline: "Book Your Glow-Up Today",
     bodyText:
-      "Professional hair, skin, and nail services tailored just for you. New clients receive 20% off their first visit. Book online in seconds!",
+      "Professional beauty services with 20% off your first visit. Book today!",
     imageUrl: unsplash("photo-1560066984-138dadb4c035"),
     photoCredit: "Unsplash",
     suggestedBudget: 12,
@@ -77,7 +77,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Find Your Dream Home",
     headline: "Your Dream Home Is Waiting",
     bodyText:
-      "Discover beautiful homes in your neighborhood. Our experienced agents guide you every step of the way — from first showing to closing day.",
+      "Discover beautiful local homes with an experienced agent by your side.",
     imageUrl: unsplash("photo-1568605114967-8130f3a36994"),
     photoCredit: "Unsplash",
     suggestedBudget: 25,
@@ -91,7 +91,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Fast & Reliable Repairs",
     headline: "Quality Home Repairs, Done Right",
     bodyText:
-      "Licensed, insured, and available 7 days a week. Get a free estimate and same-day service for urgent repairs. Trusted by hundreds of local homeowners.",
+      "Licensed, insured repairs with free estimates and same-day service. Call today!",
     imageUrl: unsplash("photo-1581578731548-c64695cc6952"),
     photoCredit: "Unsplash",
     suggestedBudget: 15,
@@ -105,7 +105,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Shop the Collection",
     headline: "New Arrivals You'll Love",
     bodyText:
-      "Discover this season's must-have styles and unique finds. Shop our curated collection and enjoy free local delivery on orders over $50.",
+      "New styles, local delivery, and free delivery on orders over $50. Shop today!",
     imageUrl: unsplash("photo-1441986300917-64674bd600d8"),
     photoCredit: "Unsplash",
     suggestedBudget: 15,
@@ -119,7 +119,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Plan With Confidence",
     headline: "A Clearer Path to Financial Confidence",
     bodyText:
-      "Personalized guidance for retirement, investing, and protecting what you've built. Schedule a complimentary consultation to talk through your goals.",
+      "Get practical guidance for retirement, investing, and protecting what you've built.",
     imageUrl: unsplash("photo-1554224155-6726b3ff858f"),
     photoCredit: "Unsplash",
     suggestedBudget: 20,
@@ -133,7 +133,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Coverage Made Clear",
     headline: "Coverage That Fits Your Life",
     bodyText:
-      "Compare practical coverage options with a local insurance professional who listens. Get a personalized review and feel confident about your next step.",
+      "Compare coverage with a local advisor. Get your personalized review today.",
     imageUrl: unsplash("photo-1450101499163-c8848c66ca85"),
     photoCredit: "Unsplash",
     suggestedBudget: 15,
@@ -147,7 +147,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Expert Support",
     headline: "Expert Support for Your Next Step",
     bodyText:
-      "Get thoughtful, practical help from a local team that understands your goals. Book a consultation and turn your next challenge into a clear plan.",
+      "Thoughtful local support for your next challenge. Book a consultation today.",
     imageUrl: unsplash("photo-1556761175-b413da4baf72"),
     photoCredit: "Unsplash",
     suggestedBudget: 15,
@@ -161,7 +161,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Plan Your Escape",
     headline: "Make Your Next Trip Unforgettable",
     bodyText:
-      "Thoughtful itineraries, trusted recommendations, and personal support from booking to return. Tell us where you want to go and we'll help plan the rest.",
+      "Personal trip planning and support from booking through your return. Start planning.",
     imageUrl: unsplash("photo-1500530855697-b586d89ba3ee"),
     photoCredit: "Unsplash",
     suggestedBudget: 15,
@@ -175,7 +175,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Local Expertise",
     headline: "Local Expertise. Made for You.",
     bodyText:
-      "Discover a better way to get the help, service, or experience you need. Connect with a local business that cares about doing things right.",
+      "Connect with a local team that understands your goals. Take the next step today.",
     imageUrl: unsplash("photo-1497366811353-6870744d04b2"),
     photoCredit: "Unsplash",
     suggestedBudget: 12,
@@ -189,7 +189,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Pamper Your Pet",
     headline: "Your Pet Deserves the Best",
     bodyText:
-      "Professional grooming, training, and daycare for your furry family member. First grooming session 20% off for new clients. Book today!",
+      "Professional pet care with 20% off a first grooming visit. Book today!",
     imageUrl: unsplash("photo-1587300003388-59208cc962cb"),
     photoCredit: "Unsplash",
     suggestedBudget: 10,
@@ -203,7 +203,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     name: "Your Health First",
     headline: "Compassionate Care Close to Home",
     bodyText:
-      "Now accepting new patients! Comprehensive, personalized care with a team that truly listens. Schedule your appointment today and feel the difference.",
+      "Compassionate local care from a team that listens. Schedule today!",
     imageUrl: unsplash("photo-1519494026892-80bbd2d6fd0d"),
     photoCredit: "Unsplash",
     suggestedBudget: 20,

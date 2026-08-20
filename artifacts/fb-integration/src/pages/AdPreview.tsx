@@ -46,7 +46,7 @@ interface AdPreviewProps {
 
 const HEADLINE_LIMIT = 40;
 const BODY_LIMIT = 90;
-const DEFAULT_CALL_TO_ACTION = "LEARN_MORE" as const;
+const DEFAULT_CALL_TO_ACTION = "GET_OFFER" as const;
 
 type CallToAction = NonNullable<FbAdDraft["callToAction"]>;
 

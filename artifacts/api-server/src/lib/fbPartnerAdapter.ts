@@ -2,7 +2,7 @@ import { logger } from "./logger";
 
 const FB_VERSION = "v20.0";
 const GRAPH_BASE = `https://graph.facebook.com/${FB_VERSION}`;
-const DEFAULT_CALL_TO_ACTION = "LEARN_MORE";
+const DEFAULT_CALL_TO_ACTION = "GET_OFFER";
 const SUPPORTED_CALL_TO_ACTIONS = new Set([
   DEFAULT_CALL_TO_ACTION,
   "GET_OFFER",
@@ -39,7 +39,7 @@ export interface CreateAdParams {
   headline: string;
   bodyText: string;
   imageUrl: string;
-  /** A Meta link-ad CTA type. Defaults to LEARN_MORE for campaigns created before CTA selection. */
+  /** A Meta link-ad CTA type. Defaults to GET_OFFER when not selected. */
   callToAction?: string;
   dailyBudgetCents: number;
   targetingRadiusMiles: number;

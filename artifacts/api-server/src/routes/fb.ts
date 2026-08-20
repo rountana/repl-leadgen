@@ -63,9 +63,9 @@ function requireAuth(req: any, res: any, next: any) {
 function serializeCampaign(c: any) {
   return {
     ...c,
-    // Campaigns created before CTA selection have no persisted value. Keep their
-    // API response stable and make their existing Learn More behavior explicit.
-    callToAction: c.callToAction ?? "LEARN_MORE",
+    // Campaigns created before CTA selection have no persisted value. Give them
+    // the current default while preserving any explicitly selected CTA.
+    callToAction: c.callToAction ?? "GET_OFFER",
     targetingLatitude: c.targetingLatitude ?? null,
     targetingLongitude: c.targetingLongitude ?? null,
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : c.createdAt,
@@ -300,7 +300,7 @@ router.post("/fb/campaigns", requireAuth, async (req: any, res): Promise<void> =
       headline,
       bodyText,
       imageUrl,
-      callToAction: callToAction ?? "LEARN_MORE",
+      callToAction: callToAction ?? "GET_OFFER",
       dailyBudgetCents,
       targetingRadiusMiles,
       targetingAgeMin,

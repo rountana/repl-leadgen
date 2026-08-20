@@ -1,6 +1,12 @@
 import { ExternalLink, Magnet, PlusCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   useListLeadMagnets,
@@ -32,6 +38,27 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
 
   const published = magnets.filter((m) => m.status === "live" && m.shareUrl);
 
+  const manageAddpageLink = (
+    <TooltipProvider delayDuration={250}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleCreateNew}
+            className="inline-flex items-center justify-center gap-1.5 text-xs text-primary font-semibold hover:text-primary/80 transition-colors py-1"
+          >
+            <PlusCircle className="w-3 h-3" />
+            Manage pages in Addpage
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+          Open Addpage to create a new page or edit, publish, or delete an existing page.
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+
   const handleCreateNew = () => {
     window.open(ADDPAGE_DASHBOARD_URL, "_blank", "noopener,noreferrer");
   };
@@ -59,16 +86,25 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
             instead of just page views.
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={handleCreateNew}
-          className="gap-2 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          Create with Addpage
-          <ExternalLink className="w-3 h-3 opacity-60" />
-        </Button>
+        <TooltipProvider delayDuration={250}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCreateNew}
+                className="gap-2 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Manage pages in Addpage
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+              Open Addpage to create a new page or edit, publish, or delete an existing page.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     );
   }
@@ -126,15 +162,9 @@ export function LeadMagnetPicker({ selected, onSelect }: LeadMagnetPickerProps) 
       </div>
 
       {/* Create new link */}
-      <button
-        type="button"
-        onClick={handleCreateNew}
-        className="w-full flex items-center justify-center gap-1.5 text-xs text-primary font-semibold hover:text-primary/80 transition-colors py-1"
-      >
-        <PlusCircle className="w-3 h-3" />
-        Create with Addpage
-        <ExternalLink className="w-3 h-3 opacity-60" />
-      </button>
+      <div className="flex justify-center">
+        {manageAddpageLink}
+      </div>
     </div>
   );
 }

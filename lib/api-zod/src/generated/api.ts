@@ -423,7 +423,7 @@ export const GenerateFbAdBody = zod.object({
   "offer": zod.string()
 })
 
-export const generateFbAdResponseCallToActionDefault = `LEARN_MORE`;
+export const generateFbAdResponseCallToActionDefault = `GET_OFFER`;
 
 export const GenerateFbAdResponse = zod.object({
   "headline": zod.string(),
@@ -468,7 +468,7 @@ export const ListFbCampaignsResponse = zod.array(ListFbCampaignsResponseItem)
 /**
  * @summary Create a new Facebook campaign
  */
-export const createFbCampaignBodyCallToActionDefault = `LEARN_MORE`;
+export const createFbCampaignBodyCallToActionDefault = `GET_OFFER`;
 export const createFbCampaignBodyTargetingAgeMinMin = 18;
 export const createFbCampaignBodyTargetingAgeMinMax = 65;
 
