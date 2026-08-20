@@ -455,7 +455,7 @@ export function LaunchConfirm({
             {[
               "Open Facebook Ads Manager using the button above",
               "Find your ad and review the creative and settings",
-              "Toggle the shared campaign to Active — all your ads start running immediately",
+              "After Meta finishes reviewing it, turn on the campaign, ad set, and this ad",
               "Come back here and hit Refresh Status to see it go live",
             ].map((step, i) => (
               <li key={i} className="flex items-start gap-2.5 text-sm text-amber-800">

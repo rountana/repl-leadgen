@@ -429,10 +429,11 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
       ),
     );
 
-  // Filter to ads that have a Meta ad set ID — status is checked per ad set,
-  // not per campaign, so that each ad gets its own accurate delivery state
-  // under the shared-campaign model.
-  const syncable = candidates.filter((c) => !!c.partnerAdSetId && !!c.connectionId);
+  // Each local ad maps to its own Meta ad set + ad. Both IDs are required so
+  // a paused ad cannot be reported as live merely because its parent is active.
+  const syncable = candidates.filter(
+    (c) => !!c.partnerAdSetId && !!c.partnerAdId && !!c.connectionId,
+  );
   if (syncable.length === 0) {
     res.json({ synced: 0, updated: 0 });
     return;
@@ -461,10 +462,11 @@ router.post("/fb/campaigns/sync", requireAuth, async (req: any, res): Promise<vo
         return;
       }
       try {
-        // Check the individual ad set — not the shared campaign — so each ad
-        // has its own status rather than inheriting the shared campaign status.
+        // Check the individual ad and its parent ad set so each ad has its own
+        // status rather than inheriting a shared campaign/parent status.
         const result = await activeFbPartnerAdapter.verifyLeadDelivery(
           campaign.partnerAdSetId!,
+          campaign.partnerAdId!,
           conn.partnerToken,
         );
         // Map Meta effective_status → our internal status + leadDeliveryStatus
@@ -783,14 +785,20 @@ router.get(
       return;
     }
 
-    // Check the individual ad set — not the shared campaign — so this ad's
-    // status is independent of other ads under the same shared campaign.
+    if (!campaign.partnerAdId) {
+      res.json({ status: "unverified", checkedAt: new Date().toISOString() });
+      return;
+    }
+
+    // Check the individual ad and its parent ad set so this ad's status is
+    // independent of other ads under the shared campaign.
     const result = await activeFbPartnerAdapter.verifyLeadDelivery(
       campaign.partnerAdSetId,
+      campaign.partnerAdId,
       conn.partnerToken,
     );
     // Map Meta effective_status to our delivery status:
-    // ACTIVE                      → "active"     (ad set is delivering)
+    // ACTIVE                      → "active"     (ad and hierarchy are delivering)
     // PAUSED / CAMPAIGN_PAUSED    → "unverified" (user hasn't activated yet / manually paused)
     // PENDING_REVIEW / IN_PROCESS → "unverified" (Meta is reviewing)
     // DISAPPROVED / WITH_ISSUES / unknown → "failed" (delivery/policy problem)

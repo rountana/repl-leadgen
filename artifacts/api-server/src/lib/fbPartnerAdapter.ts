@@ -93,14 +93,16 @@ export interface FbPartnerAdapter {
   campaignExists(partnerCampaignId: string, accessToken: string): Promise<boolean>;
 
   /**
-   * Check whether a specific ad set is currently delivering.
-   * Querying by ad set ID gives per-ad status, which is correct under the
-   * shared-campaign model where all ads share the same Meta campaign.
-   * @param partnerAdSetId  Meta ad set ID (e.g. "23854…")
-   * @param accessToken     Facebook user access token for the account that owns the ad set.
+   * Check whether a specific ad is currently delivering.
+   * The ad and its ad set are both checked so a paused ad is not reported as
+   * live merely because its parent is active.
+   * @param partnerAdSetId Meta ad set ID (e.g. "23854…")
+   * @param partnerAdId Meta ad ID (e.g. "23854…")
+   * @param accessToken Facebook user access token for the owning ad account.
    */
   verifyLeadDelivery(
     partnerAdSetId: string,
+    partnerAdId: string,
     accessToken: string,
   ): Promise<VerifyLeadDeliveryResult>;
 }
@@ -403,10 +405,10 @@ export function buildAdSetPayload(params: AdSetPayloadParams): Record<string, un
       // hand control to Meta's Advantage audience AI and ignore our spec.
       targeting_automation: { advantage_audience: 0 },
     },
-    // ACTIVE — the campaign is PAUSED, so no budget is spent yet.
-    // When the user activates the campaign in Ads Manager, this ad set
-    // (and its ad) start delivering immediately without needing a second toggle.
-    status: "ACTIVE",
+    // New ad sets are paused so adding an ad never makes it eligible to spend.
+    // The user can activate the campaign, ad set, and ad in Ads Manager after
+    // reviewing the new ad.
+    status: "PAUSED",
   };
 }
 
@@ -689,15 +691,15 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
       logger.info({ creativeId }, "Meta: ad creative created");
 
       // ── 4. Ad ───────────────────────────────────────────────────────────
-      // Also ACTIVE so the entire hierarchy is ready to deliver the moment the
-      // parent campaign is activated by the user in Ads Manager.
+      // New ads are always paused. This prevents a newly added ad from
+      // spending even when it is added under an already-active campaign.
       const adData = await graphPost(
         `/${actId}/ads`,
         {
           name: headline.slice(0, 255) || "Ad",
           adset_id: adSetId,
           creative: { creative_id: creativeId },
-          status: "ACTIVE",
+          status: "PAUSED",
         },
         accessToken,
       );
@@ -746,44 +748,40 @@ export const metaFbPartnerAdapter: FbPartnerAdapter = {
     }
   },
 
-  async verifyLeadDelivery(partnerAdSetId, accessToken) {
-    // Query the individual ad set — not the shared campaign — so each ad has
-    // its own accurate status under the shared-campaign model.
-    // Because the ad set and ad are created as ACTIVE (only the campaign is PAUSED),
-    // the ad set effective_status of "CAMPAIGN_PAUSED" means the campaign hasn't been
-    // activated yet; "ACTIVE" means the user activated the campaign and ads are running.
-    const data = await graphGet(
-      `/${partnerAdSetId}`,
-      { fields: "status,effective_status" },
-      accessToken,
-    );
+  async verifyLeadDelivery(partnerAdSetId, partnerAdId, accessToken) {
+    // Check the ad and its parent ad set together. The ad can be paused
+    // independently of an active parent, while the ad-set effective status
+    // reflects a paused campaign or ad set higher in the hierarchy.
+    const [adData, adSetData] = await Promise.all([
+      graphGet(`/${partnerAdId}`, { fields: "status,effective_status" }, accessToken),
+      graphGet(`/${partnerAdSetId}`, { fields: "status,effective_status" }, accessToken),
+    ]);
 
-    // effective_status reflects actual delivery (accounts for campaign-level pauses etc.)
-    const active = data.effective_status === "ACTIVE";
-    // CAMPAIGN_PAUSED = parent campaign is paused; user hasn't activated it yet.
-    // PAUSED / ADSET_PAUSED = ad set explicitly paused after initial submission.
-    const paused =
-      data.effective_status === "PAUSED" ||
-      data.effective_status === "CAMPAIGN_PAUSED" ||
-      data.effective_status === "ADSET_PAUSED";
-    // PENDING_REVIEW = queued for Meta's moderation review (most common in-review state).
-    // IN_PROCESS = being actively processed/reviewed by Meta's systems.
-    // NOTE: WITH_ISSUES and DISAPPROVED are rejection/delivery-problem signals, not
-    // pending-review states — they fall through so callers map them to "failed".
-    const inReview =
-      data.effective_status === "PENDING_REVIEW" ||
-      data.effective_status === "IN_PROCESS";
+    const effectiveStatuses = [adData.effective_status, adSetData.effective_status];
+    const active = effectiveStatuses.every((status) => status === "ACTIVE");
+    const inReview = effectiveStatuses.some(
+      (status) => status === "PENDING_REVIEW" || status === "IN_PROCESS",
+    );
+    const paused = !inReview && effectiveStatuses.some(
+      (status) =>
+        status === "PAUSED" ||
+        status === "CAMPAIGN_PAUSED" ||
+        status === "ADSET_PAUSED",
+    );
 
     logger.info(
       {
         partnerAdSetId,
-        status: data.status,
-        effectiveStatus: data.effective_status,
+        partnerAdId,
+        adStatus: adData.status,
+        adEffectiveStatus: adData.effective_status,
+        adSetStatus: adSetData.status,
+        adSetEffectiveStatus: adSetData.effective_status,
         active,
         paused,
         inReview,
       },
-      "Meta: ad set status checked",
+      "Meta: ad hierarchy status checked",
     );
 
     return { active, paused, inReview, checkedAt: new Date().toISOString() };
@@ -809,8 +807,8 @@ export const stubFbPartnerAdapter: FbPartnerAdapter = {
     logger.warn("stubFbPartnerAdapter.campaignExists: returning true (stub)");
     return true;
   },
-  async verifyLeadDelivery(partnerAdSetId, _accessToken) {
-    logger.warn({ partnerAdSetId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub paused");
+  async verifyLeadDelivery(partnerAdSetId, partnerAdId, _accessToken) {
+    logger.warn({ partnerAdSetId, partnerAdId }, "stubFbPartnerAdapter.verifyLeadDelivery: returning stub paused");
     return { active: false, paused: true, inReview: false, checkedAt: new Date().toISOString() };
   },
 };

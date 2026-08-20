@@ -207,7 +207,7 @@ describe("createAd", () => {
       "budget must be on the ad set (ASBO mode)",
     );
     assert.equal(adSetCall!.body?.daily_budget, 500, "ad set daily_budget must equal dailyBudgetCents");
-    assert.equal(adSetCall!.body?.status, "ACTIVE", "ad set must be ACTIVE so it delivers once campaign is activated");
+    assert.equal(adSetCall!.body?.status, "PAUSED", "new ad sets must remain off until the user activates them");
 
     // Find the creative call
     const creativeCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/adcreatives`));
@@ -222,7 +222,7 @@ describe("createAd", () => {
     // Find the ad call
     const adCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/ads`));
     assert.ok(adCall, "must POST to act_xxx/ads");
-    assert.equal(adCall!.body?.status, "ACTIVE");
+    assert.equal(adCall!.body?.status, "PAUSED");
   });
 
   test("uses the selected Meta CTA in the creative payload", async () => {
@@ -495,37 +495,51 @@ describe("verifyLeadDelivery", () => {
 
   test("reports active when effective_status is ACTIVE", async () => {
     mockFetch({ data: { status: "ACTIVE", effective_status: "ACTIVE" } });
-    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, ACCESS_TOKEN);
+    mockFetch({ data: { status: "ACTIVE", effective_status: "ACTIVE" } });
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
     assert.equal(r.active, true);
     assert.equal(r.paused, false);
     assert.equal(r.inReview, false);
   });
 
   test("reports paused when effective_status is CAMPAIGN_PAUSED (user hasn't activated campaign yet)", async () => {
+    mockFetch({ data: { status: "PAUSED", effective_status: "PAUSED" } });
     mockFetch({ data: { status: "ACTIVE", effective_status: "CAMPAIGN_PAUSED" } });
-    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, ACCESS_TOKEN);
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
+    assert.equal(r.active, false);
+    assert.equal(r.paused, true);
+    assert.equal(r.inReview, false);
+  });
+
+  test("reports paused when the ad is OFF under an active parent", async () => {
+    mockFetch({ data: { status: "PAUSED", effective_status: "PAUSED" } });
+    mockFetch({ data: { status: "ACTIVE", effective_status: "ACTIVE" } });
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
     assert.equal(r.active, false);
     assert.equal(r.paused, true);
     assert.equal(r.inReview, false);
   });
 
   test("reports inReview when effective_status is PENDING_REVIEW", async () => {
+    mockFetch({ data: { status: "PAUSED", effective_status: "PENDING_REVIEW" } });
     mockFetch({ data: { status: "ACTIVE", effective_status: "PENDING_REVIEW" } });
-    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, ACCESS_TOKEN);
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
     assert.equal(r.active, false);
     assert.equal(r.paused, false);
     assert.equal(r.inReview, true);
   });
 
   test("reports inReview when effective_status is IN_PROCESS", async () => {
+    mockFetch({ data: { status: "PAUSED", effective_status: "IN_PROCESS" } });
     mockFetch({ data: { status: "ACTIVE", effective_status: "IN_PROCESS" } });
-    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, ACCESS_TOKEN);
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
     assert.equal(r.inReview, true);
   });
 
   test("reports all false for DISAPPROVED (maps to error/failed)", async () => {
     mockFetch({ data: { status: "DISAPPROVED", effective_status: "DISAPPROVED" } });
-    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, ACCESS_TOKEN);
+    mockFetch({ data: { status: "DISAPPROVED", effective_status: "DISAPPROVED" } });
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
     assert.equal(r.active, false);
     assert.equal(r.paused, false);
     assert.equal(r.inReview, false);
@@ -533,7 +547,8 @@ describe("verifyLeadDelivery", () => {
 
   test("checkedAt is a valid ISO timestamp", async () => {
     mockFetch({ data: { status: "PAUSED", effective_status: "PAUSED" } });
-    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, ACCESS_TOKEN);
+    mockFetch({ data: { status: "PAUSED", effective_status: "PAUSED" } });
+    const r = await metaFbPartnerAdapter.verifyLeadDelivery(AD_SET_ID, AD_ID, ACCESS_TOKEN);
     assert.ok(!isNaN(Date.parse(r.checkedAt)), `checkedAt must be a valid ISO date, got: ${r.checkedAt}`);
   });
 });
