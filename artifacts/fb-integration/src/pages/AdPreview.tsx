@@ -605,11 +605,11 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
         </div>
 
         {/* ── RIGHT: Live preview ───────────────────────────────────────── */}
-        <div className="order-first space-y-3 lg:sticky lg:top-6 lg:order-last">
+        <div className="order-first space-y-3 lg:sticky lg:top-6 lg:order-last lg:justify-self-center">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             Preview
           </p>
-          <Card className="overflow-hidden border-2 shadow-md">
+          <Card className="w-full max-w-[400px] overflow-hidden border shadow-md">
             <CardContent className="p-0">
               {/* FB post header */}
               <div className="p-3 flex items-center justify-between">

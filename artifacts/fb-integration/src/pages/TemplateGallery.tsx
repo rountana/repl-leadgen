@@ -64,12 +64,12 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
       <Card
         key={template.id}
         className={cn(
-          "cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
+          "w-full max-w-[420px] cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
           isRecommended && "border-primary/30",
         )}
       >
         {/* Image */}
-        <div className="relative h-36 bg-muted overflow-hidden">
+          <div className="relative aspect-[1.91/1] bg-muted overflow-hidden">
           {!imgFailed ? (
             <img
               src={template.imageUrl}
@@ -131,11 +131,11 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
       <Card
         key={template.id}
         className={cn(
-          "cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
+          "w-full max-w-[420px] cursor-pointer overflow-hidden transition-all duration-200 hover:border-primary/50 hover:shadow-md",
         )}
       >
         {/* Image */}
-        <div className="relative h-36 bg-muted overflow-hidden">
+        <div className="relative aspect-[1.91/1] bg-muted overflow-hidden">
           {template.imageUrl ? (
             <img src={template.imageUrl} alt={template.name} className="w-full h-full object-cover" />
           ) : (
@@ -224,7 +224,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             My saved templates
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 justify-items-center gap-4">
             {myTemplates.map((t) => renderMyTemplateCard(t))}
           </div>
         </div>
@@ -236,7 +236,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Recommended for your industry
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 justify-items-center gap-4">
             {recommended.map((t) => renderCard(t, true))}
           </div>
         </div>
@@ -250,7 +250,7 @@ export function TemplateGallery({ onSelectTemplate, onStartScratch }: TemplateGa
               Other templates
             </p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 justify-items-center gap-4">
             {others.map((t) => renderCard(t, false))}
           </div>
         </div>
