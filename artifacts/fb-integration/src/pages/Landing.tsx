@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SignIn } from "@clerk/react";
+import { SignIn, SignUp } from "@clerk/react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -49,17 +49,19 @@ const INDUSTRIES = [
 ];
 
 export function Landing() {
-  const [showSignIn, setShowSignIn] = useState(false);
+  const [authMode, setAuthMode] = useState<"sign-in" | "sign-up" | null>(null);
   const returnTo = getSafeReturnPath(
     new URLSearchParams(window.location.search).get("returnTo"),
   );
   const postSignInUrl = `${window.location.origin}${basePath}${returnTo ?? "/campaigns"}`;
-  const openSignIn = () => {
+  const openAuth = (mode: "sign-in" | "sign-up") => {
     // OAuth callbacks can omit the landing-page query string. Preserve a
     // validated protected-page destination for the authenticated root route.
     rememberPostSignInReturnTo(returnTo);
-    setShowSignIn(true);
+    setAuthMode(mode);
   };
+  const openSignIn = () => openAuth("sign-in");
+  const openSignUp = () => openAuth("sign-up");
 
   return (
     <PublicShell onSignIn={openSignIn}>
@@ -84,7 +86,7 @@ export function Landing() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button
                 size="lg"
-                onClick={openSignIn}
+                onClick={openSignUp}
                 className="text-lg px-8 py-6 h-auto shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
               >
                 Get Started <ArrowRight className="ml-2 w-5 h-5" />
@@ -253,7 +255,7 @@ export function Landing() {
             <Button
               size="lg"
               variant="secondary"
-              onClick={openSignIn}
+              onClick={openSignUp}
               className="text-lg px-10 py-7 h-auto text-primary font-bold shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all bg-white hover:bg-gray-50"
             >
               Launch your first ad
@@ -272,32 +274,115 @@ export function Landing() {
         </footer>
       </div>
 
-      {/* ── Sign-in modal ─────────────────────────────────────────────── */}
-      {showSignIn && (
+      {/* ── Auth surface ──────────────────────────────────────────────── */}
+      {authMode && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowSignIn(false); }}
+          className="fixed inset-0 z-50 flex min-h-[100dvh] items-center justify-center overflow-y-auto bg-[hsl(40_33%_98%)] px-4 py-8"
         >
-          <div className="relative w-full max-w-[440px] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
-            {/* Close button — top-right inside the card */}
-            <button
-              onClick={() => setShowSignIn(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            {/* Strip Clerk's own card/box chrome so our wrapper owns all framing */}
-            <SignIn
-              forceRedirectUrl={postSignInUrl}
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  cardBox: "w-full !shadow-none !border-0 !rounded-none",
-                  card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-                },
-              }}
-            />
+          <button
+            type="button"
+            onClick={() => setAuthMode(null)}
+            className="absolute right-5 top-5 z-10 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            aria-label="Close authentication"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <div className="w-full max-w-[360px] overflow-hidden rounded-[16px] border border-border/80 bg-card shadow-[0_14px_34px_rgba(32,35,45,0.12)]">
+            <div className="px-5 pt-5 sm:px-6 sm:pt-6">
+              <div className="mb-5 text-center">
+                <img
+                  src={`${basePath}/logo.svg`}
+                  alt="Addlaunch"
+                  className="mx-auto mb-4 h-9 w-9"
+                />
+                <h1 className="text-[19px] font-semibold leading-6 tracking-tight text-foreground">
+                  {authMode === "sign-up" ? "Start capturing leads" : "Welcome back"}
+                </h1>
+                <p className="mt-1 text-[11px] leading-4 text-muted-foreground">
+                  {authMode === "sign-up"
+                    ? "Create your account in seconds"
+                    : "Sign in to keep growing your business"}
+                </p>
+              </div>
+              {authMode === "sign-up" ? (
+                <SignUp
+                  forceRedirectUrl={postSignInUrl}
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full",
+                      cardBox: "!w-full !max-w-none !bg-transparent !shadow-none !border-0 !rounded-none",
+                      card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+                      footer: "hidden",
+                      header: "hidden",
+                      main: "!p-0",
+                      headerTitle: "!text-[19px] !leading-6 !font-semibold",
+                      headerSubtitle: "!mt-1 !text-[11px] !leading-4",
+                      logoBox: "!mb-4 !h-9",
+                      logoImage: "!h-9",
+                      socialButtonsBlockButton: "!h-9 !rounded-lg !border-border !bg-card !shadow-none",
+                      socialButtonsBlockButtonText: "!text-[11px] !font-medium",
+                      dividerLine: "!bg-border/70",
+                      dividerText: "!text-[10px] !text-muted-foreground",
+                      formFieldRow: "!mb-3",
+                      formFieldLabel: "!mb-1 !text-[10px] !font-medium",
+                      formFieldInput: "!h-9 !rounded-lg !border-border !bg-card !text-xs",
+                      formButtonPrimary: "!mt-2 !h-9 !rounded-lg !text-[11px] !font-semibold !shadow-sm",
+                    },
+                  }}
+                />
+              ) : (
+                <SignIn
+                  forceRedirectUrl={postSignInUrl}
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full",
+                      cardBox: "!w-full !max-w-none !bg-transparent !shadow-none !border-0 !rounded-none",
+                      card: "!shadow-none !border-0 !bg-transparent !rounded-none",
+                      footer: "hidden",
+                      header: "hidden",
+                      main: "!p-0",
+                      headerTitle: "!text-[19px] !leading-6 !font-semibold",
+                      headerSubtitle: "!mt-1 !text-[11px] !leading-4",
+                      logoBox: "!mb-4 !h-9",
+                      logoImage: "!h-9",
+                      socialButtonsBlockButton: "!h-9 !rounded-lg !border-border !bg-card !shadow-none",
+                      socialButtonsBlockButtonText: "!text-[11px] !font-medium",
+                      dividerLine: "!bg-border/70",
+                      dividerText: "!text-[10px] !text-muted-foreground",
+                      formFieldRow: "!mb-3",
+                      formFieldLabel: "!mb-1 !text-[10px] !font-medium",
+                      formFieldInput: "!h-9 !rounded-lg !border-border !bg-card !text-xs",
+                      formButtonPrimary: "!mt-2 !h-9 !rounded-lg !text-[11px] !font-semibold !shadow-sm",
+                    },
+                  }}
+                />
+              )}
+            </div>
+            <div className="border-t border-border/60 bg-secondary/20 px-5 py-4 text-center text-[11px] text-muted-foreground sm:px-6">
+              {authMode === "sign-up" ? (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={openSignIn}
+                    className="font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    Sign in
+                  </button>
+                </>
+              ) : (
+                <>
+                  Don&apos;t have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={openSignUp}
+                    className="font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    Sign up
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

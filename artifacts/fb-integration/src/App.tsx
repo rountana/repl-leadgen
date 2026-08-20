@@ -52,6 +52,10 @@ const clerkAppearance = {
   cssLayerName: "clerk",
   options: {
     logoPlacement: "inside" as const,
+    logoLinkUrl: `${window.location.origin}${basePath}/`,
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+    socialButtonsPlacement: "top" as const,
+    socialButtonsVariant: "blockButton" as const,
   },
   variables: {
     colorPrimary: "hsl(239 84% 67%)",
@@ -130,6 +134,20 @@ function ClerkProviderWithRoutes() {
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
       signInUrl={`${basePath}/`}
+      localization={{
+        signIn: {
+          start: {
+            title: "Welcome back",
+            subtitle: "Sign in to keep growing your business",
+          },
+        },
+        signUp: {
+          start: {
+            title: "Start capturing leads",
+            subtitle: "Create your account in seconds",
+          },
+        },
+      }}
       routerPush={(to) => setLocation(stripBase(to))}
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
