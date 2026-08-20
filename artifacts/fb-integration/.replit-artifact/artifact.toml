@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/fb/"
+previewPath = "/apps/fb/"
 title = "Facebook Ads — Integration Wizard"
 description = "A four-step wizard that guides business owners through connecting their Facebook account, reviewing AI-generated ad creative, setting budget and targeting, and launching a live Facebook ad campaign. Shows campaign status, lead-delivery verification, and a campaign list screen. Standalone from the HVCG lead-magnet builder."
 version = "1.0.0"
@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = [ "/fb/" ]
+paths = [ "/apps/fb/" ]
 localPort = 18401
 
 [services.development]
@@ -25,4 +25,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "18401"
-BASE_PATH = "/fb/"
+BASE_PATH = "/apps/fb/"
