@@ -209,7 +209,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/review/:id"><ProtectedRoute component={Review} /></Route>
           <Route path="/live/:id"><ProtectedRoute component={Live} /></Route>
           <Route path="/profile"><ProtectedRoute component={Profile} /></Route>
-          <Route path="/lm/:id" component={PublicCapture} />
+          <Route path="/:id" component={PublicCapture} />
           
           <Route>
             <div className="flex min-h-screen items-center justify-center">

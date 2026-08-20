@@ -247,7 +247,7 @@ router.post("/lead-magnets/:id/approve", requireAuth, async (req: any, res): Pro
   const proto = req.get("x-forwarded-proto") || req.protocol || "https";
   const host = req.get("x-forwarded-host") || req.get("host") || "";
   const origin = host ? `${proto}://${host}` : "";
-  const shareUrl = existing.shareUrl ?? `${origin}/lm/${existing.id}`;
+  const shareUrl = existing.shareUrl ?? `${origin}/apps/lm/${existing.id}`;
 
   const [magnet] = await db
     .update(leadMagnetsTable)

@@ -106,7 +106,7 @@ export function Live() {
                 magnet_url: magnet.shareUrl ?? "",
                 magnet_desc: magnet.description ?? "",
               });
-              window.location.href = `/fb/campaign/new?${params.toString()}`;
+              window.location.href = `/apps/fb/campaign/new?${params.toString()}`;
             }}
           >
             <Megaphone className="w-4 h-4" />
