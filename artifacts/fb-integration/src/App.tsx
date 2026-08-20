@@ -11,7 +11,7 @@ import { MockOAuthCallback } from "@/pages/MockOAuthCallback";
 import { CampaignWizard } from "@/pages/CampaignWizard";
 import { Campaigns } from "@/pages/Campaigns";
 import { Profile } from "@/pages/Profile";
-import { Landing } from "@/pages/Landing";
+import { AuthPage, Landing } from "@/pages/Landing";
 import { Shell } from "@/components/layout/Shell";
 import { takePostSignInReturnTo } from "@/lib/authRedirect";
 
@@ -133,7 +133,8 @@ function ClerkProviderWithRoutes() {
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
-      signInUrl={`${basePath}/`}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
       localization={{
         signIn: {
           start: {
@@ -162,6 +163,8 @@ function ClerkProviderWithRoutes() {
               <Landing />
             </Show>
           </Route>
+          <Route path="/sign-in/*?" component={() => <AuthPage mode="sign-in" />} />
+          <Route path="/sign-up/*?" component={() => <AuthPage mode="sign-up" />} />
           <Route path="/auth/callback" component={MockOAuthCallback} />
           <Route path="/connect">
             <ProtectedRoute component={Connect} />
