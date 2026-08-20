@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { UploadCloud, Wand2, ArrowRight, ArrowLeft, Loader2, Search, ImageIcon, LayoutTemplate, FileText, LayoutDashboard, Sparkles } from "lucide-react";
+import { UploadCloud, Wand2, ArrowRight, ArrowLeft, Loader2, Search, ImageIcon, LayoutTemplate, FileText, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -194,24 +194,12 @@ export function Create() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <button
-            onClick={() => setLocation(isEditMode ? `/review/${editId}` : "/new")}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> {isEditMode ? "Back to Review" : "Back"}
-          </button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-2 shrink-0"
-            onClick={() => setLocation("/dashboard")}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            Dashboard
-          </Button>
-        </div>
+        <button
+          onClick={() => setLocation(isEditMode ? `/review/${editId}` : "/new")}
+          className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> {isEditMode ? "Back to Review" : "Back"}
+        </button>
         <h1 className="text-3xl font-bold tracking-tight">
           {isEditMode ? "Edit Page" : "Create your Give-Away Page"}
         </h1>

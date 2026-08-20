@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Link as LinkIcon, FileText, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, LayoutDashboard } from "lucide-react";
+import { Link as LinkIcon, FileText, ArrowRight, CheckCircle2, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,17 +59,6 @@ export function NewPath() {
   return (
     <div className="container mx-auto max-w-3xl px-4 py-12">
       <div className="mb-10 text-center">
-        <div className="mb-6 flex justify-start">
-          <Button
-            type="button"
-            variant="ghost"
-            className="gap-2 text-muted-foreground hover:text-foreground"
-            onClick={() => setLocation("/dashboard")}
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Button>
-        </div>
         <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
           <CheckCircle2 className="h-4 w-4" />
           Recommended for capturing new leads
