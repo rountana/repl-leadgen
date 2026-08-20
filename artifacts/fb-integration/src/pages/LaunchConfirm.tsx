@@ -386,7 +386,7 @@ export function LaunchConfirm({
              <div>
                <p className="text-xs font-semibold text-amber-900">Your ad is off until you activate it</p>
                <p className="text-sm text-amber-800 mt-0.5">
-                 Turn on the campaign, ad set, and this ad in Facebook Ads Manager after Meta finishes reviewing it. Nothing will spend before all three are active.
+                  Turn on the campaign, ad set, and this ad in Facebook Ads Manager after Meta finishes reviewing it. Your ad won’t run or use your budget until you activate the campaign, ad set, and ad.
                </p>
              </div>
            </div>
