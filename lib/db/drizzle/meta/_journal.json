@@ -15,6 +15,13 @@
       "when": 1787162400000,
       "tag": "0001_add_fb_campaign_call_to_action",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787221200000,
+      "tag": "0002_default_fb_campaign_cta_get_offer",
+      "breakpoints": true
     }
   ]
 }

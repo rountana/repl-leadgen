@@ -217,7 +217,7 @@ describe("createAd", () => {
         link_data?: { call_to_action?: { type?: string } };
       } | undefined
     )?.link_data?.call_to_action?.type;
-    assert.equal(defaultCta, "LEARN_MORE", "must default existing campaigns to Learn More");
+    assert.equal(defaultCta, "GET_OFFER", "must default campaigns to Get Offer");
 
     // Find the ad call
     const adCall = capturedCalls.find((c) => c.url.includes(`/${ACT_ID}/ads`));

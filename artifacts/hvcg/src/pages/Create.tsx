@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { UploadCloud, Wand2, ArrowRight, ArrowLeft, Loader2, Search, ImageIcon, LayoutTemplate, FileText } from "lucide-react";
+import { UploadCloud, Wand2, ArrowRight, ArrowLeft, Loader2, Search, ImageIcon, LayoutTemplate, FileText, LayoutDashboard, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 
 import { 
@@ -193,12 +194,24 @@ export function Create() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
-        <button
-          onClick={() => setLocation(isEditMode ? `/review/${editId}` : "/new")}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
-        >
-          <ArrowLeft className="w-4 h-4" /> {isEditMode ? "Back to Review" : "Back"}
-        </button>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <button
+            onClick={() => setLocation(isEditMode ? `/review/${editId}` : "/new")}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> {isEditMode ? "Back to Review" : "Back"}
+          </button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-2 shrink-0"
+            onClick={() => setLocation("/dashboard")}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </Button>
+        </div>
         <h1 className="text-3xl font-bold tracking-tight">
           {isEditMode ? "Edit Page" : "Create your Give-Away Page"}
         </h1>
@@ -296,11 +309,26 @@ export function Create() {
               Content Details
               
               <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-primary h-8 px-2 text-xs">
-                    <Search className="w-3 h-3 mr-1" /> Browse Inspiration
-                  </Button>
-                </DialogTrigger>
+                <TooltipProvider delayDuration={250}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-9 gap-1.5 px-3 text-xs font-semibold shadow-sm"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Browse Inspiration
+                          <Search className="w-3 h-3 opacity-80" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                      See proven lead magnet ideas and use one to fill in your title and description faster.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Lead Magnet Inspiration</DialogTitle>
