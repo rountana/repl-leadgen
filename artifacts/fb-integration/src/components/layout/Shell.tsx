@@ -13,7 +13,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/campaigns" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <Link href="/campaigns" className="flex shrink-0 items-center gap-2 hover:opacity-90 transition-opacity">
             <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-8 h-8" />
             <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
           </Link>

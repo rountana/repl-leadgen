@@ -15,10 +15,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-8 h-8" />
-            <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
-          </Link>
+          <div className="flex shrink-0 items-center gap-3">
+            <Link href="/dashboard" className="flex shrink-0 items-center gap-2 hover:opacity-90 transition-opacity">
+              <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-8 h-8" />
+              <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
+            </Link>
+            <span className="hidden items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary sm:inline-flex">
+              Lead Magnet
+            </span>
+            <span
+              aria-label="Lead Magnet"
+              className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-primary/20 bg-primary/10 px-1.5 text-[10px] font-bold text-primary sm:hidden"
+              title="Lead Magnet"
+            >
+              LM
+            </span>
+          </div>
           
           <div className="flex items-center gap-3">
             {!isLoaded ? (
@@ -52,7 +64,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="hidden sm:inline">My Pages</span>
                 </Link>
                 <div className="hidden sm:flex items-center gap-2 ml-2">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">

@@ -13,13 +13,15 @@ export function PublicShell({
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="w-full absolute top-0 z-50 bg-transparent">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-8 h-8" />
-            <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
-          </Link>
+        <div className="container mx-auto flex min-h-20 flex-col items-stretch justify-center gap-3 px-4 py-3 sm:h-20 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:py-0">
+          <div className="flex shrink-0 items-center gap-3">
+            <Link href="/" className="flex shrink-0 items-center gap-2 hover:opacity-90 transition-opacity">
+              <img src={`${basePath}/logo.svg`} alt="Addlaunch" className="w-8 h-8" />
+              <span className="font-bold text-xl tracking-tight text-foreground">Addlaunch</span>
+            </Link>
+          </div>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex items-center justify-end gap-2 sm:gap-4">
             <Button variant="ghost" onClick={onSignIn}>
               Log in
             </Button>

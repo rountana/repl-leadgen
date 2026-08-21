@@ -43,7 +43,7 @@ export function Dashboard() {
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your Pages</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Pages</h1>
           <p className="text-muted-foreground mt-1">Manage your lead magnets and track performance.</p>
         </div>
         <Button onClick={() => setLocation("/new")} size="lg" className="shadow-md">
