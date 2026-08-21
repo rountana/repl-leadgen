@@ -1,7 +1,6 @@
 import type { IncomingHttpHeaders } from "http";
 
 export const PRIMARY_PUBLIC_ORIGIN = "https://addlaun.ch";
-export const TRANSITION_PUBLIC_ORIGIN = "https://vibeengg.com";
 const DEFAULT_DEPLOYMENT_ORIGIN =
   "https://lead-magnet-hub-shaamsarath1.replit.app";
 
@@ -30,7 +29,6 @@ export function getDeploymentOrigin(): string {
 export function getApprovedAppOrigins(): ReadonlySet<string> {
   return new Set([
     PRIMARY_PUBLIC_ORIGIN,
-    TRANSITION_PUBLIC_ORIGIN,
     getDeploymentOrigin(),
   ]);
 }

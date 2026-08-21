@@ -1,27 +1,12 @@
 ---
 name: HVCG ↔ Facebook Ads integration
-description: How the two artifacts are linked — deep link params, destinationUrl flow, and cross-artifact navigation.
+description: Product-level routing and handoff rules between the lead-magnet builder and Facebook Ads app.
 ---
 
-## The integration pattern
+## Integration rule
 
-Two entry points, both fully implemented:
+The lead-magnet builder and Facebook Ads wizard are separate applications but one user flow. A live lead magnet can launch directly into a prefilled Facebook-ad draft, and the ads flow can select a live lead magnet as its destination.
 
-**A. HVCG → fb-integration (deep link)**
-- `artifacts/hvcg/src/pages/Live.tsx` — "Create Facebook Ad" button uses `window.location.href = /apps/fb/campaign/new?magnet_title=...&magnet_url=...&magnet_desc=...`
-- `CampaignWizard.tsx` reads these params from `useSearch()`, skips the template gallery, and pre-fills `adDraft` (headline from title, bodyText from desc, destinationUrl from url)
+**Why:** Ad clicks should reach the business owner's offer page rather than a generic Facebook Page, while still letting a user choose or create the offer from either part of the product.
 
-**B. fb-integration → HVCG (inline picker)**
-- `artifacts/fb-integration/src/components/LeadMagnetPicker.tsx` — uses `useListLeadMagnets`, filters to `status === "live" && shareUrl`, renders selectable cards
-- Embedded in `AdPreview.tsx` as a collapsible "Link a Lead Magnet" card
-- "Create a new one" link opens `/apps/lm/new` in a new tab
-
-## destinationUrl flow
-- Column: `fb_campaigns.destination_url text` (added via drizzle push)
-- Wizard state: `WizardState.destinationUrl: string`
-- `AdPreview.onNext(adDraft, destinationUrl)` — signature includes destinationUrl
-- `LaunchConfirm` accepts `destinationUrl?: string`, passes it into `campaignFields`
-- `CreateFbCampaignBody` / `UpdateFbCampaignBody` both accept optional `destinationUrl`
-- `fbPartnerAdapter.CreateCampaignParams.destinationUrl?` — used in `link_data.link`; falls back to `https://www.facebook.com/{fbPageId}` if absent
-
-**Why:** Ad clicks should land on the user's lead magnet page, not their Facebook Page. The destination URL is the bridge between the two products.
+**How to apply:** Preserve the lead magnet's title, description, and public destination URL through cross-app navigation. On the public branded domain, use the `/lm` and `/fb` aliases; retain the nested application routes as compatibility paths.

@@ -8,7 +8,7 @@ router = "path"
 
 [[services]]
 name = "web"
-paths = [ "/apps/fb/" ]
+paths = [ "/apps/fb/", "/fb/" ]
 localPort = 18401
 
 [services.development]

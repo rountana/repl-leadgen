@@ -7,7 +7,7 @@ import {
   isApprovedFrontendBase,
 } from "./fbAuth";
 
-test("keeps Netlify Facebook OAuth returns on the /fb alias", () => {
+test("keeps public Facebook OAuth returns on the /fb alias", () => {
   assert.equal(getFrontendPath("/fb/connect"), "/fb");
   assert.equal(getFrontendPath("/fb/campaign/new"), "/fb");
 });

@@ -13,7 +13,7 @@ import {
 const FB_VERSION = "v20.0";
 const SCOPES = ["pages_show_list", "pages_read_engagement", "ads_read", "ads_management"].join(",");
 const REPLIT_FRONTEND_PATH = "/apps/fb";
-const NETLIFY_FRONTEND_PATH = "/fb";
+const PUBLIC_FRONTEND_PATH = "/fb";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -45,10 +45,10 @@ function getFrontendBase(): string {
 
 export function getFrontendPath(pathname: string): string {
   if (
-    pathname === NETLIFY_FRONTEND_PATH ||
-    pathname.startsWith(`${NETLIFY_FRONTEND_PATH}/`)
+    pathname === PUBLIC_FRONTEND_PATH ||
+    pathname.startsWith(`${PUBLIC_FRONTEND_PATH}/`)
   ) {
-    return NETLIFY_FRONTEND_PATH;
+    return PUBLIC_FRONTEND_PATH;
   }
 
   if (
@@ -67,7 +67,7 @@ export function isApprovedFrontendBase(value: string): boolean {
     return (
       Boolean(getApprovedOrigin(parsed.origin)) &&
       (parsed.pathname === REPLIT_FRONTEND_PATH ||
-        parsed.pathname === NETLIFY_FRONTEND_PATH)
+        parsed.pathname === PUBLIC_FRONTEND_PATH)
     );
   } catch {
     return false;
@@ -146,7 +146,11 @@ export function getRequestFrontendBase(req: {
     }
   }
 
-  return `${origin}${NETLIFY_FRONTEND_PATH}`;
+  const defaultPath =
+    origin === getDeploymentOrigin()
+      ? REPLIT_FRONTEND_PATH
+      : PUBLIC_FRONTEND_PATH;
+  return `${origin}${defaultPath}`;
 }
 
 // ── Short-lived callback result cache ──────────────────────────────────────
@@ -208,7 +212,7 @@ function getOrigin(value: string): string | null {
 }
 
 function needsOAuthRelay(frontend: string): boolean {
-  // addlaun.ch and the transition domain both proxy to this same API service,
+  // addlaun.ch is served directly by this API deployment,
   // so the callback can retain pending credentials locally without a token relay.
   return false;
 }

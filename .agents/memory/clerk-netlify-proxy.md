@@ -1,10 +1,10 @@
 ---
-name: Clerk behind Netlify
-description: The constraints for serving Replit-managed Clerk through vibeengg.com while Netlify proxies to a generated Replit deployment.
+name: Direct branded-domain auth
+description: The constraints for serving Replit-managed Clerk and Facebook OAuth on addlaun.ch directly from the Replit deployment.
 ---
 
-When Netlify reverse-proxies the public site to the generated Replit deployment, Replit-managed Clerk needs a same-origin browser proxy URL plus the generated deployment host for server-side proxy attribution.
+Addlaunch is served directly by Replit on its branded domain; Netlify is not part of the active request path. Replit-managed Clerk still needs a same-origin browser proxy URL plus the generated deployment host for server-side proxy attribution.
 
-**Why:** A raw injected `.replit.app` proxy URL makes Replit reject the `vibeengg.com` Origin header, while changing the server attribution host to `vibeengg.com` makes Clerk reject the request as belonging to an unknown instance.
+**Why:** The branded domain must not change the managed Clerk instance identity. Sending browser requests to the generated host breaks same-origin expectations, while identifying Clerk requests as the branded host makes Clerk reject them as a different instance.
 
-**How to apply:** On an approved reverse-proxy domain, rebuild the injected proxy URL with `window.location.origin` while preserving its path; on the API, resolve `Clerk-Proxy-Url` from `x-forwarded-host`/`Host`, never browser `Origin`. Do not alter Replit-managed Clerk secrets.
+**How to apply:** Keep browser Clerk requests on the current origin under `/api/__clerk`; in production, pin `Clerk-Proxy-Url` to the generated Replit deployment host. Restrict Clerk and Facebook OAuth return origins to `https://addlaun.ch` and the generated deployment origin. Do not alter Replit-managed Clerk secrets.
