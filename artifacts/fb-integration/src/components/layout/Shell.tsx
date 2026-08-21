@@ -22,10 +22,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <Link
               href="/how-it-works"
               className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:hidden"
-              title="How it works"
+              title="Guide"
             >
               <CircleHelp className="h-5 w-5" />
-              <span className="sr-only">How it works</span>
+              <span className="sr-only">Guide</span>
             </Link>
 
             <Link
@@ -33,7 +33,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="hidden items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:flex"
             >
               <CircleHelp className="h-4 w-4" />
-              How it works
+              Guide
             </Link>
 
             <Link

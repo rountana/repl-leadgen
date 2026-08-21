@@ -23,14 +23,14 @@ export function PublicShell({
           </div>
 
           <nav className="flex items-center justify-end gap-2 sm:gap-4">
-            <Button variant="ghost" size="icon" className="sm:hidden" asChild title="How it works">
+            <Button variant="ghost" size="icon" className="sm:hidden" asChild title="Guide">
               <Link href="/how-it-works">
                 <CircleHelp className="h-5 w-5" />
-                <span className="sr-only">How it works</span>
+                <span className="sr-only">Guide</span>
               </Link>
             </Button>
             <Button variant="ghost" className="hidden sm:inline-flex" asChild>
-              <Link href="/how-it-works">How it works</Link>
+              <Link href="/how-it-works">Guide</Link>
             </Button>
             <Button variant="ghost" onClick={onSignIn}>
               Log in
