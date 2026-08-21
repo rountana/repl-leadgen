@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import { User, LogOut, Loader2, LayoutDashboard, UserCircle, Users } from "lucide-react";
+import { User, LogOut, Loader2, LayoutDashboard, UserCircle, Users, CircleHelp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPublicBasePath } from "@/lib/publicRoutes";
 
@@ -19,6 +19,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/how-it-works"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:hidden"
+              title="How it works"
+            >
+              <CircleHelp className="h-5 w-5" />
+              <span className="sr-only">How it works</span>
+            </Link>
+
+            <Link
+              href="/how-it-works"
+              className="hidden items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:flex"
+            >
+              <CircleHelp className="h-4 w-4" />
+              How it works
+            </Link>
+
             <Link
               href="/campaigns"
               className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"

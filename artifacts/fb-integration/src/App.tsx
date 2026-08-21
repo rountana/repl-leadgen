@@ -12,6 +12,7 @@ import { CampaignWizard } from "@/pages/CampaignWizard";
 import { Campaigns } from "@/pages/Campaigns";
 import { Leads } from "@/pages/Leads";
 import { Profile } from "@/pages/Profile";
+import { HowItWorks, PublicHowItWorks } from "@/pages/HowItWorks";
 import { AuthPage, Landing } from "@/pages/Landing";
 import { Shell } from "@/components/layout/Shell";
 import { takePostSignInReturnTo } from "@/lib/authRedirect";
@@ -180,6 +181,16 @@ function ClerkProviderWithRoutes() {
           </Route>
           <Route path="/leads">
             <ProtectedRoute component={Leads} />
+          </Route>
+          <Route path="/how-it-works">
+            <Show when="signed-in">
+              <Shell>
+                <HowItWorks />
+              </Shell>
+            </Show>
+            <Show when="signed-out">
+              <PublicHowItWorks />
+            </Show>
           </Route>
           <Route path="/profile">
             <ProtectedRoute component={Profile} />

@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { CircleHelp } from "lucide-react";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -22,6 +23,15 @@ export function PublicShell({
           </div>
 
           <nav className="flex items-center justify-end gap-2 sm:gap-4">
+            <Button variant="ghost" size="icon" className="sm:hidden" asChild title="How it works">
+              <Link href="/how-it-works">
+                <CircleHelp className="h-5 w-5" />
+                <span className="sr-only">How it works</span>
+              </Link>
+            </Button>
+            <Button variant="ghost" className="hidden sm:inline-flex" asChild>
+              <Link href="/how-it-works">How it works</Link>
+            </Button>
             <Button variant="ghost" onClick={onSignIn}>
               Log in
             </Button>
