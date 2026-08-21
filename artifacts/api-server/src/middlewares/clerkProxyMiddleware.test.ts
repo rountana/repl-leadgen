@@ -6,16 +6,16 @@ import {
   isApprovedRequestOrigin,
 } from "../lib/publicOrigins";
 
-test("uses the configured deployment host even when the browser uses the custom domain", () => {
+test("uses the browser-facing custom domain for Clerk proxy attribution", () => {
   const host = getClerkProxyHost({
     headers: {
       origin: "https://addlaun.ch",
-      host: "lead-magnet-hub-shaamsarath1.replit.app",
-      "x-forwarded-host": "lead-magnet-hub-shaamsarath1.replit.app",
+      host: "internal-deployment-host",
+      "x-forwarded-host": "addlaun.ch",
     },
   });
 
-  assert.equal(host, "lead-magnet-hub-shaamsarath1.replit.app");
+  assert.equal(host, "addlaun.ch");
 });
 
 test("uses the original forwarding host instead of any browser origin", () => {
@@ -30,22 +30,15 @@ test("uses the original forwarding host instead of any browser origin", () => {
   assert.equal(host, "lead-magnet-hub-shaamsarath1.replit.app");
 });
 
-test("keeps production Clerk attribution on the managed deployment host", () => {
-  const previousNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = "production";
+test("uses the original browser host when internal proxies append their host", () => {
+  const host = getClerkProxyHost({
+    headers: {
+      host: "internal-deployment-host",
+      "x-forwarded-host": "addlaun.ch, internal-deployment-host",
+    },
+  });
 
-  try {
-    const host = getClerkProxyHost({
-      headers: {
-        host: "lead-magnet-hub-shaamsarath1.replit.app",
-        "x-forwarded-host": "attacker.example",
-      },
-    });
-
-    assert.equal(host, "lead-magnet-hub-shaamsarath1.replit.app");
-  } finally {
-    process.env.NODE_ENV = previousNodeEnv;
-  }
+  assert.equal(host, "addlaun.ch");
 });
 
 test("allows only the branded and deployment origins for Clerk", () => {

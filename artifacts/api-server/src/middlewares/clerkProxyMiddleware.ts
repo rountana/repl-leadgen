@@ -23,7 +23,6 @@ import type { IncomingHttpHeaders } from 'http';
 import type { RequestHandler } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import {
-  getDeploymentOrigin,
   isApprovedRequestOrigin,
 } from "../lib/publicOrigins";
 
@@ -31,17 +30,16 @@ const CLERK_FAPI = 'https://frontend-api.clerk.dev';
 export const CLERK_PROXY_PATH = '/api/__clerk';
 
 /**
- * Returns the managed Replit deployment hostname used to identify this Clerk
- * instance. Browser-facing Netlify hosts deliberately do not appear here:
- * Clerk uses this value to attribute the proxied request to the deployment.
+ * Returns the browser-facing public hostname for a Clerk proxy request.
+ *
+ * Clerk validates the browser's Origin against Clerk-Proxy-Url, so this must
+ * match the host the browser actually used to reach /api/__clerk. Prefer the
+ * first x-forwarded-host value because that is the original host before any
+ * internal deployment proxy hops.
  */
 export function getClerkProxyHost(req: {
   headers: IncomingHttpHeaders;
 }): string | undefined {
-  if (process.env.NODE_ENV === "production") {
-    return new URL(getDeploymentOrigin()).host;
-  }
-
   const forwarded = req.headers['x-forwarded-host'];
   const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
   const firstHop = raw?.split(',')[0]?.trim();

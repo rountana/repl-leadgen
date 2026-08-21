@@ -30,28 +30,7 @@ const clerkPubKey = publishableKeyFromHost(
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
 
-function resolveClerkProxyUrl(): string {
-  const configuredProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-  if (!configuredProxyUrl) {
-    return configuredProxyUrl;
-  }
-
-  try {
-    const configured = new URL(configuredProxyUrl, window.location.origin);
-    // Netlify proxies the app through the generated Replit deployment. Keep
-    // Clerk requests same-origin in the browser, while the API proxy still
-    // identifies the managed Clerk instance with the Replit deployment host.
-    if (configured.origin !== window.location.origin) {
-      return `${window.location.origin}${configured.pathname}${configured.search}`;
-    }
-  } catch {
-    // Keep Clerk's injected value if it cannot be parsed as a URL.
-  }
-
-  return configuredProxyUrl;
-}
-
-const clerkProxyUrl = resolveClerkProxyUrl();
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = getPublicBasePath();
 
 function stripBase(path: string): string {
