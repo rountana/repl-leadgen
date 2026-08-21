@@ -65,7 +65,6 @@ const INTEREST_OPTIONS = [
   "Pets",
   "Automobiles",
   "Parenting",
-  "Small business",
 ];
 
 function InfoTip({ content }: { content: string }) {
@@ -248,7 +247,7 @@ export function BudgetTargeting({
                   <div className="flex items-center gap-2 mt-0.5">
                     <div>
                       <p className="font-semibold text-sm">Original campaign location</p>
-                      <p className="text-xs text-muted-foreground">Saved map center</p>
+                      <p className="text-xs text-muted-foreground">Original ad location</p>
                     </div>
                     <Button
                       size="icon"

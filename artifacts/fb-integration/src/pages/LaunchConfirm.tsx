@@ -394,31 +394,31 @@ export function LaunchConfirm({
             <p className="text-xs text-muted-foreground mb-1">Headline</p>
             <p className="font-semibold text-sm">{adDraft.headline}</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-primary shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Daily budget</p>
-                <p className="font-semibold text-sm">${dailyBudget}/day</p>
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">Radius</p>
-                <p className="font-semibold text-sm">{radiusMiles} miles</p>
-              </div>
-            </div>
-          </div>
-          {geocodedLocation && (
-            <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Targeting center</p>
-                <p className="font-medium text-sm truncate">{geocodedLocation}</p>
-              </div>
-            </div>
-          )}
+           <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2">
+             <DollarSign className="w-4 h-4 text-primary shrink-0" />
+             <div>
+               <p className="text-xs text-muted-foreground">Daily budget</p>
+               <p className="font-semibold text-sm">${dailyBudget}/day</p>
+             </div>
+           </div>
+           {geocodedLocation && (
+             <div className="grid grid-cols-2 gap-3">
+               <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2 min-w-0">
+                 <MapPin className="w-4 h-4 text-primary shrink-0" />
+                 <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground">Ad targeting location</p>
+                   <p className="font-medium text-sm truncate" title={geocodedLocation}>{geocodedLocation}</p>
+                 </div>
+               </div>
+               <div className="p-3 rounded-lg bg-secondary/30 flex items-center gap-2">
+                 <MapPin className="w-4 h-4 text-primary shrink-0" />
+                 <div>
+                   <p className="text-xs text-muted-foreground">Radius</p>
+                   <p className="font-semibold text-sm">{radiusMiles} miles</p>
+                 </div>
+               </div>
+             </div>
+           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg bg-secondary/30">
               <p className="text-xs text-muted-foreground">Age range</p>
