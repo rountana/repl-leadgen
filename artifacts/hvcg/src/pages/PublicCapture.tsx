@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Download, AlertCircle, Loader2 } from "lucide-react";
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+const PUBLIC_LEAD_MAGNET_API = "/api/public/lead-magnets";
 
 const captureSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -248,7 +248,7 @@ export function PublicCapture() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`${BASE}/api/public/lead-magnets/${id}`)
+    fetch(`${PUBLIC_LEAD_MAGNET_API}/${id}`)
       .then((r) => {
         if (r.status === 404) { setNotFound(true); return null; }
         return r.json();
@@ -264,7 +264,7 @@ export function PublicCapture() {
     setSubmitting(true);
     setSubmitError(null);
     try {
-      const res = await fetch(`${BASE}/api/public/lead-magnets/${id}/leads`, {
+      const res = await fetch(`${PUBLIC_LEAD_MAGNET_API}/${id}/leads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
