@@ -26,7 +26,6 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import type { FbAdDraft, FbConnection } from "@workspace/api-client-react";
 import {
-  useGenerateFbAd,
   useListIndustries,
   useGetProfile,
   useCreateFbAdTemplate,
@@ -114,17 +113,6 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
     if (profile.businessLocation) setLocation(profile.businessLocation);
   }, [profile]);
 
-  const generateAd = useGenerateFbAd({
-    mutation: {
-      onSuccess: (draft) => {
-        setHeadline(draft.headline);
-        setBodyText(draft.bodyText);
-        if (draft.imageUrl) setImageUrl(draft.imageUrl);
-        setInfoOpen(false);
-      },
-    },
-  });
-
   // Edit campaigns can load just after this component mounts. Hydrate the empty
   // local editor once the parent receives that saved draft, without overwriting
   // a user's in-progress changes.
@@ -144,18 +132,6 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
   }, [initialDraft, initialDestinationUrl]);
 
   // ── Handlers ───────────────────────────────────────────────────────────
-  const handleGenerate = () => {
-    if (!businessName.trim()) return;
-    generateAd.mutate({
-      data: {
-        businessName: businessName.trim(),
-        industry: industry || "Local Services",
-        location: location.trim() || "your area",
-        offer: offer.trim() || "Contact us today",
-      },
-    });
-  };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -314,22 +290,21 @@ export function AdPreview({ connection, onNext, initialDraft, initialDestination
                 </div>
 
                 <Button
+                  type="button"
+                  variant="outline"
                   className="w-full gap-2"
-                  onClick={handleGenerate}
-                  disabled={!businessName.trim() || generateAd.isPending}
+                  disabled
+                  aria-label="Generate with AI — coming soon"
                 >
-                  {generateAd.isPending ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-                  ) : (
-                    <><Sparkles className="w-4 h-4" /> Generate with AI</>
-                  )}
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate with AI</span>
+                  <Badge variant="secondary" className="ml-auto text-[10px]">
+                    Coming soon
+                  </Badge>
                 </Button>
-
-                {generateAd.isError && (
-                  <p className="text-xs text-destructive text-center">
-                    Generation failed — you can still write your copy below.
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground text-center">
+                  AI-generated ad copy is coming soon. Write your copy below for now.
+                </p>
               </CardContent>
             )}
           </Card>
