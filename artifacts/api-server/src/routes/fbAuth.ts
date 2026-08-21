@@ -7,6 +7,8 @@ import { logger } from "../lib/logger";
 
 const FB_VERSION = "v20.0";
 const SCOPES = ["pages_show_list", "pages_read_engagement", "ads_read", "ads_management"].join(",");
+const REPLIT_FRONTEND_PATH = "/apps/fb";
+const NETLIFY_FRONTEND_PATH = "/fb";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -33,7 +35,25 @@ function getCallbackUrl(): string {
 function getFrontendBase(): string {
   const base =
     process.env.APP_BASE_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`;
-  return `${base}/fb`;
+  return `${base}${REPLIT_FRONTEND_PATH}`;
+}
+
+export function getFrontendPath(pathname: string): string {
+  if (
+    pathname === NETLIFY_FRONTEND_PATH ||
+    pathname.startsWith(`${NETLIFY_FRONTEND_PATH}/`)
+  ) {
+    return NETLIFY_FRONTEND_PATH;
+  }
+
+  if (
+    pathname === REPLIT_FRONTEND_PATH ||
+    pathname.startsWith(`${REPLIT_FRONTEND_PATH}/`)
+  ) {
+    return REPLIT_FRONTEND_PATH;
+  }
+
+  return REPLIT_FRONTEND_PATH;
 }
 
 /**
@@ -84,13 +104,19 @@ function verifyState(state: string): FbOAuthState | null {
 function getRequestFrontendBase(req: any): string {
   const origin = typeof req.headers.origin === "string" ? req.headers.origin.replace(/\/$/, "") : "";
   if (/^https?:\/\/[^/]+$/.test(origin)) {
-    return `${origin}/fb`;
+    const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
+    try {
+      const refererUrl = new URL(referer);
+      return `${origin}${getFrontendPath(refererUrl.pathname)}`;
+    } catch {
+      return `${origin}${REPLIT_FRONTEND_PATH}`;
+    }
   }
 
   const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
   try {
     const refererUrl = new URL(referer);
-    return `${refererUrl.origin}/fb`;
+    return `${refererUrl.origin}${getFrontendPath(refererUrl.pathname)}`;
   } catch {
     // Continue to forwarded-host detection when no valid browser referer exists.
   }
