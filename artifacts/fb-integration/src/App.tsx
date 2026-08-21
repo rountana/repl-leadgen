@@ -14,6 +14,7 @@ import { Profile } from "@/pages/Profile";
 import { AuthPage, Landing } from "@/pages/Landing";
 import { Shell } from "@/components/layout/Shell";
 import { takePostSignInReturnTo } from "@/lib/authRedirect";
+import { getPublicBasePath } from "@/lib/publicRoutes";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,7 +52,7 @@ function resolveClerkProxyUrl(): string {
 }
 
 const clerkProxyUrl = resolveClerkProxyUrl();
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const basePath = getPublicBasePath();
 
 function stripBase(path: string): string {
   try {

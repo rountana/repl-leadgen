@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useGetLeadMagnet } from "@workspace/api-client-react";
+import { getFacebookAppBasePath } from "@/lib/publicRoutes";
 
 export function Live() {
   const params = useParams();
@@ -106,7 +107,7 @@ export function Live() {
                 magnet_url: magnet.shareUrl ?? "",
                 magnet_desc: magnet.description ?? "",
               });
-              window.location.href = `/apps/fb/campaign/new?${params.toString()}`;
+              window.location.href = `${getFacebookAppBasePath()}/campaign/new?${params.toString()}`;
             }}
           >
             <Megaphone className="w-4 h-4" />

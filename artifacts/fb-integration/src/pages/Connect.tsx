@@ -23,8 +23,9 @@ import {
   getGetFbConnectionQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { getPublicBasePath } from "@/lib/publicRoutes";
 
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const basePath = getPublicBasePath();
 
 /** Zernio requires adAccountId in the form act_<digits>. Anything else (e.g. act_mock_789) will be rejected. */
 function isRealAdAccountId(id: string | null | undefined): boolean {

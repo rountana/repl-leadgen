@@ -2,8 +2,9 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
 import { User, LogOut, ArrowRight, Loader2, UserCircle, CircleHelp, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getPublicBasePath } from "@/lib/publicRoutes";
 
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const basePath = getPublicBasePath();
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();

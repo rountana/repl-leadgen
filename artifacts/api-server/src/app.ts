@@ -8,6 +8,7 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import { getApprovedOrigin } from "./lib/publicOrigins";
 import router from "./routes";
 import { callbackRouter as fbCallbackRouter } from "./routes/fbAuth";
 import { logger } from "./lib/logger";
@@ -36,7 +37,14 @@ app.use(
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+app.use(
+  cors({
+    credentials: true,
+    origin(origin, callback) {
+      callback(null, !origin || Boolean(getApprovedOrigin(origin)));
+    },
+  }),
+);
 app.use(
   express.json({
     limit: "10mb",

@@ -2,11 +2,12 @@ import { Link } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
 import { User, LogOut, Loader2, LayoutDashboard, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getPublicBasePath } from "@/lib/publicRoutes";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
   const { user, isLoaded } = useUser();
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const basePath = getPublicBasePath();
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">

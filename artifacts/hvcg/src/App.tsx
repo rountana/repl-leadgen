@@ -16,6 +16,7 @@ import { Profile } from "@/pages/Profile";
 import { PublicCapture } from "@/pages/PublicCapture";
 import { HowItWorks } from "@/pages/HowItWorks";
 import { Shell } from "@/components/layout/Shell";
+import { getPublicBasePath } from "@/lib/publicRoutes";
 
 const queryClient = new QueryClient();
 
@@ -46,7 +47,7 @@ function resolveClerkProxyUrl(): string {
 }
 
 const clerkProxyUrl = resolveClerkProxyUrl();
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const basePath = getPublicBasePath();
 
 function stripBase(path: string): string {
   try {

@@ -16,9 +16,10 @@ import {
 } from "lucide-react";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { getSafeReturnPath, rememberPostSignInReturnTo } from "@/lib/authRedirect";
+import { getPublicBasePath } from "@/lib/publicRoutes";
 import { useLocation } from "wouter";
 
-const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const basePath = getPublicBasePath();
 
 const INDUSTRIES = [
   {

@@ -4,6 +4,11 @@ import { getAuth } from "@clerk/express";
 import { db, fbConnectionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import {
+  getApprovedOrigin,
+  getApprovedOriginFromHeaders,
+  getDeploymentOrigin,
+} from "../lib/publicOrigins";
 
 const FB_VERSION = "v20.0";
 const SCOPES = ["pages_show_list", "pages_read_engagement", "ads_read", "ads_management"].join(",");
@@ -24,18 +29,18 @@ function getAppSecret(): string {
   return v;
 }
 
-/** The OAuth redirect_uri registered in the Facebook Developer App */
-function getCallbackUrl(): string {
-  const base =
-    process.env.APP_BASE_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`;
-  return `${base}/api/auth/facebook/callback`;
+/** The OAuth redirect_uri registered in the Facebook Developer App. */
+export function getCallbackUrl(frontend?: string): string {
+  const frontendOrigin = frontend ? getOrigin(frontend) : null;
+  const approvedOrigin = frontendOrigin
+    ? getApprovedOrigin(frontendOrigin)
+    : null;
+  return `${approvedOrigin ?? getDeploymentOrigin()}/api/auth/facebook/callback`;
 }
 
 /** Base URL of the FB integration frontend */
 function getFrontendBase(): string {
-  const base =
-    process.env.APP_BASE_URL ?? `https://${process.env.REPLIT_DEV_DOMAIN}`;
-  return `${base}${REPLIT_FRONTEND_PATH}`;
+  return `${getDeploymentOrigin()}${REPLIT_FRONTEND_PATH}`;
 }
 
 export function getFrontendPath(pathname: string): string {
@@ -54,6 +59,19 @@ export function getFrontendPath(pathname: string): string {
   }
 
   return REPLIT_FRONTEND_PATH;
+}
+
+export function isApprovedFrontendBase(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return (
+      Boolean(getApprovedOrigin(parsed.origin)) &&
+      (parsed.pathname === REPLIT_FRONTEND_PATH ||
+        parsed.pathname === NETLIFY_FRONTEND_PATH)
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -87,7 +105,14 @@ function verifyState(state: string): FbOAuthState | null {
     const payload = state.slice(0, separator);
     const sig = state.slice(separator + 1);
     const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as FbOAuthState;
-    if (!decoded.userId || !decoded.timestamp || !decoded.returnFrontend) return null;
+    if (
+      !decoded.userId ||
+      !decoded.timestamp ||
+      !decoded.returnFrontend ||
+      !isApprovedFrontendBase(decoded.returnFrontend)
+    ) {
+      return null;
+    }
     if (Date.now() - decoded.timestamp > 10 * 60 * 1000) return null; // 10-min expiry
     const expected = createHmac("sha256", secret).update(payload).digest("hex");
     const eBuf = Buffer.from(expected);
@@ -100,39 +125,28 @@ function verifyState(state: string): FbOAuthState | null {
   }
 }
 
-/** Resolve the frontend host that initiated OAuth, without exposing internal API ports. */
-function getRequestFrontendBase(req: any): string {
-  const origin = typeof req.headers.origin === "string" ? req.headers.origin.replace(/\/$/, "") : "";
-  if (/^https?:\/\/[^/]+$/.test(origin)) {
-    const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
+/** Resolve the approved frontend that initiated OAuth. */
+export function getRequestFrontendBase(req: {
+  headers: Record<string, string | string[] | undefined>;
+}): string {
+  const origin = getApprovedOriginFromHeaders(req.headers);
+  if (!origin) return getFrontendBase();
+
+  const referer = Array.isArray(req.headers.referer)
+    ? req.headers.referer[0]
+    : req.headers.referer;
+  if (referer) {
     try {
       const refererUrl = new URL(referer);
-      return `${origin}${getFrontendPath(refererUrl.pathname)}`;
+      if (getApprovedOrigin(refererUrl.origin) === origin) {
+        return `${origin}${getFrontendPath(refererUrl.pathname)}`;
+      }
     } catch {
-      return `${origin}${REPLIT_FRONTEND_PATH}`;
+      // Fall through to the safe public app entry for the approved origin.
     }
   }
 
-  const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
-  try {
-    const refererUrl = new URL(referer);
-    return `${refererUrl.origin}${getFrontendPath(refererUrl.pathname)}`;
-  } catch {
-    // Continue to forwarded-host detection when no valid browser referer exists.
-  }
-
-  const forwardedHost = req.headers["x-forwarded-host"] ?? req.headers.host;
-  const forwardedProto = req.headers["x-forwarded-proto"] ?? "https";
-  if (
-    typeof forwardedHost === "string" &&
-    forwardedHost &&
-    !/^localhost(?::\d+)?$/.test(forwardedHost) &&
-    !/^127\.0\.0\.1(?::\d+)?$/.test(forwardedHost)
-  ) {
-    return `${forwardedProto}://${forwardedHost}/fb`;
-  }
-
-  return getFrontendBase();
+  return `${origin}${NETLIFY_FRONTEND_PATH}`;
 }
 
 // ── Short-lived callback result cache ──────────────────────────────────────
@@ -194,7 +208,9 @@ function getOrigin(value: string): string | null {
 }
 
 function needsOAuthRelay(frontend: string): boolean {
-  return getOrigin(frontend) !== getOrigin(getFrontendBase());
+  // addlaun.ch and the transition domain both proxy to this same API service,
+  // so the callback can retain pending credentials locally without a token relay.
+  return false;
 }
 
 async function relayOAuthResult(
@@ -206,7 +222,9 @@ async function relayOAuthResult(
   adAccounts: FbAdAccountData[],
 ): Promise<void> {
   const origin = getOrigin(frontend);
-  if (!origin) throw new Error("Invalid OAuth return origin");
+  if (!origin || !getApprovedOrigin(origin)) {
+    throw new Error("Invalid OAuth return origin");
+  }
 
   const relayResponse = await fetch(`${origin}/api/auth/facebook/relay`, {
     method: "POST",
@@ -277,6 +295,7 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
   const { code, state, error: fbError, error_description } = req.query as Record<string, string>;
   const stateData = verifyState(state ?? "");
   const frontend = stateData?.returnFrontend ?? getFrontendBase();
+  const callbackUrl = getCallbackUrl(stateData?.returnFrontend);
 
   // User denied the dialog
   if (fbError || !code) {
@@ -305,7 +324,7 @@ async function handleFacebookCallback(req: any, res: any): Promise<void> {
     const tokenParams = new URLSearchParams({
       client_id: getAppId(),
       client_secret: getAppSecret(),
-      redirect_uri: getCallbackUrl(),
+        redirect_uri: callbackUrl,
       code,
     });
     const tokenRes = await fetch(
@@ -469,10 +488,11 @@ const router = Router();
 router.get("/auth/facebook/init", requireAuth, async (req: any, res): Promise<void> => {
   try {
     const userId = req.userId as string;
-    const state = makeState(userId, getRequestFrontendBase(req));
+    const frontend = getRequestFrontendBase(req);
+    const state = makeState(userId, frontend);
     const params = new URLSearchParams({
       client_id: getAppId(),
-      redirect_uri: getCallbackUrl(),
+      redirect_uri: getCallbackUrl(frontend),
       scope: SCOPES,
       state,
       response_type: "code",
