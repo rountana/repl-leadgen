@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getClerkProxyHost } from "./clerkProxyMiddleware";
 
-test("uses the approved Netlify origin for Clerk proxy requests", () => {
+test("uses the configured deployment host even when the browser is on Netlify", () => {
   const host = getClerkProxyHost({
     headers: {
       origin: "https://vibeengg.com",
@@ -11,10 +11,10 @@ test("uses the approved Netlify origin for Clerk proxy requests", () => {
     },
   });
 
-  assert.equal(host, "vibeengg.com");
+  assert.equal(host, "lead-magnet-hub-shaamsarath1.replit.app");
 });
 
-test("does not trust an arbitrary browser origin", () => {
+test("uses the original forwarding host instead of any browser origin", () => {
   const host = getClerkProxyHost({
     headers: {
       origin: "https://untrusted.example",

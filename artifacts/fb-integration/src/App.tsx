@@ -29,29 +29,7 @@ const clerkPubKey = publishableKeyFromHost(
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
 
-function resolveClerkProxyUrl(): string {
-  const configuredProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
-  if (!configuredProxyUrl) {
-    return configuredProxyUrl;
-  }
-
-  try {
-    const configured = new URL(configuredProxyUrl, window.location.origin);
-    // Replit injects its deployment origin into the production build. When the
-    // app is served through an approved reverse proxy, Clerk must instead use
-    // that visitor-facing origin so the browser never makes a cross-origin
-    // request to the generated deployment.
-    if (configured.origin !== window.location.origin) {
-      return `${window.location.origin}${configured.pathname}${configured.search}`;
-    }
-  } catch {
-    // Keep Clerk's injected value if it cannot be parsed as a URL.
-  }
-
-  return configuredProxyUrl;
-}
-
-const clerkProxyUrl = resolveClerkProxyUrl();
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {

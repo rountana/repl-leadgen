@@ -25,32 +25,6 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const CLERK_FAPI = 'https://frontend-api.clerk.dev';
 export const CLERK_PROXY_PATH = '/api/__clerk';
-const TRUSTED_REVERSE_PROXY_HOSTS = new Set(['vibeengg.com']);
-
-function trustedProxyHostFromOrigin(
-  req: { headers: IncomingHttpHeaders },
-): string | undefined {
-  const origin = req.headers.origin;
-  const rawOrigin = Array.isArray(origin) ? origin[0] : origin;
-
-  if (!rawOrigin) {
-    return undefined;
-  }
-
-  try {
-    const parsed = new URL(rawOrigin);
-    if (
-      parsed.protocol === 'https:' &&
-      TRUSTED_REVERSE_PROXY_HOSTS.has(parsed.hostname.toLowerCase())
-    ) {
-      return parsed.host;
-    }
-  } catch {
-    // Ignore malformed Origin headers and use the deployment host instead.
-  }
-
-  return undefined;
-}
 
 /**
  * Returns the first effective public hostname for the given request,
@@ -72,15 +46,6 @@ function trustedProxyHostFromOrigin(
 export function getClerkProxyHost(req: {
   headers: IncomingHttpHeaders;
 }): string | undefined {
-  // Netlify forwards the browser's Origin header but the Replit deployment
-  // edge rewrites x-forwarded-host to its generated .replit.app hostname.
-  // Accept only the known public Netlify hostname so Clerk sees a proxy URL
-  // that matches the browser origin; never trust arbitrary Origins here.
-  const trustedOriginHost = trustedProxyHostFromOrigin(req);
-  if (trustedOriginHost) {
-    return trustedOriginHost;
-  }
-
   const forwarded = req.headers['x-forwarded-host'];
   const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
   const firstHop = raw?.split(',')[0]?.trim();
