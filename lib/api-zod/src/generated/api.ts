@@ -138,6 +138,21 @@ export const GetLeadMagnetsSummaryResponse = zod.object({
 
 
 /**
+ * @summary List giveaway-form submissions for the current user
+ */
+export const ListLeadsResponseItem = zod.object({
+  "id": zod.number(),
+  "leadMagnetId": zod.number(),
+  "leadMagnetTitle": zod.string().nullish(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListLeadsResponse = zod.array(ListLeadsResponseItem)
+
+
+/**
  * @summary Get a single lead magnet
  */
 export const GetLeadMagnetParams = zod.object({

@@ -10,6 +10,7 @@ import { Connect } from "@/pages/Connect";
 import { MockOAuthCallback } from "@/pages/MockOAuthCallback";
 import { CampaignWizard } from "@/pages/CampaignWizard";
 import { Campaigns } from "@/pages/Campaigns";
+import { Leads } from "@/pages/Leads";
 import { Profile } from "@/pages/Profile";
 import { AuthPage, Landing } from "@/pages/Landing";
 import { Shell } from "@/components/layout/Shell";
@@ -176,6 +177,9 @@ function ClerkProviderWithRoutes() {
           </Route>
           <Route path="/campaigns">
             <ProtectedRoute component={Campaigns} />
+          </Route>
+          <Route path="/leads">
+            <ProtectedRoute component={Leads} />
           </Route>
           <Route path="/profile">
             <ProtectedRoute component={Profile} />

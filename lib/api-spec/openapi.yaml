@@ -110,6 +110,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/LeadMagnetsSummary"
 
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [lead-magnets]
+      summary: List giveaway-form submissions for the current user
+      responses:
+        "200":
+          description: List of giveaway-form submissions, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeadSubmission"
+
   /lead-magnets/{id}:
     get:
       operationId: getLeadMagnet
@@ -877,6 +892,30 @@ components:
         - live
         - review
         - draft
+
+    LeadSubmission:
+      type: object
+      required:
+        - id
+        - leadMagnetId
+        - name
+        - email
+        - createdAt
+      properties:
+        id:
+          type: number
+        leadMagnetId:
+          type: number
+        leadMagnetTitle:
+          type: ["string", "null"]
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        createdAt:
+          type: string
 
     Template:
       type: object

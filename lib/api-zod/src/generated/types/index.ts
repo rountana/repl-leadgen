@@ -46,6 +46,7 @@ export * from './leadMagnetsSummary';
 export * from './leadMagnetStatus';
 export * from './leadMagnetType';
 export * from './leadMagnetUpdate';
+export * from './leadSubmission';
 export * from './listExamplesParams';
 export * from './syncFbCampaigns200';
 export * from './template';

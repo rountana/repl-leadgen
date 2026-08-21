@@ -132,6 +132,18 @@ export interface LeadMagnetsSummary {
   draft: number;
 }
 
+export interface LeadSubmission {
+  id: number;
+  leadMagnetId: number;
+  /** @nullable */
+  leadMagnetTitle?: string | null;
+  name: string;
+  email: string;
+  /** @nullable */
+  phone?: string | null;
+  createdAt: string;
+}
+
 export type TemplateLayout = typeof TemplateLayout[keyof typeof TemplateLayout];
 
 

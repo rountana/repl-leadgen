@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
-import { User, LogOut, Loader2, LayoutDashboard, UserCircle } from "lucide-react";
+import { User, LogOut, Loader2, LayoutDashboard, UserCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getPublicBasePath } from "@/lib/publicRoutes";
 
@@ -25,6 +25,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
             >
               <LayoutDashboard className="w-4 h-4" />
               Dashboard
+            </Link>
+
+            <Link
+              href="/leads"
+              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Users className="w-4 h-4" />
+              Leads
             </Link>
 
             <Link

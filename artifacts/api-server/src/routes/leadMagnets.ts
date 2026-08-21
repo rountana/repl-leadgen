@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { db, leadMagnetsTable, templatesTable, leadsTable } from "@workspace/db";
 import {
@@ -11,13 +11,31 @@ import {
   ApproveLeadMagnetParams,
   UploadLeadMagnetFileParams,
   UploadLeadMagnetFileBody,
+  ListLeadsResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
 function requireAuth(req: any, res: any, next: any) {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
+  // Integration-test bypass: only active when NODE_ENV === "test".
+  // Production and development builds always require a valid Clerk session.
+  if (process.env.NODE_ENV === "test") {
+    const testUserId = req.headers["x-test-user-id"] as string | undefined;
+    if (testUserId) {
+      req.userId = testUserId;
+      next();
+      return;
+    }
+  }
+
+  let userId: string | null | undefined;
+  try {
+    userId = getAuth(req)?.userId;
+  } catch {
+    // A route mounted without Clerk middleware is still unauthenticated, not a
+    // server failure. The normal application always mounts Clerk first.
+    userId = null;
+  }
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -108,6 +126,34 @@ router.get("/lead-magnets", requireAuth, async (req: any, res): Promise<void> =>
     .where(eq(leadMagnetsTable.userId, userId))
     .orderBy(leadMagnetsTable.createdAt);
   res.json(magnets.map(serializeMagnet));
+});
+
+// GET /leads — giveaway-form submissions for lead magnets owned by the current user
+router.get("/leads", requireAuth, async (req: any, res): Promise<void> => {
+  const userId = req.userId as string;
+  const leads = await db
+    .select({
+      id: leadsTable.id,
+      leadMagnetId: leadsTable.leadMagnetId,
+      leadMagnetTitle: leadMagnetsTable.title,
+      name: leadsTable.name,
+      email: leadsTable.email,
+      phone: leadsTable.phone,
+      createdAt: leadsTable.createdAt,
+    })
+    .from(leadsTable)
+    .innerJoin(leadMagnetsTable, eq(leadsTable.leadMagnetId, leadMagnetsTable.id))
+    .where(eq(leadMagnetsTable.userId, userId))
+    .orderBy(desc(leadsTable.createdAt), desc(leadsTable.id));
+
+  res.json(
+    ListLeadsResponse.parse(
+      leads.map((lead) => ({
+        ...lead,
+        createdAt: lead.createdAt instanceof Date ? lead.createdAt.toISOString() : lead.createdAt,
+      })),
+    ),
+  );
 });
 
 // POST /lead-magnets
